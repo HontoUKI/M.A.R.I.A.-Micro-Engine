@@ -1,0 +1,9 @@
+# Normalize line endings: LF in the repository, native in the working copy.
+* text=auto eol=lf
+
+# Binary assets must never be normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.npy binary
