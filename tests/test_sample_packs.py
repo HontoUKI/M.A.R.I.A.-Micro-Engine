@@ -13,6 +13,7 @@ import pytest
 
 from engine.character import CharacterRuntime
 from engine.pack import load_pack
+from engine.pack.models import STAGE_NAMES
 
 _CHARACTERS_DIR = Path(__file__).resolve().parents[1] / "characters"
 
@@ -67,6 +68,13 @@ def test_kaguya_sample_is_serious_and_more_guarded_than_megumin():
     # The contrast the two packs exist to prove: Kaguya starts more guarded.
     assert kaguya.axes.affection.start < megumin.axes.affection.start
     assert kaguya.axes.trust.start < megumin.axes.trust.start
+
+
+@pytest.mark.parametrize("name", ["megumin", "kaguya"])
+def test_samples_define_the_full_stage_ladder(name):
+    pack = load_pack(str(_CHARACTERS_DIR / name))
+    # Both samples are showcases for explainable change, so they voice every stage.
+    assert set(pack.stages) == set(STAGE_NAMES)
 
 
 def test_megumin_pack_drives_a_full_runtime_turn():
