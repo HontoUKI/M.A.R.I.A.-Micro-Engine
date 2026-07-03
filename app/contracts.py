@@ -41,6 +41,16 @@ class ChatCompletionUsage(BaseModel):
     total_tokens: int = 0
 
 
+class MicroEngineExtension(BaseModel):
+    """Non-OpenAI fields the sprite-shell UI needs. OpenAI clients ignore
+    unknown response fields, so carrying this alongside the standard payload
+    keeps drop-in compatibility while exposing the character's turn state."""
+
+    tag: str
+    sprite: str | None = None
+    axes: dict[str, float]
+
+
 class ChatCompletionResponse(BaseModel):
     id: str
     object: str = "chat.completion"
@@ -48,6 +58,7 @@ class ChatCompletionResponse(BaseModel):
     model: str
     choices: list[ChatCompletionChoice]
     usage: ChatCompletionUsage = Field(default_factory=ChatCompletionUsage)
+    x_micro_engine: MicroEngineExtension | None = None
 
 
 class ModelCard(BaseModel):
