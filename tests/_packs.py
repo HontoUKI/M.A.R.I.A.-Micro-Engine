@@ -17,9 +17,9 @@ def make_pack(**overrides) -> CharacterPack:
         },
         "identity": "You are Aria, a calm librarian.",
         "axes": {
-            "affection": {"min": 0, "max": 100, "start": 20},
-            "trust": {"min": 0, "max": 100, "start": 10},
-            "bond": {"min": 0, "max": 100, "start": 0},
+            "affection": {"start": 20},
+            "trust": {"start": 10},
+            "bond": {"start": 0},
         },
         "tags": [
             {"id": "warmth", "description": "The user is warm.", "sentiment": "positive"},

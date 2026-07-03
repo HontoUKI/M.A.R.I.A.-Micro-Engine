@@ -14,13 +14,7 @@ _SEMVER_PATTERN = r"^\d+\.\d+\.\d+$"
 
 MIN_TAGS = 2
 MAX_TAGS = 32
-
-# Canonical relationship-stage ladder, low to high closeness. Mirrors the
-# stage vocabulary of the full engine (cold / reserved / comfort / ...), minus
-# its mood-driven override modes. The engine derives the active stage from the
-# affection+trust ratio (see engine.state.classify_stage); a pack supplies the
-# character's tone at each stage it cares to voice.
-STAGE_NAMES = ("cold", "reserved", "cautious", "comfort", "close", "very_close")
+MAX_STAGES = 32
 
 
 class PackMeta(BaseModel):
@@ -36,19 +30,13 @@ class PackMeta(BaseModel):
 
 
 class AxisConfig(BaseModel):
+    """Per-axis configuration. Only the starting value is authored (in points);
+    the ceiling is a runtime/env knob, not part of the character (see
+    `AXIS_MAX` / slow-burn in the SPEC), and the floor is always 0."""
+
     model_config = ConfigDict(extra="forbid")
 
-    min: float = 0.0
-    max: float = 100.0
-    start: float = 0.0
-
-    @model_validator(mode="after")
-    def _check_bounds(self) -> AxisConfig:
-        if self.min > self.max:
-            raise ValueError("axis min must be <= max")
-        if not (self.min <= self.start <= self.max):
-            raise ValueError("axis start must be within [min, max]")
-        return self
+    start: float = Field(default=0.0, ge=0.0)
 
 
 class AxesConfig(BaseModel):
@@ -93,6 +81,22 @@ class DecayConfig(BaseModel):
     bond: float = Field(default=0.05, ge=0.0)
 
 
+class Stage(BaseModel):
+    """One author-defined relationship stage.
+
+    Active while the closeness ratio (see engine.state.relationship_ratio) is
+    at or below `up_to`. Thresholds are ratios in (0, 1], so they are
+    independent of the axis ceiling — the same stages work at any `AXIS_MAX`,
+    which is what makes slow-burn a pure deployment knob.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=_NAME_PATTERN)
+    up_to: float = Field(gt=0.0, le=1.0)
+    block: str = ""
+
+
 class CharacterPack(BaseModel):
     """The fully validated character pack (shape-level)."""
 
@@ -107,7 +111,7 @@ class CharacterPack(BaseModel):
     axes: AxesConfig = Field(default_factory=AxesConfig)
     sprites: dict[str, str] = Field(default_factory=dict)
     decay: DecayConfig = Field(default_factory=DecayConfig)
-    stages: dict[str, str] = Field(default_factory=dict)
+    stages: list[Stage] = Field(default_factory=list, max_length=MAX_STAGES)
     invariants: list[str] = Field(default_factory=list)
     actions: list[str] = Field(default_factory=list)
 
@@ -142,13 +146,14 @@ class CharacterPack(BaseModel):
         if not any(t.sentiment == "negative" for t in self.tags):
             raise ValueError("pack must declare at least one negative-sentiment tag")
 
-        # Stage keys must be canonical ladder names (cold ... very_close).
-        unknown_stages = set(self.stages) - set(STAGE_NAMES)
-        if unknown_stages:
-            raise ValueError(
-                f"unknown stage names {sorted(unknown_stages)}; "
-                f"valid stages are {list(STAGE_NAMES)}"
-            )
+        # Stages: unique ids, strictly ascending thresholds (author-defined,
+        # any number).
+        stage_ids = [s.id for s in self.stages]
+        if len(stage_ids) != len(set(stage_ids)):
+            raise ValueError("stage ids must be unique")
+        ups = [s.up_to for s in self.stages]
+        if any(ups[i] >= ups[i + 1] for i in range(len(ups) - 1)):
+            raise ValueError("stage 'up_to' thresholds must be strictly ascending")
 
         return self
 

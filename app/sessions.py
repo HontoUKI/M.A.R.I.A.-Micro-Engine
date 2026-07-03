@@ -13,13 +13,14 @@ session. State is in-process for v0.1; durable persistence is future work.
 from __future__ import annotations
 
 from engine.pack import CharacterPack
-from engine.state import StateKernel
+from engine.state import DEFAULT_AXIS_MAX, StateKernel
 
 
 class SessionStore:
     """In-memory map of (session_key, pack_name) → StateKernel."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, axis_max: float = DEFAULT_AXIS_MAX) -> None:
+        self._axis_max = axis_max
         self._kernels: dict[tuple[str, str], StateKernel] = {}
 
     def kernel_for(self, session_key: str, pack: CharacterPack) -> StateKernel:
@@ -27,7 +28,7 @@ class SessionStore:
         key = (session_key, pack.meta.name)
         kernel = self._kernels.get(key)
         if kernel is None:
-            kernel = StateKernel.from_pack(pack)
+            kernel = StateKernel.from_pack(pack, axis_max=self._axis_max)
             self._kernels[key] = kernel
         return kernel
 

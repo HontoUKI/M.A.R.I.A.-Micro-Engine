@@ -68,15 +68,22 @@ Keep it a compact "who you are", not a rulebook: base tone, voice, disposition.
 
 ### 2.4 `axes` (optional)
 
-Bounds and starting value for the three relationship axes. Any omitted axis or
-field uses the engine default (`min: 0, max: 100`, `start: 0`).
+The starting value (in points) of each relationship axis. The floor is always
+`0`; the ceiling is the runtime `AXIS_MAX` (default `100`), not a pack field.
+So a pack only chooses where the character begins; omitted axes start at `0`.
 
 ```yaml
 axes:
-  affection: {min: 0, max: 100, start: 20}
-  trust:     {min: 0, max: 100, start: 15}
-  bond:      {min: 0, max: 100, start: 0}
+  affection: {start: 20}
+  trust:     {start: 15}
+  bond:      {start: 0}
 ```
+
+`AXIS_MAX` is a **deployment knob for slow-burn**, not part of the character.
+Raise it (e.g. to `1000`) and the same per-turn deltas become a smaller
+fraction of the whole, so relationships warm far more slowly across many more
+messages. Stage thresholds (§2.12) are ratios, so they need no retuning when
+you change it.
 
 ### 2.5 `tags` (required, list)
 
@@ -184,37 +191,42 @@ matching tone into the turn's dynamic tail, on top of the moment tag's block.
 Where a tag reacts to *this message*, a stage expresses *how close you two have
 become*.
 
-The stage ladder is fixed (the engine owns the thresholds, mirroring the full
-M.A.R.I.A. engine). A pack fills in the character's voice at each stage it
-cares to shape; omitted stages simply add no stage tone.
+Stages are **author-defined**: you choose how many, what to call them, and
+where they begin. Each stage is a `{id, up_to, block}` entry; the engine
+activates the first stage whose `up_to` threshold covers the current closeness
+ratio (the last stage is the catch-all).
 
 ```yaml
 stages:
-  cold:       "You barely know them. Guarded and distant."
-  reserved:   "Still early. Polite but closed."
-  cautious:   "Warming a little; the guard eases slightly."
-  comfort:    "At ease now; genuine warmth shows more openly."
-  close:      "You trust them; calm and openly warm."
-  very_close: "Fully at ease; unguarded and sincere."
+  - id: strangers
+    up_to: 0.15
+    block: "You barely know them. Guarded and distant."
+  - id: acquaintances
+    up_to: 0.45
+    block: "Warming a little; the guard eases."
+  - id: friends
+    up_to: 0.8
+    block: "At ease; openly warm."
+  - id: close
+    up_to: 1.0
+    block: "Fully unguarded and sincere."
 ```
 
-| Stage        | Active while the affection+trust ratio is |
-|--------------|-------------------------------------------|
-| `cold`       | < 0.12 |
-| `reserved`   | < 0.25 |
-| `cautious`   | < 0.45 |
-| `comfort`    | < 0.65 |
-| `close`      | < 0.82 |
-| `very_close` | ≥ 0.82 |
+| Field   | Req | Notes |
+|---------|-----|-------|
+| `id`    | ✅  | `^[a-z0-9][a-z0-9_-]*$`, unique within the pack. Reported to clients. |
+| `up_to` | ✅  | Ratio threshold in `(0, 1]`. Thresholds must be strictly ascending; make the last one `1.0` to cover the top. |
+| `block` |     | Tone text for this stage; length-limited and injection-scanned like a block (§4). |
 
-The ratio is `(affection + trust) / 2`, each normalized within its axis bounds.
-Bond, the slow long-term axis, does not gate the acted stage. Only these six
-stage names are valid keys; each stage's text is length-limited and
-injection-scanned like a block (§4).
+The **closeness ratio** is `(affection + trust) / 2`, each divided by
+`AXIS_MAX`. Bond, the slow long-term axis, does not gate the acted stage.
+Because thresholds are ratios (not raw points), they need no retuning when a
+deployment changes `AXIS_MAX` for slow-burn. Up to 32 stages.
 
-Every chat response reports the active `stage` and whether this turn crossed
-into it (`stage_changed`) in the `x_micro_engine` extension, so a client can
-show *why* the character just shifted.
+Every chat response reports the active `stage` (its id, or `null` when a pack
+defines no stages) and whether this turn crossed into it (`stage_changed`) in
+the `x_micro_engine` extension, so a client can show *why* the character
+shifted.
 
 ---
 
@@ -278,8 +290,8 @@ defense-in-depth, not a substitute for human review of gallery submissions.
    back to `meta.fallback_tag`.
 3. The engine applies `deltas[tag]` to the axes (clamped to bounds; bond moves
    slowly), then resolves the current relationship **stage** from the new
-   axes (§2.12). Both `blocks[tag]` and `stages[stage]` are injected into the
-   dynamic tail.
+   axes (§2.12). Both the tag's block and the active stage's block are injected
+   into the dynamic tail.
 4. A second LLM call voices the reply. The response reports `tag`, `stage`,
    `stage_changed`, `sprite`, and the axis values.
 5. On idle, `decay` pulls the axes toward baseline (which can lower the stage

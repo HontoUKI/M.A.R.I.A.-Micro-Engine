@@ -29,7 +29,7 @@ def _build_service() -> EngineService:
         settings.embed_model,
         timeout_s=settings.llm_timeout_s,
     )
-    return EngineService(registry=registry, llm=llm)
+    return EngineService(registry=registry, llm=llm, axis_max=settings.axis_max)
 
 
 def get_service() -> EngineService:

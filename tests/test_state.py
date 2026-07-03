@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import pytest
 
-from engine.pack.models import DecayConfig, DeltaVector
-from engine.state import Axes, StateKernel, classify_stage, relationship_ratio, summarize_axes
+from engine.pack.models import DecayConfig, DeltaVector, Stage
+from engine.state import Axes, StateKernel, relationship_ratio, resolve_stage, summarize_axes
 from tests._packs import make_pack
 
 
@@ -62,6 +62,12 @@ def test_decay_never_crosses_baseline():
     assert k.axes.affection == 20  # snaps to baseline, not below
 
 
+def test_apply_clamps_to_axis_max_ceiling():
+    k = StateKernel.from_pack(make_pack(), axis_max=1000)
+    k.apply(DeltaVector(affection=5000.0, trust=1.0, bond=1.0))
+    assert k.axes.affection == 1000
+
+
 def test_restore_and_to_dict_roundtrip():
     pack = make_pack()
     k = StateKernel.from_pack(pack)
@@ -72,50 +78,58 @@ def test_restore_and_to_dict_roundtrip():
 
 
 def test_summarize_axes_uses_neutral_bands_not_numbers():
-    pack = make_pack()
-    k = StateKernel.from_pack(pack)
-    summary = summarize_axes(k.axes, pack.axes)
+    k = StateKernel.from_pack(make_pack())
+    summary = summarize_axes(k.axes, k.axis_max)
     assert "affection" in summary
     # A baseline of 20/100 is in the "low" band; no raw number leaks.
     assert "20" not in summary
     assert any(band in summary for band in ("very low", "low", "moderate", "high"))
 
 
-# ---------------------------------------------------------------- stages
+# ---------------------------------------------------------------- ratio / stages
 
 
 def _axes(affection, trust, bond=0.0):
     return Axes(affection=affection, trust=trust, bond=bond)
 
 
-def test_relationship_ratio_averages_affection_and_trust():
-    cfg = make_pack().axes  # 0..100 bounds
-    assert relationship_ratio(_axes(40, 60), cfg) == pytest.approx(0.5)
-    assert relationship_ratio(_axes(0, 0), cfg) == 0.0
-    assert relationship_ratio(_axes(100, 100), cfg) == 1.0
+def test_relationship_ratio_averages_affection_and_trust_over_axis_max():
+    assert relationship_ratio(_axes(40, 60), 100) == pytest.approx(0.5)
+    assert relationship_ratio(_axes(0, 0), 100) == 0.0
+    assert relationship_ratio(_axes(100, 100), 100) == 1.0
+
+
+def test_relationship_ratio_scales_with_axis_max_for_slowburn():
+    # The same points are a far smaller ratio at a higher ceiling.
+    assert relationship_ratio(_axes(50, 50), 100) == pytest.approx(0.5)
+    assert relationship_ratio(_axes(50, 50), 1000) == pytest.approx(0.05)
+
+
+def test_bond_does_not_affect_the_ratio():
+    assert relationship_ratio(_axes(50, 50, bond=0), 100) == relationship_ratio(
+        _axes(50, 50, bond=100), 100
+    )
+
+
+_STAGES = [
+    Stage(id="strangers", up_to=0.2, block="a"),
+    Stage(id="friends", up_to=0.6, block="b"),
+    Stage(id="close", up_to=1.0, block="c"),
+]
 
 
 @pytest.mark.parametrize(
-    "affection,trust,expected",
-    [
-        (0, 0, "cold"),
-        (11, 11, "cold"),
-        (12, 12, "reserved"),
-        (24, 24, "reserved"),
-        (30, 30, "cautious"),
-        (50, 50, "comfort"),
-        (70, 70, "close"),
-        (90, 90, "very_close"),
-        (100, 100, "very_close"),
-    ],
+    "ratio,expected",
+    [(0.0, "strangers"), (0.2, "strangers"), (0.21, "friends"), (0.6, "friends"), (0.9, "close")],
 )
-def test_classify_stage_ladder(affection, trust, expected):
-    cfg = make_pack().axes
-    assert classify_stage(_axes(affection, trust), cfg) == expected
+def test_resolve_stage_picks_the_covering_tier(ratio, expected):
+    assert resolve_stage(ratio, _STAGES).id == expected
 
 
-def test_bond_does_not_affect_the_stage():
-    cfg = make_pack().axes
-    low_bond = classify_stage(_axes(50, 50, bond=0), cfg)
-    high_bond = classify_stage(_axes(50, 50, bond=100), cfg)
-    assert low_bond == high_bond == "comfort"
+def test_resolve_stage_above_last_threshold_falls_back_to_last():
+    short = [Stage(id="a", up_to=0.3, block="")]
+    assert resolve_stage(0.9, short).id == "a"
+
+
+def test_resolve_stage_returns_none_without_stages():
+    assert resolve_stage(0.5, []) is None

@@ -88,8 +88,9 @@ def test_chat_exposes_engine_extension(client_with):
     # warmth delta over 20/10/0 baseline.
     assert ext["axes"]["affection"] == 25
     assert ext["sprite"] is None
-    # The explainable-change signals are always present.
-    assert ext["stage"] == "reserved"
+    # The explainable-change signals are always present (stage is null when the
+    # pack declares none).
+    assert ext["stage"] is None
     assert ext["stage_changed"] is False
 
 

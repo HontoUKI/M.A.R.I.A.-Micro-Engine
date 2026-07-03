@@ -19,7 +19,14 @@ from engine.memory import VectorStore
 from engine.pack.models import CharacterPack
 from engine.perception import TagClassifier
 from engine.prompt_manager import DialogueTurn, PromptInputs, PromptManager
-from engine.state import Axes, StateKernel, classify_stage, summarize_axes
+from engine.state import (
+    DEFAULT_AXIS_MAX,
+    Axes,
+    StateKernel,
+    relationship_ratio,
+    resolve_stage,
+    summarize_axes,
+)
 
 
 @dataclass(frozen=True)
@@ -30,7 +37,7 @@ class TurnResult:
     tag: str
     axes: Axes
     sprite: str | None
-    stage: str
+    stage: str | None
     stage_changed: bool
 
 
@@ -48,10 +55,12 @@ class CharacterRuntime:
         classifier: TagClassifier | None = None,
         embed_model: str = "",
         recall_k: int = 3,
+        axis_max: float = DEFAULT_AXIS_MAX,
     ) -> None:
         self._pack = pack
         self._llm = llm
-        self._state = state or StateKernel.from_pack(pack)
+        self._axis_max = axis_max
+        self._state = state or StateKernel.from_pack(pack, axis_max=axis_max)
         self._memory = memory
         self._pm = prompt_manager or PromptManager()
         self._classifier = classifier or TagClassifier(llm)
@@ -71,15 +80,16 @@ class CharacterRuntime:
 
         pre_axes = self._state.axes
         axes = self._state.apply(self._pack.deltas[tag])
-        stage, stage_changed = self._resolve_stage(pre_axes, axes)
+        stage_obj, stage_changed = self._resolve_stage(pre_axes, axes)
+        stage = stage_obj.id if stage_obj else None
 
         recall_text, query_vec = self._recall(user_message)
 
         inputs = PromptInputs(
             identity=self._pack.identity,
             invariants="\n".join(self._pack.invariants),
-            state_summary=summarize_axes(axes, self._pack.axes),
-            stage_block=self._pack.stages.get(stage, ""),
+            state_summary=summarize_axes(axes, self._axis_max),
+            stage_block=stage_obj.block if stage_obj else "",
             steering_block=self._pack.blocks[tag],
             memory_recall=recall_text,
             dialogue_window=dialogue_window,
@@ -97,11 +107,14 @@ class CharacterRuntime:
             stage_changed=stage_changed,
         )
 
-    def _resolve_stage(self, pre_axes: Axes, post_axes: Axes) -> tuple[str, bool]:
+    def _resolve_stage(self, pre_axes: Axes, post_axes: Axes):
         """Active stage after the turn, and whether the turn crossed into it."""
-        pre_stage = classify_stage(pre_axes, self._pack.axes)
-        post_stage = classify_stage(post_axes, self._pack.axes)
-        return post_stage, pre_stage != post_stage
+        stages = self._pack.stages
+        pre = resolve_stage(relationship_ratio(pre_axes, self._axis_max), stages)
+        post = resolve_stage(relationship_ratio(post_axes, self._axis_max), stages)
+        pre_id = pre.id if pre else None
+        post_id = post.id if post else None
+        return post, pre_id != post_id
 
     def idle(self) -> Axes:
         """Apply one decay step (call between turns / after inactivity)."""

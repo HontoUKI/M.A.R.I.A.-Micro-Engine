@@ -19,6 +19,10 @@ class Settings:
     embed_model: str = "nomic-embed-text"
     data_dir: str = "data"
     llm_timeout_s: float = 120.0
+    # Ceiling for every relationship axis. Raising it (e.g. to 1000) makes the
+    # same per-turn deltas a smaller fraction of the whole, so relationships
+    # warm far more slowly — a global "slow-burn" knob, independent of packs.
+    axis_max: float = 100.0
 
 
 def load_settings() -> Settings:
@@ -29,4 +33,5 @@ def load_settings() -> Settings:
         embed_model=os.getenv("EMBED_MODEL", Settings.embed_model),
         data_dir=os.getenv("DATA_DIR", Settings.data_dir),
         llm_timeout_s=float(os.getenv("LLM_TIMEOUT_S", Settings.llm_timeout_s)),
+        axis_max=float(os.getenv("AXIS_MAX", Settings.axis_max)),
     )

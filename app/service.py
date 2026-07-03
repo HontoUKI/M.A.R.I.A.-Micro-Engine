@@ -14,6 +14,7 @@ from engine.character import CharacterRuntime, TurnResult
 from engine.llm import OllamaClient
 from engine.prompt_manager import DialogueTurn, PromptManager
 from engine.registry import PackRegistry
+from engine.state import DEFAULT_AXIS_MAX
 
 
 class UnknownModelError(Exception):
@@ -28,12 +29,13 @@ class EmptyConversationError(Exception):
 class EngineService:
     registry: PackRegistry
     llm: OllamaClient
+    axis_max: float = DEFAULT_AXIS_MAX
     sessions: SessionStore = None  # type: ignore[assignment]
     prompt_manager: PromptManager = None  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
         if self.sessions is None:
-            self.sessions = SessionStore()
+            self.sessions = SessionStore(axis_max=self.axis_max)
         if self.prompt_manager is None:
             self.prompt_manager = PromptManager()
 
@@ -53,7 +55,11 @@ class EngineService:
         driver, window = _split_messages(messages)
         kernel = self.sessions.kernel_for(session_key, pack)
         runtime = CharacterRuntime(
-            pack, self.llm, state=kernel, prompt_manager=self.prompt_manager
+            pack,
+            self.llm,
+            state=kernel,
+            prompt_manager=self.prompt_manager,
+            axis_max=self.axis_max,
         )
         return runtime.respond(driver, window)
 
