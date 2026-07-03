@@ -1,0 +1,17 @@
+[project]
+name = "maria-micro-engine"
+version = "0.1.0.dev0"
+description = "Lightweight character-pack chat engine with an OpenAI-compatible API"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
