@@ -13,6 +13,7 @@ from app.contracts import (
     ChatCompletionChoice,
     ChatCompletionRequest,
     ChatCompletionResponse,
+    ChatCompletionUsage,
     ChatMessage,
     MicroEngineExtension,
     ModelCard,
@@ -107,6 +108,11 @@ def chat_completions(
                 message=ChatMessage(role="assistant", content=result.reply)
             )
         ],
+        usage=ChatCompletionUsage(
+            prompt_tokens=result.usage.prompt_tokens,
+            completion_tokens=result.usage.completion_tokens,
+            total_tokens=result.usage.total_tokens,
+        ),
         x_micro_engine=MicroEngineExtension(
             tag=result.tag,
             sprite=result.sprite,

@@ -11,6 +11,7 @@ import os
 from app.service import EngineService
 from engine.config import load_settings
 from engine.llm import OllamaClient
+from engine.logging_config import configure as configure_logging
 from engine.registry import PackRegistry
 
 CHARACTERS_DIR_ENV = "CHARACTERS_DIR"
@@ -21,6 +22,7 @@ _service: EngineService | None = None
 
 def _build_service() -> EngineService:
     settings = load_settings()
+    configure_logging(settings.log_level)
     characters_dir = os.getenv(CHARACTERS_DIR_ENV, _DEFAULT_CHARACTERS_DIR)
     registry = PackRegistry.from_dir(characters_dir)
     llm = OllamaClient(
@@ -28,6 +30,8 @@ def _build_service() -> EngineService:
         settings.chat_model,
         settings.embed_model,
         timeout_s=settings.llm_timeout_s,
+        temperature=settings.temperature,
+        num_ctx=settings.num_ctx,
     )
     return EngineService(registry=registry, llm=llm, axis_max=settings.axis_max)
 

@@ -75,6 +75,8 @@ def test_chat_returns_openai_completion_with_reply(client_with):
     assert body["model"] == "aria"
     assert body["choices"][0]["message"]["content"] == "So kind of you."
     assert body["choices"][0]["message"]["role"] == "assistant"
+    # OpenAI-shaped usage is always present (zero when the stub reports none).
+    assert set(body["usage"]) >= {"prompt_tokens", "completion_tokens", "total_tokens"}
 
 
 def test_chat_exposes_engine_extension(client_with):

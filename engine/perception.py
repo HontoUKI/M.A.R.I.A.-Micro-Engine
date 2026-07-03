@@ -35,7 +35,9 @@ class TagClassifier:
 
         for _ in range(self._max_retries + 1):
             try:
-                raw = self._llm.chat(messages, fmt=schema)
+                # Temperature 0: classification stays deterministic no matter
+                # how "sparky" the character's voicing temperature is set.
+                raw = self._llm.chat(messages, fmt=schema, options={"temperature": 0.0})
             except LLMError:
                 break
             tag = _parse_tag(raw)

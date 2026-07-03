@@ -10,6 +10,10 @@ from typing import Any
 
 import requests
 
+from engine.logging_config import get_logger
+
+_log = get_logger("llm")
+
 
 class LLMError(RuntimeError):
     """Raised when the LLM backend fails or returns an unusable payload."""
@@ -25,13 +29,45 @@ class OllamaClient:
         embed_model: str,
         *,
         timeout_s: float = 120.0,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
         session: Any = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._chat_model = chat_model
         self._embed_model = embed_model
         self._timeout_s = timeout_s
+        # Default Ollama sampling options applied to every chat call; a
+        # per-call `options` dict overrides these key by key.
+        self._default_options: dict[str, Any] = {}
+        if temperature is not None:
+            self._default_options["temperature"] = float(temperature)
+        if num_ctx is not None:
+            self._default_options["num_ctx"] = int(num_ctx)
         self._session = session if session is not None else requests.Session()
+        # Running token totals across this client's lifetime. The runtime reads
+        # deltas of this to report per-turn usage.
+        self._usage = {"prompt_tokens": 0, "completion_tokens": 0, "calls": 0}
+
+    def usage_snapshot(self) -> dict[str, int]:
+        """A copy of the cumulative token counters, with a derived total."""
+        snap = dict(self._usage)
+        snap["total_tokens"] = snap["prompt_tokens"] + snap["completion_tokens"]
+        return snap
+
+    def _record_usage(self, model: str, data: Any) -> None:
+        prompt = int(data.get("prompt_eval_count") or 0) if isinstance(data, dict) else 0
+        completion = int(data.get("eval_count") or 0) if isinstance(data, dict) else 0
+        self._usage["prompt_tokens"] += prompt
+        self._usage["completion_tokens"] += completion
+        self._usage["calls"] += 1
+        _log.info(
+            "chat tokens: prompt=%d completion=%d total=%d (model=%s)",
+            prompt,
+            completion,
+            prompt + completion,
+            model,
+        )
 
     def chat(
         self,
@@ -53,8 +89,9 @@ class OllamaClient:
         }
         if fmt is not None:
             payload["format"] = fmt
-        if options:
-            payload["options"] = dict(options)
+        merged_options = {**self._default_options, **(options or {})}
+        if merged_options:
+            payload["options"] = merged_options
         data = self._post("/api/chat", payload)
         try:
             content = data["message"]["content"]
@@ -62,6 +99,7 @@ class OllamaClient:
             raise LLMError(f"unexpected chat payload shape: {type(data).__name__}") from exc
         if not isinstance(content, str):
             raise LLMError("chat content is not a string")
+        self._record_usage(payload["model"], data)
         return content
 
     def embed(self, text: str, *, model: str | None = None) -> list[float]:

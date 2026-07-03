@@ -70,6 +70,42 @@ def test_chat_passes_format_for_constrained_decode():
     assert session.calls[0]["json"]["format"] == "json"
 
 
+def test_default_options_are_sent_on_every_call():
+    session = StubSession(response=StubResponse(payload={"message": {"content": "x"}}))
+    client = OllamaClient("http://stub", "m", "e", temperature=0.3, num_ctx=4096, session=session)
+    client.chat([{"role": "user", "content": "hi"}])
+    opts = session.calls[0]["json"]["options"]
+    assert opts["temperature"] == 0.3
+    assert opts["num_ctx"] == 4096
+
+
+def test_per_call_options_override_defaults():
+    session = StubSession(response=StubResponse(payload={"message": {"content": "x"}}))
+    client = OllamaClient("http://stub", "m", "e", temperature=0.9, session=session)
+    client.chat([{"role": "user", "content": "hi"}], options={"temperature": 0.0})
+    assert session.calls[0]["json"]["options"]["temperature"] == 0.0
+
+
+def test_no_options_key_when_none_configured():
+    session = StubSession(response=StubResponse(payload={"message": {"content": "x"}}))
+    _client(session).chat([{"role": "user", "content": "hi"}])
+    assert "options" not in session.calls[0]["json"]
+
+
+def test_usage_snapshot_accumulates_tokens_across_calls():
+    payload = {"message": {"content": "x"}, "prompt_eval_count": 11, "eval_count": 7}
+    session = StubSession(response=StubResponse(payload=payload))
+    client = _client(session)
+    assert client.usage_snapshot()["total_tokens"] == 0
+    client.chat([{"role": "user", "content": "hi"}])
+    client.chat([{"role": "user", "content": "hi"}])
+    snap = client.usage_snapshot()
+    assert snap["prompt_tokens"] == 22
+    assert snap["completion_tokens"] == 14
+    assert snap["total_tokens"] == 36
+    assert snap["calls"] == 2
+
+
 def test_chat_model_override():
     session = StubSession(
         response=StubResponse(payload={"message": {"content": "x"}})

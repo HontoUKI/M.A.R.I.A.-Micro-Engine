@@ -30,6 +30,15 @@ from engine.state import (
 
 
 @dataclass(frozen=True)
+class TokenUsage:
+    """Tokens spent on one turn (both the classify and voice calls)."""
+
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+
+@dataclass(frozen=True)
 class TurnResult:
     """The outcome of one turn, ready for the API layer to project."""
 
@@ -39,6 +48,7 @@ class TurnResult:
     sprite: str | None
     stage: str | None
     stage_changed: bool
+    usage: TokenUsage = TokenUsage()
 
 
 class CharacterRuntime:
@@ -76,6 +86,8 @@ class CharacterRuntime:
         user_message: str,
         dialogue_window: tuple[DialogueTurn, ...] = (),
     ) -> TurnResult:
+        usage_before = self._usage_snapshot()
+
         tag = self._classifier.classify(self._pack, user_message, dialogue_window)
 
         pre_axes = self._state.axes
@@ -105,7 +117,21 @@ class CharacterRuntime:
             sprite=self._sprite_for(tag),
             stage=stage,
             stage_changed=stage_changed,
+            usage=self._usage_delta(usage_before),
         )
+
+    def _usage_snapshot(self) -> dict[str, int] | None:
+        fn = getattr(self._llm, "usage_snapshot", None)
+        return fn() if callable(fn) else None
+
+    def _usage_delta(self, before: dict[str, int] | None) -> TokenUsage:
+        """Tokens spent between `before` and now (this turn's classify+voice)."""
+        if before is None:
+            return TokenUsage()
+        after = self._llm.usage_snapshot()
+        prompt = after["prompt_tokens"] - before["prompt_tokens"]
+        completion = after["completion_tokens"] - before["completion_tokens"]
+        return TokenUsage(prompt, completion, prompt + completion)
 
     def _resolve_stage(self, pre_axes: Axes, post_axes: Axes):
         """Active stage after the turn, and whether the turn crossed into it."""

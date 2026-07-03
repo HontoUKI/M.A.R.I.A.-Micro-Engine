@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 
 from engine.character import CharacterRuntime
+from engine.llm import OllamaClient
 from engine.memory import VectorStore
 from engine.prompt_manager import DialogueTurn
 from tests._packs import make_pack
@@ -76,6 +77,49 @@ def test_dialogue_window_is_passed_through_to_voice():
     CharacterRuntime(make_pack(), llm).respond("now", dialogue_window=window)
     contents = [m["content"] for m in llm.chat_calls[1]["messages"]]
     assert "earlier" in contents
+
+
+# ---------------------------------------------------------------- token usage
+
+
+class _SeqResponse:
+    status_code = 200
+
+    def __init__(self, payload):
+        self._payload = payload
+
+    def json(self):
+        return self._payload
+
+
+class _SeqSession:
+    """Returns queued HTTP responses in order (classify, then voice)."""
+
+    def __init__(self, responses):
+        self._responses = list(responses)
+
+    def post(self, url, json=None, timeout=None):
+        return self._responses.pop(0)
+
+
+def test_turn_reports_token_usage_summed_over_classify_and_voice():
+    classify = {
+        "message": {"content": '{"tag": "warmth"}'},
+        "prompt_eval_count": 10,
+        "eval_count": 2,
+    }
+    voice = {"message": {"content": "So kind."}, "prompt_eval_count": 30, "eval_count": 15}
+    session = _SeqSession([_SeqResponse(classify), _SeqResponse(voice)])
+    llm = OllamaClient("http://stub", "m", "e", session=session)
+    result = CharacterRuntime(make_pack(), llm).respond("you're lovely")
+    assert result.usage.prompt_tokens == 40
+    assert result.usage.completion_tokens == 17
+    assert result.usage.total_tokens == 57
+
+
+def test_usage_is_zero_when_the_llm_does_not_track_it():
+    result = CharacterRuntime(make_pack(), FakeLLM()).respond("hi")
+    assert result.usage.total_tokens == 0
 
 
 # ---------------------------------------------------------------- fallback
