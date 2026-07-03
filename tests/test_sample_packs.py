@@ -58,6 +58,17 @@ class _StubLLM:
         return json.dumps({"tag": self._tag}) if fmt is not None else self._reply
 
 
+def test_kaguya_sample_is_serious_and_more_guarded_than_megumin():
+    kaguya = load_pack(str(_CHARACTERS_DIR / "kaguya"))
+    megumin = load_pack(str(_CHARACTERS_DIR / "megumin"))
+    assert kaguya.meta.name == "kaguya"
+    assert len(kaguya.tags) == 8
+    assert kaguya.tag("provocation").sentiment == "negative"
+    # The contrast the two packs exist to prove: Kaguya starts more guarded.
+    assert kaguya.axes.affection.start < megumin.axes.affection.start
+    assert kaguya.axes.trust.start < megumin.axes.trust.start
+
+
 def test_megumin_pack_drives_a_full_runtime_turn():
     pack = load_pack(str(_CHARACTERS_DIR / "megumin"))
     llm = _StubLLM("explosion_praise", "BEHOLD, my devotion to EXPLOSION!")
