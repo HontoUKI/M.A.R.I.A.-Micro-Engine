@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a problem with the engine
+title: "[Bug] <summary>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Engine fixes land from the author — please describe the problem rather
+        than sending a patch (code PRs are not merged; see CONTRIBUTING.md).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Commands, request bodies, or a minimal pack that triggers it.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Engine version
+      description: From `GET /healthz` or the git commit.
+    validations:
+      required: false
+  - type: input
+    id: model
+    attributes:
+      label: LLM model
+      description: e.g. gemma3:12b via Ollama.
+    validations:
+      required: false

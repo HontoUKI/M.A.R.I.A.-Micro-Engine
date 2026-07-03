@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: The M.A.R.I.A. hub
+    url: https://github.com/HontoUKI/M.A.R.I.A.
+    about: The wider project this engine is the community tip of.
+  - name: Character pack format
+    url: https://github.com/HontoUKI/M.A.R.I.A.-Micro-Engine/blob/main/CHARACTER_PACK_SPEC.md
+    about: How to build a character before you submit one.

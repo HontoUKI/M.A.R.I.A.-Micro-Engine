@@ -1,0 +1,64 @@
+name: Submit a character
+description: Propose a character pack for the approved gallery
+title: "[Character] <name>"
+labels: ["character-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for making a character! Please build and test your pack locally
+        first (see the README quickstart), then host it publicly and link it
+        below. Contributions are **character data**, not engine code.
+  - type: input
+    id: pack-name
+    attributes:
+      label: Pack name
+      description: The `meta.name` in pack.yaml (this is the model id).
+      placeholder: my-character
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Link to the pack
+      description: A public fork, repo, or gist containing the pack directory.
+      placeholder: https://github.com/you/your-pack
+    validations:
+      required: true
+  - type: textarea
+    id: about
+    attributes:
+      label: Who is this character?
+      description: A sentence or two on their tone and how they change over the stages.
+    validations:
+      required: true
+  - type: dropdown
+    id: origin
+    attributes:
+      label: Original or fan work?
+      options:
+        - Original character (I created them)
+        - Fan work (based on an existing character)
+    validations:
+      required: true
+  - type: input
+    id: license
+    attributes:
+      label: Pack license (meta.license)
+      description: Must permit hosting/redistribution in the gallery.
+      placeholder: CC-BY-4.0
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have read and agree to the SUBMISSION_TERMS.md.
+          required: true
+        - label: I own or have rights to all content, including any sprite art.
+          required: true
+        - label: The pack loads cleanly (`load_pack` succeeds) and I have chatted with it.
+          required: true
+        - label: The prompt text contains no jailbreak/injection or unsafe steering.
+          required: true
