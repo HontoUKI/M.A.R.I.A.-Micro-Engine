@@ -1,0 +1,176 @@
+:root {
+  --bg: #f5f1e8;
+  --panel: #fffdf8;
+  --ink: #3a3530;
+  --muted: #8c8377;
+  --line: #e5ddcd;
+  --accent: #c9736b;
+  --affection: #e07a6f;
+  --trust: #6f9bd0;
+  --bond: #b58bd0;
+  --radius: 16px;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  min-height: 100vh;
+}
+
+@media (max-width: 720px) {
+  .app { grid-template-columns: 1fr; }
+}
+
+/* ---------------------------------------------------------- character panel */
+
+.character {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #fff, #f0e7d6);
+  border: 3px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 42px;
+  letter-spacing: 2px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.avatar.pulse {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 6px rgba(201, 115, 107, 0.18);
+}
+
+.name { font-size: 20px; margin: 4px 0 0; text-transform: capitalize; }
+
+.stage {
+  font-size: 13px;
+  color: var(--accent);
+  background: rgba(201, 115, 107, 0.1);
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: background 0.3s ease;
+}
+
+.stage.changed { animation: flash 1.1s ease; }
+
+@keyframes flash {
+  0% { background: var(--accent); color: #fff; }
+  100% { background: rgba(201, 115, 107, 0.1); color: var(--accent); }
+}
+
+.axes { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+.axis label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.bar {
+  height: 10px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 3px;
+}
+.bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--affection);
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.axis:nth-child(2) .bar span { background: var(--trust); }
+.bar.bond span { background: var(--bond); }
+
+.controls { width: 100%; display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.controls label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+
+select, button, input {
+  font: inherit;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  padding: 9px 12px;
+  background: #fff;
+  color: var(--ink);
+}
+
+button {
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  transition: filter 0.15s ease;
+}
+button:hover { filter: brightness(1.05); }
+button:disabled { opacity: 0.5; cursor: default; }
+
+.controls button { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+
+.meta { font-size: 11px; color: var(--muted); margin: 4px 0 0; text-align: center; }
+
+/* ------------------------------------------------------------------- chat */
+
+.chat {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  min-height: 70vh;
+}
+
+.log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bubble {
+  max-width: 78%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.bubble.user { align-self: flex-end; background: var(--trust); color: #fff; border-bottom-right-radius: 4px; }
+.bubble.assistant { align-self: flex-start; background: #f3ece0; border-bottom-left-radius: 4px; }
+.bubble.system { align-self: center; background: transparent; color: var(--muted); font-size: 12px; font-style: italic; }
+.bubble.error { align-self: center; background: #f7e0dd; color: #9a4238; font-size: 13px; }
+
+.composer { display: flex; gap: 10px; padding: 14px; border-top: 1px solid var(--line); }
+.composer input { flex: 1; }

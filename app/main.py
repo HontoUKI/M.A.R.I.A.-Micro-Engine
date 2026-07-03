@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import uuid
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.contracts import (
     ChatCompletionChoice,
@@ -44,8 +46,9 @@ def _openai_error(
 
 
 @app.get("/healthz")
-def healthz() -> dict[str, object]:
-    return {"ok": True, "version": __version__}
+def healthz(service: ServiceDep) -> dict[str, object]:
+    # axis_max lets the web shell scale its axis bars to the deployment.
+    return {"ok": True, "version": __version__, "axis_max": service.axis_max}
 
 
 @app.get("/v1/models")
@@ -113,3 +116,10 @@ def chat_completions(
         ),
     )
     return JSONResponse(content=response.model_dump())
+
+
+# The web sprite-shell (a static single-page client) is served at the root.
+# Mounted last so the API routes above always take precedence.
+_WEB_DIR = Path(__file__).resolve().parents[1] / "web"
+if _WEB_DIR.is_dir():
+    app.mount("/", StaticFiles(directory=str(_WEB_DIR), html=True), name="web")

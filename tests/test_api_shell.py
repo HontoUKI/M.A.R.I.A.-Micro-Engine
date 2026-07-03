@@ -13,12 +13,13 @@ from engine import __version__
 client = TestClient(app)
 
 
-def test_healthz_reports_ok_and_version():
+def test_healthz_reports_ok_version_and_axis_max():
     response = client.get("/healthz")
     assert response.status_code == 200
     body = response.json()
     assert body["ok"] is True
     assert body["version"] == __version__
+    assert body["axis_max"] == 100
 
 
 def test_models_list_is_openai_shaped_and_empty():

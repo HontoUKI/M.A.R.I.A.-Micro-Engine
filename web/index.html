@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>M.A.R.I.A. Micro-Engine</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="app">
+    <aside class="character">
+      <div class="avatar" id="avatar" aria-hidden="true">
+        <span id="face">·_·</span>
+      </div>
+      <h1 class="name" id="name">Micro-Engine</h1>
+      <div class="stage" id="stage" title="Relationship stage">—</div>
+
+      <div class="axes" id="axes">
+        <div class="axis">
+          <label>affection</label>
+          <div class="bar"><span id="bar-affection"></span></div>
+        </div>
+        <div class="axis">
+          <label>trust</label>
+          <div class="bar"><span id="bar-trust"></span></div>
+        </div>
+        <div class="axis">
+          <label>bond</label>
+          <div class="bar bond"><span id="bar-bond"></span></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <label for="model">Character</label>
+        <select id="model"></select>
+        <button id="reset" type="button">New conversation</button>
+      </div>
+      <p class="meta" id="meta"></p>
+    </aside>
+
+    <section class="chat">
+      <div class="log" id="log"></div>
+      <form class="composer" id="composer">
+        <input id="input" type="text" autocomplete="off"
+               placeholder="Say something…" />
+        <button type="submit" id="send">Send</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
