@@ -13,7 +13,6 @@ import pytest
 
 from engine.character import CharacterRuntime
 from engine.pack import load_pack
-from engine.pack.models import STAGE_NAMES
 
 _CHARACTERS_DIR = Path(__file__).resolve().parents[1] / "characters"
 
@@ -71,10 +70,20 @@ def test_kaguya_sample_is_serious_and_more_guarded_than_megumin():
 
 
 @pytest.mark.parametrize("name", ["megumin", "kaguya"])
-def test_samples_define_the_full_stage_ladder(name):
+def test_samples_define_a_valid_author_stage_ladder(name):
     pack = load_pack(str(_CHARACTERS_DIR / name))
-    # Both samples are showcases for explainable change, so they voice every stage.
-    assert set(pack.stages) == set(STAGE_NAMES)
+    # Showcases for explainable change: several stages, ascending, covering the top.
+    assert len(pack.stages) >= 3
+    ups = [s.up_to for s in pack.stages]
+    assert ups == sorted(ups)
+    assert pack.stages[-1].up_to == 1.0
+
+
+def test_samples_use_distinct_stage_names():
+    # The whole point of author-defined stages: the two packs name them differently.
+    megumin = {s.id for s in load_pack(str(_CHARACTERS_DIR / "megumin")).stages}
+    kaguya = {s.id for s in load_pack(str(_CHARACTERS_DIR / "kaguya")).stages}
+    assert megumin.isdisjoint(kaguya)
 
 
 def test_megumin_pack_drives_a_full_runtime_turn():
@@ -83,6 +92,6 @@ def test_megumin_pack_drives_a_full_runtime_turn():
     result = CharacterRuntime(pack, llm).respond("your explosion magic is incredible")
     assert result.tag == "explosion_praise"
     assert result.reply.startswith("BEHOLD")
-    # explosion_praise delta (+5 / +3 / +0.4) over 25 / 20 / 0 baseline.
-    assert result.axes.affection == 30
-    assert result.axes.trust == 23
+    # explosion_praise delta (+5 / +3 / +0.4) over her 12 / 8 / 0 baseline.
+    assert result.axes.affection == 17
+    assert result.axes.trust == 11
