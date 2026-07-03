@@ -1,8 +1,10 @@
 """State kernel contracts: delta application, clamping, decay, banding."""
 from __future__ import annotations
 
+import pytest
+
 from engine.pack.models import DecayConfig, DeltaVector
-from engine.state import StateKernel, summarize_axes
+from engine.state import Axes, StateKernel, classify_stage, relationship_ratio, summarize_axes
 from tests._packs import make_pack
 
 
@@ -77,3 +79,43 @@ def test_summarize_axes_uses_neutral_bands_not_numbers():
     # A baseline of 20/100 is in the "low" band; no raw number leaks.
     assert "20" not in summary
     assert any(band in summary for band in ("very low", "low", "moderate", "high"))
+
+
+# ---------------------------------------------------------------- stages
+
+
+def _axes(affection, trust, bond=0.0):
+    return Axes(affection=affection, trust=trust, bond=bond)
+
+
+def test_relationship_ratio_averages_affection_and_trust():
+    cfg = make_pack().axes  # 0..100 bounds
+    assert relationship_ratio(_axes(40, 60), cfg) == pytest.approx(0.5)
+    assert relationship_ratio(_axes(0, 0), cfg) == 0.0
+    assert relationship_ratio(_axes(100, 100), cfg) == 1.0
+
+
+@pytest.mark.parametrize(
+    "affection,trust,expected",
+    [
+        (0, 0, "cold"),
+        (11, 11, "cold"),
+        (12, 12, "reserved"),
+        (24, 24, "reserved"),
+        (30, 30, "cautious"),
+        (50, 50, "comfort"),
+        (70, 70, "close"),
+        (90, 90, "very_close"),
+        (100, 100, "very_close"),
+    ],
+)
+def test_classify_stage_ladder(affection, trust, expected):
+    cfg = make_pack().axes
+    assert classify_stage(_axes(affection, trust), cfg) == expected
+
+
+def test_bond_does_not_affect_the_stage():
+    cfg = make_pack().axes
+    low_bond = classify_stage(_axes(50, 50, bond=0), cfg)
+    high_bond = classify_stage(_axes(50, 50, bond=100), cfg)
+    assert low_bond == high_bond == "comfort"

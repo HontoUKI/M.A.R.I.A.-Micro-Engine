@@ -15,7 +15,12 @@ _SEMVER_PATTERN = r"^\d+\.\d+\.\d+$"
 MIN_TAGS = 2
 MAX_TAGS = 32
 
-Sentiment = str  # constrained below via Field pattern on MomentTag.sentiment
+# Canonical relationship-stage ladder, low to high closeness. Mirrors the
+# stage vocabulary of the full engine (cold / reserved / comfort / ...), minus
+# its mood-driven override modes. The engine derives the active stage from the
+# affection+trust ratio (see engine.state.classify_stage); a pack supplies the
+# character's tone at each stage it cares to voice.
+STAGE_NAMES = ("cold", "reserved", "cautious", "comfort", "close", "very_close")
 
 
 class PackMeta(BaseModel):
@@ -102,6 +107,7 @@ class CharacterPack(BaseModel):
     axes: AxesConfig = Field(default_factory=AxesConfig)
     sprites: dict[str, str] = Field(default_factory=dict)
     decay: DecayConfig = Field(default_factory=DecayConfig)
+    stages: dict[str, str] = Field(default_factory=dict)
     invariants: list[str] = Field(default_factory=list)
     actions: list[str] = Field(default_factory=list)
 
@@ -135,6 +141,14 @@ class CharacterPack(BaseModel):
         # Balance: at least one negative tag (see SPEC §6).
         if not any(t.sentiment == "negative" for t in self.tags):
             raise ValueError("pack must declare at least one negative-sentiment tag")
+
+        # Stage keys must be canonical ladder names (cold ... very_close).
+        unknown_stages = set(self.stages) - set(STAGE_NAMES)
+        if unknown_stages:
+            raise ValueError(
+                f"unknown stage names {sorted(unknown_stages)}; "
+                f"valid stages are {list(STAGE_NAMES)}"
+            )
 
         return self
 

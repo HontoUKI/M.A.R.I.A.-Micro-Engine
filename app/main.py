@@ -108,6 +108,8 @@ def chat_completions(
             tag=result.tag,
             sprite=result.sprite,
             axes=result.axes.as_dict(),
+            stage=result.stage,
+            stage_changed=result.stage_changed,
         ),
     )
     return JSONResponse(content=response.model_dump())

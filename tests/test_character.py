@@ -88,6 +88,40 @@ def test_invalid_classification_uses_fallback_tag():
     assert result.axes.affection == 20
 
 
+# ---------------------------------------------------------------- stages
+
+
+def test_runtime_reports_stage_and_injects_stage_block():
+    # make_pack starts at 20/10 → ratio 0.15 → reserved.
+    pack = make_pack(stages={"reserved": "You are still guarded.", "very_close": "Warm."})
+    llm = FakeLLM(tag="neutral")
+    result = CharacterRuntime(pack, llm).respond("hi")
+    assert result.stage == "reserved"
+    tail = llm.chat_calls[1]["messages"][-1]["content"]
+    assert "You are still guarded." in tail
+
+
+def test_stage_changed_true_when_a_turn_crosses_a_threshold():
+    # Start at ratio 0.44 (cautious); a warmth turn (+5 / +3) lifts it to 0.48
+    # (comfort), crossing the boundary.
+    axes = {
+        "affection": {"min": 0, "max": 100, "start": 44},
+        "trust": {"min": 0, "max": 100, "start": 44},
+        "bond": {"min": 0, "max": 100, "start": 0},
+    }
+    pack = make_pack(axes=axes, stages={"cautious": "guarded", "comfort": "warmer"})
+    result = CharacterRuntime(pack, FakeLLM(tag="warmth")).respond("you're kind")
+    assert result.stage == "comfort"
+    assert result.stage_changed is True
+
+
+def test_stage_changed_false_when_no_threshold_crossed():
+    runtime = CharacterRuntime(make_pack(stages={"reserved": "r"}), FakeLLM(tag="neutral"))
+    result = runtime.respond("hi")
+    assert result.stage == "reserved"
+    assert result.stage_changed is False
+
+
 # ---------------------------------------------------------------- idle / decay
 
 

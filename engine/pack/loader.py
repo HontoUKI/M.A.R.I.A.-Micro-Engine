@@ -139,6 +139,13 @@ def _enforce_content_limits(pack: CharacterPack) -> None:
             )
         _scan_injection(f"invariant[{idx}]", rule)
 
+    for stage, block in pack.stages.items():
+        if len(block) > MAX_BLOCK_CHARS:
+            raise PackSecurityError(
+                f"stage {stage!r} block is {len(block)} chars; limit is {MAX_BLOCK_CHARS}"
+            )
+        _scan_injection(f"stage[{stage}]", block)
+
 
 def _scan_injection(where: str, text: str) -> None:
     for pattern in _INJECTION_PATTERNS:

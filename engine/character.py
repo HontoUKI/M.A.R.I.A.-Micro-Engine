@@ -19,7 +19,7 @@ from engine.memory import VectorStore
 from engine.pack.models import CharacterPack
 from engine.perception import TagClassifier
 from engine.prompt_manager import DialogueTurn, PromptInputs, PromptManager
-from engine.state import Axes, StateKernel, summarize_axes
+from engine.state import Axes, StateKernel, classify_stage, summarize_axes
 
 
 @dataclass(frozen=True)
@@ -30,6 +30,8 @@ class TurnResult:
     tag: str
     axes: Axes
     sprite: str | None
+    stage: str
+    stage_changed: bool
 
 
 class CharacterRuntime:
@@ -66,7 +68,10 @@ class CharacterRuntime:
         dialogue_window: tuple[DialogueTurn, ...] = (),
     ) -> TurnResult:
         tag = self._classifier.classify(self._pack, user_message, dialogue_window)
+
+        pre_axes = self._state.axes
         axes = self._state.apply(self._pack.deltas[tag])
+        stage, stage_changed = self._resolve_stage(pre_axes, axes)
 
         recall_text, query_vec = self._recall(user_message)
 
@@ -74,6 +79,7 @@ class CharacterRuntime:
             identity=self._pack.identity,
             invariants="\n".join(self._pack.invariants),
             state_summary=summarize_axes(axes, self._pack.axes),
+            stage_block=self._pack.stages.get(stage, ""),
             steering_block=self._pack.blocks[tag],
             memory_recall=recall_text,
             dialogue_window=dialogue_window,
@@ -82,7 +88,20 @@ class CharacterRuntime:
         reply = self._llm.chat(self._pm.build_messages(inputs))
 
         self._remember(user_message, query_vec)
-        return TurnResult(reply=reply, tag=tag, axes=axes, sprite=self._sprite_for(tag))
+        return TurnResult(
+            reply=reply,
+            tag=tag,
+            axes=axes,
+            sprite=self._sprite_for(tag),
+            stage=stage,
+            stage_changed=stage_changed,
+        )
+
+    def _resolve_stage(self, pre_axes: Axes, post_axes: Axes) -> tuple[str, bool]:
+        """Active stage after the turn, and whether the turn crossed into it."""
+        pre_stage = classify_stage(pre_axes, self._pack.axes)
+        post_stage = classify_stage(post_axes, self._pack.axes)
+        return post_stage, pre_stage != post_stage
 
     def idle(self) -> Axes:
         """Apply one decay step (call between turns / after inactivity)."""

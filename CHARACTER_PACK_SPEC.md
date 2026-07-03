@@ -12,6 +12,12 @@ changes rarely and deliberately.
 > to pick **one** moment tag from the pack's closed list, then moves three
 > numeric axes by a fixed table you define. There is no ML brain and no
 > file/command access. A pack is prompt-and-number data, not code.
+>
+> The headline capability is that a character **changes explainably over time**:
+> as affection and trust grow, the pack shifts through named relationship
+> **stages** (§2.12), and each shift is caused by tracked state you can inspect,
+> not by the model's whim. The moment tag is the weather; the stage is the
+> climate.
 
 ---
 
@@ -170,6 +176,46 @@ Cosmetic action whitelist (e.g. `emote`, `change_scene`). Advisory metadata for
 clients; the engine performs no file, command, or network action on their
 behalf. There is deliberately **no** safe-chain in this tier.
 
+### 2.12 `stages` (optional, map) — the headline feature
+
+Relationship stages give a character a **slow, explainable arc**. The engine
+derives the current stage from the **affection+trust ratio** and injects the
+matching tone into the turn's dynamic tail, on top of the moment tag's block.
+Where a tag reacts to *this message*, a stage expresses *how close you two have
+become*.
+
+The stage ladder is fixed (the engine owns the thresholds, mirroring the full
+M.A.R.I.A. engine). A pack fills in the character's voice at each stage it
+cares to shape; omitted stages simply add no stage tone.
+
+```yaml
+stages:
+  cold:       "You barely know them. Guarded and distant."
+  reserved:   "Still early. Polite but closed."
+  cautious:   "Warming a little; the guard eases slightly."
+  comfort:    "At ease now; genuine warmth shows more openly."
+  close:      "You trust them; calm and openly warm."
+  very_close: "Fully at ease; unguarded and sincere."
+```
+
+| Stage        | Active while the affection+trust ratio is |
+|--------------|-------------------------------------------|
+| `cold`       | < 0.12 |
+| `reserved`   | < 0.25 |
+| `cautious`   | < 0.45 |
+| `comfort`    | < 0.65 |
+| `close`      | < 0.82 |
+| `very_close` | ≥ 0.82 |
+
+The ratio is `(affection + trust) / 2`, each normalized within its axis bounds.
+Bond, the slow long-term axis, does not gate the acted stage. Only these six
+stage names are valid keys; each stage's text is length-limited and
+injection-scanned like a block (§4).
+
+Every chat response reports the active `stage` and whether this turn crossed
+into it (`stage_changed`) in the `x_micro_engine` extension, so a client can
+show *why* the character just shifted.
+
 ---
 
 ## 3. A minimal valid pack
@@ -231,9 +277,13 @@ defense-in-depth, not a substitute for human review of gallery submissions.
    (constrained decode). An invalid or missing choice retries once, then falls
    back to `meta.fallback_tag`.
 3. The engine applies `deltas[tag]` to the axes (clamped to bounds; bond moves
-   slowly), then `blocks[tag]` is injected into the dynamic tail.
-4. A second LLM call voices the reply.
-5. On idle, `decay` pulls the axes toward baseline.
+   slowly), then resolves the current relationship **stage** from the new
+   axes (§2.12). Both `blocks[tag]` and `stages[stage]` are injected into the
+   dynamic tail.
+4. A second LLM call voices the reply. The response reports `tag`, `stage`,
+   `stage_changed`, `sprite`, and the axis values.
+5. On idle, `decay` pulls the axes toward baseline (which can lower the stage
+   again — arcs can go backwards).
 
 ## 6. Balance guidance (informative)
 

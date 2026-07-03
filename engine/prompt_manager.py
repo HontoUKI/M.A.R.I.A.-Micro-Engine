@@ -51,7 +51,10 @@ class PromptInputs:
         identity:        stable pack identity skeleton (pinned prefix).
         invariants:      pinned rule block for the prefix (may be empty).
         state_summary:   mood/disposition implied by the current axes.
-        steering_block:  block selected for this turn's moment tag/state.
+        stage_block:     tone for the current relationship stage (the slow
+                         "climate"; may be empty).
+        steering_block:  block selected for this turn's moment tag (the fast
+                         "weather"; may be empty).
         memory_recall:   retrieved memory snippets (disposable under budget).
         dialogue_window: prior turns, oldest first.
         user_message:    the new user input driving this turn.
@@ -61,6 +64,7 @@ class PromptInputs:
     user_message: str
     invariants: str = ""
     state_summary: str = ""
+    stage_block: str = ""
     steering_block: str = ""
     memory_recall: str = ""
     dialogue_window: tuple[DialogueTurn, ...] = ()
@@ -134,6 +138,8 @@ class PromptManager:
         sections: list[tuple[str, str]] = []
         if inputs.state_summary.strip():
             sections.append(("State", inputs.state_summary.strip()))
+        if inputs.stage_block.strip():
+            sections.append(("Stage", inputs.stage_block.strip()))
         if inputs.steering_block.strip():
             sections.append(("Guidance", inputs.steering_block.strip()))
         if include_memory and inputs.memory_recall.strip():

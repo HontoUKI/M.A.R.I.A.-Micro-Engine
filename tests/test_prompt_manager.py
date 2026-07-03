@@ -79,6 +79,20 @@ def test_dialogue_window_sits_between_prefix_and_tail_in_order():
 # ---------------------------------------------------------------- labels
 
 
+def test_stage_block_renders_between_state_and_guidance():
+    inputs = PromptInputs(
+        identity="You are Aria.",
+        state_summary="affection: high",
+        stage_block="You have grown close to them.",
+        steering_block="Be playful.",
+        user_message="hi",
+    )
+    tail = _manager().build_messages(inputs)[-1]["content"]
+    assert "[Stage]" in tail
+    assert "You have grown close to them." in tail
+    assert tail.index("[State]") < tail.index("[Stage]") < tail.index("[Guidance]")
+
+
 def test_section_labels_can_be_disabled():
     inputs = PromptInputs(
         identity="You are Aria.",

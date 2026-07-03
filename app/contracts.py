@@ -49,6 +49,8 @@ class MicroEngineExtension(BaseModel):
     tag: str
     sprite: str | None = None
     axes: dict[str, float]
+    stage: str
+    stage_changed: bool = False
 
 
 class ChatCompletionResponse(BaseModel):

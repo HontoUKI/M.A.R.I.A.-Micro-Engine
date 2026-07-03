@@ -88,6 +88,9 @@ def test_chat_exposes_engine_extension(client_with):
     # warmth delta over 20/10/0 baseline.
     assert ext["axes"]["affection"] == 25
     assert ext["sprite"] is None
+    # The explainable-change signals are always present.
+    assert ext["stage"] == "reserved"
+    assert ext["stage_changed"] is False
 
 
 def test_unknown_model_returns_404(client_with):

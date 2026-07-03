@@ -86,6 +86,44 @@ class StateKernel:
         return dict(self._values)
 
 
+def _axis_fraction(value: float, cfg) -> float:
+    span = cfg.max - cfg.min
+    if span <= 0:
+        return 0.0
+    return max(0.0, min(1.0, (value - cfg.min) / span))
+
+
+def relationship_ratio(axes: Axes, config: AxesConfig) -> float:
+    """Combined closeness in [0, 1] from affection and trust.
+
+    Mirrors the full engine's stage driver: liking and trust averaged. Bond is
+    the slow long-term axis and does not gate the acted stage.
+    """
+    aff = _axis_fraction(axes.affection, config.affection)
+    tru = _axis_fraction(axes.trust, config.trust)
+    return (aff + tru) / 2.0
+
+
+# Ratio thresholds for the canonical stage ladder, mirroring the full engine's
+# `classify_relationship_stage` (minus its mood/irritation override modes).
+_STAGE_THRESHOLDS = (
+    (0.12, "cold"),
+    (0.25, "reserved"),
+    (0.45, "cautious"),
+    (0.65, "comfort"),
+    (0.82, "close"),
+)
+
+
+def classify_stage(axes: Axes, config: AxesConfig) -> str:
+    """Return the canonical relationship stage for the current axes."""
+    ratio = relationship_ratio(axes, config)
+    for threshold, name in _STAGE_THRESHOLDS:
+        if ratio < threshold:
+            return name
+    return "very_close"
+
+
 _BANDS = ("very low", "low", "moderate", "high", "very high")
 
 
