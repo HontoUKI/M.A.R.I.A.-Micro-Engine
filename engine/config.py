@@ -17,9 +17,17 @@ from dotenv import load_dotenv
 class Settings:
     """Immutable snapshot of engine configuration."""
 
+    # Which backend generates responses: "ollama" (local) or "openai" (cloud).
+    llm_backend: str = "ollama"
     ollama_base_url: str = "http://127.0.0.1:11434"
     chat_model: str = "gemma3:12b"
     embed_model: str = "nomic-embed-text"
+    # OpenAI backend (used when llm_backend == "openai"). The key is read from
+    # the environment / .env and never leaves the server.
+    openai_api_key: str = ""
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_model: str = "gpt-4o-mini"
+    openai_embed_model: str = "text-embedding-3-small"
     data_dir: str = "data"
     llm_timeout_s: float = 120.0
     # Sampling for the voicing model. Temperature is the character's "spark";
@@ -47,9 +55,14 @@ def load_settings() -> Settings:
     """
     load_dotenv()
     return Settings(
+        llm_backend=os.getenv("LLM_BACKEND", Settings.llm_backend),
         ollama_base_url=os.getenv("OLLAMA_BASE_URL", Settings.ollama_base_url),
         chat_model=os.getenv("CHAT_MODEL", Settings.chat_model),
         embed_model=os.getenv("EMBED_MODEL", Settings.embed_model),
+        openai_api_key=os.getenv("OPENAI_API_KEY", Settings.openai_api_key),
+        openai_base_url=os.getenv("OPENAI_BASE_URL", Settings.openai_base_url),
+        openai_model=os.getenv("OPENAI_MODEL", Settings.openai_model),
+        openai_embed_model=os.getenv("OPENAI_EMBED_MODEL", Settings.openai_embed_model),
         data_dir=os.getenv("DATA_DIR", Settings.data_dir),
         llm_timeout_s=float(os.getenv("LLM_TIMEOUT_S", Settings.llm_timeout_s)),
         temperature=float(os.getenv("TEMPERATURE", Settings.temperature)),

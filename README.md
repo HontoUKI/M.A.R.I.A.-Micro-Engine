@@ -33,8 +33,14 @@ curl http://127.0.0.1:8000/v1/chat/completions \
        "messages": [{"role": "user", "content": "your explosions are amazing"}]}'
 ```
 
-The response is a standard chat completion plus an `x_micro_engine` field
-carrying the active `tag`, `stage`, `stage_changed`, `sprite`, and axis values.
+The response is a standard chat completion (including token `usage`) plus an
+`x_micro_engine` field carrying the active `tag`, `stage`, `stage_changed`,
+`sprite`, and axis values.
+
+**Backends.** By default the engine talks to a local Ollama server. To generate
+with the OpenAI API instead, set `LLM_BACKEND=openai` and `OPENAI_API_KEY=sk-…`
+in your `.env` (see [.env.example](.env.example)). The key stays on the server.
+Model, temperature, and context window are all env-configurable.
 
 ## The headline: characters that change, explainably
 
