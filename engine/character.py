@@ -27,6 +27,18 @@ from engine.state import (
     resolve_stage,
 )
 
+NON_RP_RULE = (
+    "Non-roleplay mode: reply only with spoken words, as a plain conversational "
+    "assistant. Do not narrate, describe, or act out your gestures, expressions, "
+    "movements, or the scene — no asterisk actions (like *smiles*) and no "
+    "parenthetical stage directions. Keep your character's voice and personality, "
+    "but answer directly, helpfully, and concisely."
+)
+
+# Per-turn reminder placed next to the user message. Small models follow a
+# nearby reminder better than a single rule in the far-away system prefix.
+_NON_RP_TAIL_HINT = "Answer in plain words only — no actions, emotes, or stage directions."
+
 
 @dataclass(frozen=True)
 class TokenUsage:
@@ -65,10 +77,12 @@ class CharacterRuntime:
         embed_model: str = "",
         recall_k: int = 3,
         axis_max: float = DEFAULT_AXIS_MAX,
+        non_rp: bool = False,
     ) -> None:
         self._pack = pack
         self._llm = llm
         self._axis_max = axis_max
+        self._non_rp = non_rp
         self._state = state or StateKernel.from_pack(pack, axis_max=axis_max)
         self._memory = memory
         self._pm = prompt_manager or PromptManager()
@@ -98,9 +112,9 @@ class CharacterRuntime:
 
         inputs = PromptInputs(
             identity=self._pack.identity,
-            invariants="\n".join(self._pack.invariants),
+            invariants=self._invariants(),
             stage_block=stage_obj.block if stage_obj else "",
-            steering_block=self._pack.blocks[tag],
+            steering_block=self._steering_block(tag),
             memory_recall=recall_text,
             dialogue_window=dialogue_window,
             user_message=user_message,
@@ -130,6 +144,20 @@ class CharacterRuntime:
         prompt = after["prompt_tokens"] - before["prompt_tokens"]
         completion = after["completion_tokens"] - before["completion_tokens"]
         return TokenUsage(prompt, completion, prompt + completion)
+
+    def _invariants(self) -> str:
+        """Pinned rules: the pack's invariants, plus the non-RP rule when on."""
+        rules = list(self._pack.invariants)
+        if self._non_rp:
+            rules.append(NON_RP_RULE)
+        return "\n".join(rules)
+
+    def _steering_block(self, tag: str) -> str:
+        """This turn's tag block, plus a per-turn non-RP reminder when on."""
+        block = self._pack.blocks[tag]
+        if self._non_rp:
+            block = (block + "\n" + _NON_RP_TAIL_HINT).strip()
+        return block
 
     def _resolve_stage(self, pre_axes: Axes, post_axes: Axes):
         """Active stage after the turn, and whether the turn crossed into it."""

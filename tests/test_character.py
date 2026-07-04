@@ -71,6 +71,20 @@ def test_identity_is_pinned_in_system_prefix():
     assert "Aria" in system["content"]
 
 
+def test_non_rp_mode_adds_the_anti_roleplay_rule_to_the_prefix():
+    llm = FakeLLM()
+    CharacterRuntime(make_pack(), llm, non_rp=True).respond("hi")
+    system = llm.chat_calls[1]["messages"][0]["content"]
+    assert "Non-roleplay mode" in system
+    assert "asterisk actions" in system
+
+
+def test_rp_mode_is_the_default_and_adds_no_such_rule():
+    llm = FakeLLM()
+    CharacterRuntime(make_pack(), llm).respond("hi")
+    assert "Non-roleplay mode" not in llm.chat_calls[1]["messages"][0]["content"]
+
+
 def test_dialogue_window_is_passed_through_to_voice():
     llm = FakeLLM()
     window = (DialogueTurn("user", "earlier"), DialogueTurn("assistant", "reply"))

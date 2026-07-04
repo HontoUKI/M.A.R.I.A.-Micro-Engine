@@ -29,6 +29,13 @@ class Settings:
     openai_model: str = "gpt-4o-mini"
     openai_embed_model: str = "text-embedding-3-small"
     data_dir: str = "data"
+    # Where per-session relationship state and transcripts are persisted, so a
+    # long correspondence continues across restarts.
+    sessions_dir: str = ".local/sessions"
+    # Non-roleplay mode: forbid the character from narrating its own actions
+    # (asterisk emotes, stage directions) — it stays in voice but replies as a
+    # plain conversational pet-assistant. Good for showing the mechanics.
+    non_rp: bool = False
     llm_timeout_s: float = 120.0
     # Sampling for the voicing model. Temperature is the character's "spark";
     # num_ctx is the model context window (tokens). num_ctx None = let the
@@ -45,6 +52,13 @@ class Settings:
 def _optional_int(name: str) -> int | None:
     value = os.getenv(name)
     return int(value) if value else None
+
+
+def _bool_env(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ("1", "true", "yes", "on")
 
 
 def load_settings() -> Settings:
@@ -64,6 +78,8 @@ def load_settings() -> Settings:
         openai_model=os.getenv("OPENAI_MODEL", Settings.openai_model),
         openai_embed_model=os.getenv("OPENAI_EMBED_MODEL", Settings.openai_embed_model),
         data_dir=os.getenv("DATA_DIR", Settings.data_dir),
+        sessions_dir=os.getenv("SESSIONS_DIR", Settings.sessions_dir),
+        non_rp=_bool_env("NON_RP", Settings.non_rp),
         llm_timeout_s=float(os.getenv("LLM_TIMEOUT_S", Settings.llm_timeout_s)),
         temperature=float(os.getenv("TEMPERATURE", Settings.temperature)),
         num_ctx=_optional_int("NUM_CTX"),

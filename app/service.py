@@ -30,12 +30,14 @@ class EngineService:
     registry: PackRegistry
     llm: OllamaClient
     axis_max: float = DEFAULT_AXIS_MAX
+    non_rp: bool = False
+    sessions_dir: str = ".local/sessions"
     sessions: SessionStore = None  # type: ignore[assignment]
     prompt_manager: PromptManager = None  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
         if self.sessions is None:
-            self.sessions = SessionStore(axis_max=self.axis_max)
+            self.sessions = SessionStore(axis_max=self.axis_max, root=self.sessions_dir)
         if self.prompt_manager is None:
             self.prompt_manager = PromptManager()
 
@@ -60,8 +62,13 @@ class EngineService:
             state=kernel,
             prompt_manager=self.prompt_manager,
             axis_max=self.axis_max,
+            non_rp=self.non_rp,
         )
-        return runtime.respond(driver, window)
+        result = runtime.respond(driver, window)
+        self.sessions.record_turn(
+            session_key, pack, kernel, user_message=driver, result=result
+        )
+        return result
 
 
 def _split_messages(

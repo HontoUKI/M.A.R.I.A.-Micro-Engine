@@ -52,7 +52,11 @@ def _build_service() -> EngineService:
     characters_dir = os.getenv(CHARACTERS_DIR_ENV, _DEFAULT_CHARACTERS_DIR)
     registry = PackRegistry.from_dir(characters_dir)
     return EngineService(
-        registry=registry, llm=_build_llm(settings), axis_max=settings.axis_max
+        registry=registry,
+        llm=_build_llm(settings),
+        axis_max=settings.axis_max,
+        non_rp=settings.non_rp,
+        sessions_dir=settings.sessions_dir,
     )
 
 
