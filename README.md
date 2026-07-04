@@ -51,6 +51,10 @@ caused by tracked numbers you can inspect, not by the model's mood. Want a long,
 slow arc? Raise the axis ceiling with `AXIS_MAX=1000` and the same character
 warms across many more messages. See [CHARACTER_PACK_SPEC.md](CHARACTER_PACK_SPEC.md).
 
+See it in action: [docs/EXAMPLE_RUN.md](docs/EXAMPLE_RUN.md) walks through a real
+100-message conversation on `gemma3:12b` — the stage climb, memory recall,
+boundaries, and web lookup, quoted verbatim.
+
 ## Optional features (env toggles)
 
 All off/local by default; see [.env.example](.env.example).
