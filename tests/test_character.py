@@ -146,6 +146,60 @@ def test_invalid_classification_uses_fallback_tag():
     assert result.axes.affection == 20
 
 
+# ---------------------------------------------------------------- web lookup
+
+
+def _web_pack():
+    return make_pack(
+        tags=[
+            {"id": "web_lookup", "description": "needs a lookup", "sentiment": "neutral"},
+            {"id": "hostility", "description": "hostile", "sentiment": "negative"},
+            {"id": "neutral", "description": "nothing", "sentiment": "neutral"},
+        ],
+        deltas={
+            "web_lookup": {"affection": 0.0, "trust": 0.0, "bond": 0.0},
+            "hostility": {"affection": -5.0, "trust": -3.0, "bond": -0.3},
+            "neutral": {"affection": 0.0, "trust": 0.0, "bond": 0.0},
+        },
+        blocks={"web_lookup": "Use the results.", "hostility": "", "neutral": ""},
+    )
+
+
+class _StubSearcher:
+    def __init__(self, results):
+        self._results = results
+        self.queries = []
+
+    def search(self, query):
+        self.queries.append(query)
+        return self._results
+
+
+def test_web_lookup_grounds_the_reply_when_tag_and_searcher_present():
+    from engine.web import WebResult
+
+    searcher = _StubSearcher([WebResult("Py", "http://x", "Python is a language")])
+    llm = FakeLLM(tag="web_lookup")
+    CharacterRuntime(_web_pack(), llm, web_search=searcher).respond("what is python?")
+    assert searcher.queries == ["what is python?"]
+    tail = llm.chat_calls[1]["messages"][-1]["content"]
+    assert "Python is a language" in tail
+    assert "Search results" in tail
+
+
+def test_no_web_lookup_without_a_searcher():
+    llm = FakeLLM(tag="web_lookup")
+    CharacterRuntime(_web_pack(), llm).respond("what is python?")
+    assert "Search results" not in llm.chat_calls[1]["messages"][-1]["content"]
+
+
+def test_searcher_not_called_for_a_non_web_tag():
+    searcher = _StubSearcher([])
+    llm = FakeLLM(tag="neutral")
+    CharacterRuntime(_web_pack(), llm, web_search=searcher).respond("hi")
+    assert searcher.queries == []
+
+
 # ---------------------------------------------------------------- stages
 
 

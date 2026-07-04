@@ -26,6 +26,12 @@ from engine.state import (
     relationship_ratio,
     resolve_stage,
 )
+from engine.web import WebResult, WebSearcher
+
+# A turn classified with this tag triggers an (opt-in) web lookup, whose result
+# snippets are handed to the voicing model as grounding. A pack must declare the
+# tag for it to ever be chosen.
+WEB_LOOKUP_TAG = "web_lookup"
 
 NON_RP_RULE = (
     "Non-roleplay mode: reply only with spoken words, as a plain conversational "
@@ -78,11 +84,13 @@ class CharacterRuntime:
         recall_k: int = 3,
         axis_max: float = DEFAULT_AXIS_MAX,
         non_rp: bool = False,
+        web_search: WebSearcher | None = None,
     ) -> None:
         self._pack = pack
         self._llm = llm
         self._axis_max = axis_max
         self._non_rp = non_rp
+        self._web_search = web_search
         self._state = state or StateKernel.from_pack(pack, axis_max=axis_max)
         self._memory = memory
         self._pm = prompt_manager or PromptManager()
@@ -116,6 +124,7 @@ class CharacterRuntime:
             stage_block=stage_obj.block if stage_obj else "",
             steering_block=self._steering_block(tag),
             memory_recall=recall_text,
+            web_context=self._web_lookup(tag, user_message),
             dialogue_window=dialogue_window,
             user_message=user_message,
         )
@@ -151,6 +160,13 @@ class CharacterRuntime:
         if self._non_rp:
             rules.append(NON_RP_RULE)
         return "\n".join(rules)
+
+    def _web_lookup(self, tag: str, query: str) -> str:
+        """Run an opt-in web search when this turn asked for a lookup."""
+        if tag != WEB_LOOKUP_TAG or self._web_search is None:
+            return ""
+        results = self._web_search.search(query)
+        return _format_web_results(results)
 
     def _steering_block(self, tag: str) -> str:
         """This turn's tag block, plus a per-turn non-RP reminder when on."""
@@ -204,3 +220,9 @@ class CharacterRuntime:
     def _sprite_for(self, tag: str) -> str | None:
         sprites = self._pack.sprites
         return sprites.get(tag) or sprites.get("default")
+
+
+def _format_web_results(results: list[WebResult]) -> str:
+    """Compact grounding text from search hits (empty when none)."""
+    lines = [f"- {r.title}: {r.snippet} ({r.url})".strip() for r in results if r.title]
+    return "\n".join(lines)

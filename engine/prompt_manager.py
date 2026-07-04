@@ -55,6 +55,8 @@ class PromptInputs:
         steering_block:  block selected for this turn's moment tag (the fast
                          "weather"; may be empty).
         memory_recall:   retrieved memory snippets (disposable under budget).
+        web_context:     search-result grounding for a web-lookup turn (may be
+                         empty).
         dialogue_window: prior turns, oldest first.
         user_message:    the new user input driving this turn.
     """
@@ -65,6 +67,7 @@ class PromptInputs:
     stage_block: str = ""
     steering_block: str = ""
     memory_recall: str = ""
+    web_context: str = ""
     dialogue_window: tuple[DialogueTurn, ...] = ()
 
 
@@ -153,6 +156,13 @@ class PromptManager:
 
         if include_memory and inputs.memory_recall.strip():
             parts.append("(You recall:\n" + inputs.memory_recall.strip() + ")")
+
+        if inputs.web_context.strip():
+            parts.append(
+                "(Search results you may use to answer, in your own voice:\n"
+                + inputs.web_context.strip()
+                + ")"
+            )
 
         parts.append(inputs.user_message.strip())
         return "\n\n".join(parts)

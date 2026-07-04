@@ -15,6 +15,7 @@ from engine.llm import OllamaClient
 from engine.prompt_manager import DialogueTurn, PromptManager
 from engine.registry import PackRegistry
 from engine.state import DEFAULT_AXIS_MAX
+from engine.web import WebSearcher
 
 
 class UnknownModelError(Exception):
@@ -31,6 +32,7 @@ class EngineService:
     llm: OllamaClient
     axis_max: float = DEFAULT_AXIS_MAX
     non_rp: bool = False
+    web_search: WebSearcher | None = None
     sessions_dir: str = ".local/sessions"
     sessions: SessionStore = None  # type: ignore[assignment]
     prompt_manager: PromptManager = None  # type: ignore[assignment]
@@ -63,6 +65,7 @@ class EngineService:
             prompt_manager=self.prompt_manager,
             axis_max=self.axis_max,
             non_rp=self.non_rp,
+            web_search=self.web_search,
         )
         result = runtime.respond(driver, window)
         self.sessions.record_turn(

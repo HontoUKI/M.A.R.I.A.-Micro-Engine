@@ -36,6 +36,11 @@ class Settings:
     # (asterisk emotes, stage directions) — it stays in voice but replies as a
     # plain conversational pet-assistant. Good for showing the mechanics.
     non_rp: bool = False
+    # Opt-in web lookup. When on, a turn a pack classifies as `web_lookup` runs
+    # a DuckDuckGo search and grounds the reply on the snippets. Off by default:
+    # the community tier ships no network access unless a deployer enables it.
+    web_search: bool = False
+    web_search_results: int = 3
     llm_timeout_s: float = 120.0
     # Sampling for the voicing model. Temperature is the character's "spark";
     # num_ctx is the model context window (tokens). num_ctx None = let the
@@ -80,6 +85,8 @@ def load_settings() -> Settings:
         data_dir=os.getenv("DATA_DIR", Settings.data_dir),
         sessions_dir=os.getenv("SESSIONS_DIR", Settings.sessions_dir),
         non_rp=_bool_env("NON_RP", Settings.non_rp),
+        web_search=_bool_env("WEB_SEARCH", Settings.web_search),
+        web_search_results=int(os.getenv("WEB_SEARCH_RESULTS", Settings.web_search_results)),
         llm_timeout_s=float(os.getenv("LLM_TIMEOUT_S", Settings.llm_timeout_s)),
         temperature=float(os.getenv("TEMPERATURE", Settings.temperature)),
         num_ctx=_optional_int("NUM_CTX"),
