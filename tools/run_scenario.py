@@ -40,6 +40,7 @@ from engine.state import (  # noqa: E402
     StateKernel,
     relationship_ratio,
 )
+from engine.web import DuckDuckGoSearcher  # noqa: E402
 
 _AXES = ("affection", "trust", "bond")
 
@@ -63,6 +64,7 @@ def run_one(character: str, length, args) -> None:
     kernel = StateKernel(pack.axes, axis_max=DEFAULT_AXIS_MAX, values=values)
 
     memory = VectorStore(tempfile.mkdtemp(prefix="scenario_mem_")) if args.memory else None
+    searcher = DuckDuckGoSearcher() if args.web_search else None
     runtime = CharacterRuntime(
         pack,
         llm,
@@ -70,6 +72,7 @@ def run_one(character: str, length, args) -> None:
         memory=memory,
         embed_model=args.embed_model,
         non_rp=args.non_rp,
+        web_search=searcher,
     )
 
     start = dict(values)
@@ -134,6 +137,7 @@ def main() -> None:
     p.add_argument("--temperature", type=float, default=0.8)
     p.add_argument("--memory", action="store_true", help="enable vector memory")
     p.add_argument("--non-rp", action="store_true", help="forbid roleplay action narration")
+    p.add_argument("--web-search", action="store_true", help="enable opt-in web lookup")
     p.add_argument("--affection", type=float, default=None)
     p.add_argument("--trust", type=float, default=None)
     p.add_argument("--bond", type=float, default=None)
@@ -142,7 +146,7 @@ def main() -> None:
     characters = ["megumin", "kaguya"] if args.character == "both" else [args.character]
     if args.length == "all":
         lengths: list = [10, 20, 30]
-    elif args.length in ("coding", "boundary"):
+    elif args.length in ("coding", "boundary", "showcase"):
         lengths = [args.length]
     else:
         lengths = [int(args.length)]
