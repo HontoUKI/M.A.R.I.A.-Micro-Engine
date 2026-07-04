@@ -126,7 +126,7 @@ def run_one(character: str, length, args) -> None:
 def main() -> None:
     p = argparse.ArgumentParser(description="Run an e2e character scenario.")
     p.add_argument("--character", default="both", help="megumin | kaguya | both")
-    p.add_argument("--length", default="all", help="10 | 20 | 30 | coding | all")
+    p.add_argument("--length", default="all", help="10 | 20 | 30 | coding | boundary | all")
     p.add_argument("--name", default="Alex", help="user name used in the script")
     p.add_argument("--model", default="gemma3:4b")
     p.add_argument("--embed-model", default="nomic-embed-text")
@@ -142,8 +142,8 @@ def main() -> None:
     characters = ["megumin", "kaguya"] if args.character == "both" else [args.character]
     if args.length == "all":
         lengths: list = [10, 20, 30]
-    elif args.length == "coding":
-        lengths = ["coding"]
+    elif args.length in ("coding", "boundary"):
+        lengths = [args.length]
     else:
         lengths = [int(args.length)]
 

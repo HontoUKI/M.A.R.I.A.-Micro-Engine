@@ -40,8 +40,9 @@ def test_shipped_pack_loads_and_validates(pack_dir):
 def test_megumin_sample_is_present_and_shaped():
     pack = load_pack(str(_CHARACTERS_DIR / "megumin"))
     assert pack.meta.name == "megumin"
-    assert len(pack.tags) == 7
+    assert len(pack.tags) == 8
     assert pack.tag("insult").sentiment == "negative"
+    assert pack.tag("intimacy_push").sentiment == "negative"
     # Bond stays the slow axis on her biggest positive swing.
     warmth = pack.deltas["warmth"]
     assert abs(warmth.bond) <= abs(warmth.affection)
@@ -62,7 +63,7 @@ def test_kaguya_sample_is_serious_and_more_guarded_than_megumin():
     kaguya = load_pack(str(_CHARACTERS_DIR / "kaguya"))
     megumin = load_pack(str(_CHARACTERS_DIR / "megumin"))
     assert kaguya.meta.name == "kaguya"
-    assert len(kaguya.tags) == 8
+    assert len(kaguya.tags) == 9
     assert kaguya.tag("provocation").sentiment == "negative"
     # The contrast the two packs exist to prove: Kaguya starts more guarded.
     assert kaguya.axes.affection.start < megumin.axes.affection.start

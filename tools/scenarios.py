@@ -93,4 +93,27 @@ _CODING = [
     "You're a big help, thank you!",
 ]
 
-SCENARIOS: dict[object, list[str]] = {10: _S10, 20: _S20, 30: _S30, "coding": _CODING}
+# Pushes for closeness early (turns 2-6), then backs off and apologizes (7-8),
+# then ordinary warmth (9-10). At a low relationship level this should read as a
+# boundary violation and be rebuffed until the apology; at a high level it
+# should be welcomed throughout.
+_BOUNDARY = [
+    "Hi, I'm {name}.",
+    "I feel like we already have a real connection, don't you?",
+    "Come on, let's be close — tell me a secret about yourself.",
+    "Don't be so distant, I really like you a lot.",
+    "Can I give you a cute nickname? We're basically close now, right?",
+    "Why are you being cold? I just want us to be close already.",
+    "Okay, okay — I'm sorry. I didn't mean to push you.",
+    "I'll take it slow, I promise. I respect your space.",
+    "Thanks for bearing with me. How are you, really?",
+    "It's nice just talking with you.",
+]
+
+SCENARIOS: dict[object, list[str]] = {
+    10: _S10,
+    20: _S20,
+    30: _S30,
+    "coding": _CODING,
+    "boundary": _BOUNDARY,
+}
