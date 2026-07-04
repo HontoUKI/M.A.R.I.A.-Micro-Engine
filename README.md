@@ -51,6 +51,19 @@ caused by tracked numbers you can inspect, not by the model's mood. Want a long,
 slow arc? Raise the axis ceiling with `AXIS_MAX=1000` and the same character
 warms across many more messages. See [CHARACTER_PACK_SPEC.md](CHARACTER_PACK_SPEC.md).
 
+## Optional features (env toggles)
+
+All off/local by default; see [.env.example](.env.example).
+
+- **Persistent sessions** — relationship state and transcripts are saved under
+  `.local/sessions`, so a long correspondence resumes across restarts.
+- **Non-roleplay mode** (`NON_RP=true`) — the character keeps its voice but
+  stops narrating actions (`*smiles*`, stage directions) and answers like a
+  plain pet-assistant. Good for coding help and for showing the mechanics.
+- **Web lookup** (`WEB_SEARCH=true`) — when a pack declares a `web_lookup` tag
+  and the classifier picks it, the engine runs a DuckDuckGo search and grounds
+  the reply on the snippets. Off by default (it enables outbound network).
+
 ## Make a character
 
 A character is just data — a `pack.yaml` (plus optional sprites). Read the

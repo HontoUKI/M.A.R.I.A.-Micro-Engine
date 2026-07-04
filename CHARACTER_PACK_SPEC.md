@@ -112,6 +112,13 @@ tags:
 Limits: **2–32 tags**. At least **one** tag with `sentiment: negative` (a
 character that can only warm up ratchets into sycophancy — see §6).
 
+**Reserved tag `web_lookup`.** If a pack declares a tag with id `web_lookup`
+and the deployment sets `WEB_SEARCH=true`, a turn the classifier assigns to
+that tag triggers a DuckDuckGo search; the result snippets are handed to the
+voicing model as grounding. Without `WEB_SEARCH` it behaves like any other tag
+(no network). Give it a neutral delta and a block that says to answer from the
+provided results in-character.
+
 ### 2.6 `deltas` (required, map)
 
 For every tag id, the vector applied to the axes when that tag is chosen.
