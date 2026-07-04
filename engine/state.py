@@ -134,21 +134,3 @@ def resolve_stage(ratio: float, stages: list[Stage]) -> Stage | None:
         if ratio <= stage.up_to:
             return stage
     return stages[-1]
-
-
-_BANDS = ("very low", "low", "moderate", "high", "very high")
-
-
-def summarize_axes(axes: Axes, axis_max: float) -> str:
-    """Render the axes as neutral qualitative bands for the prompt tail.
-
-    Bands rather than raw numbers on purpose: a weak model is far less likely
-    to parrot "affection: 34" back at the user than a soft descriptor, and the
-    engine stays character-neutral (the pack's steering block carries tone).
-    """
-    parts: list[str] = []
-    for name in _AXES:
-        frac = 0.0 if axis_max <= 0 else getattr(axes, name) / axis_max
-        idx = min(len(_BANDS) - 1, max(0, int(frac * len(_BANDS))))
-        parts.append(f"{name}: {_BANDS[idx]}")
-    return ", ".join(parts)

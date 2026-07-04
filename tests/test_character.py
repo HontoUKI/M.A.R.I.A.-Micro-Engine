@@ -254,5 +254,6 @@ def test_recall_searches_before_storing_current_message(tmp_path):
     rt = CharacterRuntime(make_pack(), llm, memory=store, embed_model="m")
     rt.respond("unique-phrase-xyz")
     tail = llm.chat_calls[1]["messages"][-1]["content"]
-    # It appears as the user message, but not inside a [Recalled] section.
-    assert "[Recalled]" not in tail
+    # The store was empty when we searched, so nothing is recalled into the
+    # very prompt that answers this message.
+    assert "You recall" not in tail

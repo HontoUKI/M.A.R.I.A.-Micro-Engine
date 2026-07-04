@@ -50,7 +50,6 @@ class PromptInputs:
     Fields:
         identity:        stable pack identity skeleton (pinned prefix).
         invariants:      pinned rule block for the prefix (may be empty).
-        state_summary:   mood/disposition implied by the current axes.
         stage_block:     tone for the current relationship stage (the slow
                          "climate"; may be empty).
         steering_block:  block selected for this turn's moment tag (the fast
@@ -63,7 +62,6 @@ class PromptInputs:
     identity: str
     user_message: str
     invariants: str = ""
-    state_summary: str = ""
     stage_block: str = ""
     steering_block: str = ""
     memory_recall: str = ""
@@ -87,22 +85,18 @@ class PromptManager:
     Args:
         max_tokens:    hard ceiling for the assembled prompt.
         estimate_tokens: token-count estimator; injectable for tests.
-        section_label: whether to label tail sections. Labels help weaker
-                       models tell steering from user text; disable for
-                       terse packs.
     """
 
     max_tokens: int = 2048
     estimate_tokens: Callable[[str], int] = field(default=_estimate_tokens)
-    section_label: bool = True
 
     def build_messages(self, inputs: PromptInputs) -> list[dict[str, str]]:
         """Build the OpenAI-style message list for one turn."""
         system = self._build_prefix(inputs)
         system_cost = self.estimate_tokens(system)
 
-        # The tail (steering + state + user message) is load-bearing and
-        # always kept whole; measure it without recalled memory first.
+        # The tail (direction + user message) is load-bearing and always kept
+        # whole; measure it without recalled memory first.
         core_tail = self._build_tail(inputs, include_memory=False)
         core_tail_cost = self.estimate_tokens(core_tail)
 
@@ -135,20 +129,33 @@ class PromptManager:
     # -------------------------------------------------------------------- tail
 
     def _build_tail(self, inputs: PromptInputs, *, include_memory: bool) -> str:
-        sections: list[tuple[str, str]] = []
-        if inputs.state_summary.strip():
-            sections.append(("State", inputs.state_summary.strip()))
-        if inputs.stage_block.strip():
-            sections.append(("Stage", inputs.stage_block.strip()))
-        if inputs.steering_block.strip():
-            sections.append(("Guidance", inputs.steering_block.strip()))
-        if include_memory and inputs.memory_recall.strip():
-            sections.append(("Recalled", inputs.memory_recall.strip()))
-        sections.append(("Message", inputs.user_message.strip()))
+        """Assemble the dynamic tail: private direction, recall, then the user
+        message.
 
-        if not self.section_label:
-            return "\n\n".join(body for _, body in sections)
-        return "\n\n".join(f"[{label}]\n{body}" for label, body in sections)
+        The stage and steering blocks are wrapped as explicitly private
+        direction that is *not* the user's words and must never be quoted. This
+        stops weaker models from reading the guidance aloud or mistaking it for
+        something the user said. The user's message is always the final, clean
+        line so it reads unambiguously as the turn to answer.
+        """
+        parts: list[str] = []
+
+        directions = [
+            block.strip()
+            for block in (inputs.stage_block, inputs.steering_block)
+            if block.strip()
+        ]
+        if directions:
+            parts.append(
+                "(Private notes to shape your reply. They are not from the user; "
+                "never repeat, quote, or mention them.\n" + "\n".join(directions) + ")"
+            )
+
+        if include_memory and inputs.memory_recall.strip():
+            parts.append("(You recall:\n" + inputs.memory_recall.strip() + ")")
+
+        parts.append(inputs.user_message.strip())
+        return "\n\n".join(parts)
 
     # ------------------------------------------------------------------ window
 

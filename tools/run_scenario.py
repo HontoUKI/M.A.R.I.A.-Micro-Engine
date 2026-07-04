@@ -18,6 +18,12 @@ import sys
 import tempfile
 from pathlib import Path
 
+# Model replies can contain characters outside the console's legacy code page
+# (e.g. cp1251 on Windows); force UTF-8 so printing never crashes a run.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))

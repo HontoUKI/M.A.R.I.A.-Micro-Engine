@@ -25,7 +25,6 @@ from engine.state import (
     StateKernel,
     relationship_ratio,
     resolve_stage,
-    summarize_axes,
 )
 
 
@@ -100,7 +99,6 @@ class CharacterRuntime:
         inputs = PromptInputs(
             identity=self._pack.identity,
             invariants="\n".join(self._pack.invariants),
-            state_summary=summarize_axes(axes, self._axis_max),
             stage_block=stage_obj.block if stage_obj else "",
             steering_block=self._pack.blocks[tag],
             memory_recall=recall_text,

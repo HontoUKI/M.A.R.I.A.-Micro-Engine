@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 
 from engine.pack.models import DecayConfig, DeltaVector, Stage
-from engine.state import Axes, StateKernel, relationship_ratio, resolve_stage, summarize_axes
+from engine.state import Axes, StateKernel, relationship_ratio, resolve_stage
 from tests._packs import make_pack
 
 
@@ -75,15 +75,6 @@ def test_restore_and_to_dict_roundtrip():
     snapshot = k.to_dict()
     restored = StateKernel.restore(pack, snapshot)
     assert restored.to_dict() == snapshot
-
-
-def test_summarize_axes_uses_neutral_bands_not_numbers():
-    k = StateKernel.from_pack(make_pack())
-    summary = summarize_axes(k.axes, k.axis_max)
-    assert "affection" in summary
-    # A baseline of 20/100 is in the "low" band; no raw number leaks.
-    assert "20" not in summary
-    assert any(band in summary for band in ("very low", "low", "moderate", "high"))
 
 
 # ---------------------------------------------------------------- ratio / stages
