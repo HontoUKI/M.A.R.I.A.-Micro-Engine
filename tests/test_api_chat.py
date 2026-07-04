@@ -145,6 +145,48 @@ def test_session_state_accumulates_across_turns(client_with):
     assert second["x_micro_engine"]["axes"]["affection"] == 30  # + 5 again
 
 
+def test_history_days_transcript_and_clear(client_with):
+    client = client_with(_service(tag="warmth"))
+    payload = {
+        "model": "aria",
+        "messages": [{"role": "user", "content": "hi there"}],
+        "user": "alice",
+    }
+    client.post("/v1/chat/completions", json=payload)
+
+    days = client.get("/sessions/aria/days", params={"user": "alice"}).json()["days"]
+    assert len(days) == 1
+
+    turns = client.get("/sessions/aria/transcript", params={"user": "alice"}).json()["turns"]
+    assert turns[0]["user"] == "hi there"
+
+    cleared = client.request("DELETE", "/sessions/aria/transcript", params={"user": "alice"})
+    assert cleared.json()["cleared"] == 1
+    assert client.get("/sessions/aria/days", params={"user": "alice"}).json()["days"] == []
+
+
+def test_reset_relationship_endpoint(client_with):
+    client = client_with(_service(tag="warmth"))
+    payload = {
+        "model": "aria",
+        "messages": [{"role": "user", "content": "you're great"}],
+        "user": "bob",
+    }
+    client.post("/v1/chat/completions", json=payload)
+    second = client.post("/v1/chat/completions", json=payload).json()
+    assert second["x_micro_engine"]["axes"]["affection"] == 30  # 20 + 5 + 5
+
+    client.post("/sessions/aria/reset", params={"user": "bob"})
+    after = client.post("/v1/chat/completions", json=payload).json()
+    assert after["x_micro_engine"]["axes"]["affection"] == 25  # baseline + one turn
+
+
+def test_history_endpoints_404_for_unknown_model(client_with):
+    client = client_with(_service())
+    assert client.get("/sessions/ghost/days").status_code == 404
+    assert client.post("/sessions/ghost/reset").status_code == 404
+
+
 def test_sessions_are_isolated_by_user(client_with):
     service = _service(tag="warmth")
     client = client_with(service)

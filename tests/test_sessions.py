@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 
 from app.sessions import SessionStore
@@ -67,6 +68,63 @@ def test_sessions_are_isolated_by_key_and_pack(tmp_path):
     b = store.kernel_for("bob", pack)
     a._values["affection"] = 99.0
     assert b.to_dict()["affection"] == 20.0
+
+
+def _write_transcript(store, session, pack, entries):
+    directory = store._dir(session, pack)
+    os.makedirs(directory, exist_ok=True)
+    with open(os.path.join(directory, "transcript.jsonl"), "w", encoding="utf-8") as fh:
+        for entry in entries:
+            fh.write(json.dumps(entry) + "\n")
+
+
+def _sample_entries():
+    return [
+        {"ts": "2026-07-01T10:00:00", "user": "u1", "reply": "r1"},
+        {"ts": "2026-07-01T11:00:00", "user": "u2", "reply": "r2"},
+        {"ts": "2026-07-02T09:00:00", "user": "u3", "reply": "r3"},
+    ]
+
+
+def test_transcript_days_and_read_by_day(tmp_path):
+    store = SessionStore(root=str(tmp_path / "s"))
+    pack = make_pack()
+    _write_transcript(store, "a", pack, _sample_entries())
+    assert store.transcript_days("a", pack) == ["2026-07-01", "2026-07-02"]
+    day1 = store.read_transcript("a", pack, "2026-07-01")
+    assert [e["user"] for e in day1] == ["u1", "u2"]
+    assert len(store.read_transcript("a", pack)) == 3
+
+
+def test_clear_one_day_leaves_the_rest(tmp_path):
+    store = SessionStore(root=str(tmp_path / "s"))
+    pack = make_pack()
+    _write_transcript(store, "a", pack, _sample_entries())
+    assert store.clear_transcript("a", pack, "2026-07-01") == 2
+    assert store.transcript_days("a", pack) == ["2026-07-02"]
+
+
+def test_clear_all_history(tmp_path):
+    store = SessionStore(root=str(tmp_path / "s"))
+    pack = make_pack()
+    _write_transcript(store, "a", pack, _sample_entries())
+    assert store.clear_transcript("a", pack) == 3
+    assert store.transcript_days("a", pack) == []
+
+
+def test_reset_state_forgets_the_relationship(tmp_path):
+    store = SessionStore(root=str(tmp_path / "s"))
+    pack = make_pack()
+    kernel = store.kernel_for("a", pack)
+    kernel._values["affection"] = 90.0
+    store.record_turn(
+        "a", pack, kernel,
+        user_message="x",
+        result=_FakeResult("y", "warmth", "reserved", Axes(90.0, 10.0, 0.0)),
+    )
+    store.reset_state("a", pack)
+    # A fresh lookup starts from the pack baseline again.
+    assert store.kernel_for("a", pack).to_dict()["affection"] == 20.0
 
 
 def test_unsafe_session_key_cannot_escape_the_root(tmp_path):

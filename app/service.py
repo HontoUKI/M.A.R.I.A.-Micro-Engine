@@ -49,12 +49,28 @@ class EngineService:
     def has_model(self, name: str) -> bool:
         return name in self.registry
 
-    def complete(
-        self, model: str, messages: list[ChatMessage], *, session_key: str
-    ) -> TurnResult:
+    def _require_pack(self, model: str):
         pack = self.registry.get(model)
         if pack is None:
             raise UnknownModelError(model)
+        return pack
+
+    def history_days(self, model: str, session_key: str) -> list[str]:
+        return self.sessions.transcript_days(session_key, self._require_pack(model))
+
+    def history(self, model: str, session_key: str, day: str | None = None) -> list[dict]:
+        return self.sessions.read_transcript(session_key, self._require_pack(model), day)
+
+    def clear_history(self, model: str, session_key: str, day: str | None = None) -> int:
+        return self.sessions.clear_transcript(session_key, self._require_pack(model), day)
+
+    def reset_relationship(self, model: str, session_key: str) -> None:
+        self.sessions.reset_state(session_key, self._require_pack(model))
+
+    def complete(
+        self, model: str, messages: list[ChatMessage], *, session_key: str
+    ) -> TurnResult:
+        pack = self._require_pack(model)
 
         driver, window = _split_messages(messages)
         kernel = self.sessions.kernel_for(session_key, pack)

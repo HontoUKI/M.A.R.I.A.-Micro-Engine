@@ -124,6 +124,57 @@ def chat_completions(
     return JSONResponse(content=response.model_dump())
 
 
+# --------------------------------------------------------------- session history
+# Per (user, character) transcript management for the web shell. Not part of the
+# OpenAI-compatible surface.
+
+
+def _known_model_or_404(service: EngineService, model: str) -> JSONResponse | None:
+    if service.has_model(model):
+        return None
+    return _openai_error(
+        404, "model_not_found", f"No character pack named {model!r}.",
+        "invalid_request_error", param="model",
+    )
+
+
+@app.get("/sessions/{model}/days")
+def session_days(model: str, service: ServiceDep, user: str = "default") -> JSONResponse:
+    """Dates that have a saved conversation with this character."""
+    if (err := _known_model_or_404(service, model)) is not None:
+        return err
+    return JSONResponse(content={"days": service.history_days(model, user)})
+
+
+@app.get("/sessions/{model}/transcript")
+def session_transcript(
+    model: str, service: ServiceDep, user: str = "default", day: str | None = None
+) -> JSONResponse:
+    """The saved turns for a character, optionally filtered to one day."""
+    if (err := _known_model_or_404(service, model)) is not None:
+        return err
+    return JSONResponse(content={"turns": service.history(model, user, day)})
+
+
+@app.delete("/sessions/{model}/transcript")
+def clear_session_transcript(
+    model: str, service: ServiceDep, user: str = "default", day: str | None = None
+) -> JSONResponse:
+    """Clear the whole transcript, or just one day's entries."""
+    if (err := _known_model_or_404(service, model)) is not None:
+        return err
+    return JSONResponse(content={"cleared": service.clear_history(model, user, day)})
+
+
+@app.post("/sessions/{model}/reset")
+def reset_session(model: str, service: ServiceDep, user: str = "default") -> JSONResponse:
+    """Forget the relationship (reset the axes to the pack baseline)."""
+    if (err := _known_model_or_404(service, model)) is not None:
+        return err
+    service.reset_relationship(model, user)
+    return JSONResponse(content={"ok": True})
+
+
 # The web sprite-shell (a static single-page client) is served at the root.
 # Mounted last so the API routes above always take precedence.
 _WEB_DIR = Path(__file__).resolve().parents[1] / "web"
