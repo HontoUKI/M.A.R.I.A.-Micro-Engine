@@ -80,4 +80,17 @@ _S30 = [
     "Thank you, truly. Goodnight!",
 ]
 
-SCENARIOS: dict[int, list[str]] = {10: _S10, 20: _S20, 30: _S30}
+_CODING = [
+    "Hey {name} here. Can you help me with a bit of Python?",
+    "How do I reverse a string in Python?",
+    "Nice. And how would I reverse a list?",
+    "Write me a small function that checks whether a number is prime.",
+    "What's the difference between a list and a tuple?",
+    "My code throws 'IndexError: list index out of range' - what usually causes that?",
+    "Give me a one-liner to read a text file into a list of lines.",
+    "What's a quick way to measure how long a function takes to run?",
+    "Any tip for keeping functions readable?",
+    "You're a big help, thank you!",
+]
+
+SCENARIOS: dict[object, list[str]] = {10: _S10, 20: _S20, 30: _S30, "coding": _CODING}

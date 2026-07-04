@@ -51,7 +51,7 @@ def _seed_values(pack, overrides: dict[str, float | None]) -> dict[str, float]:
     }
 
 
-def run_one(character: str, length: int, args) -> None:
+def run_one(character: str, length, args) -> None:
     pack = load_pack(str(_ROOT / "characters" / character))
     llm = OllamaClient(
         args.ollama_url,
@@ -64,14 +64,19 @@ def run_one(character: str, length: int, args) -> None:
 
     memory = VectorStore(tempfile.mkdtemp(prefix="scenario_mem_")) if args.memory else None
     runtime = CharacterRuntime(
-        pack, llm, state=kernel, memory=memory, embed_model=args.embed_model
+        pack,
+        llm,
+        state=kernel,
+        memory=memory,
+        embed_model=args.embed_model,
+        non_rp=args.non_rp,
     )
 
     start = dict(values)
     print("=" * 78)
     print(
         f"{pack.meta.display_name}  |  length={length}  |  model={args.model}"
-        f"  |  memory={'on' if memory else 'off'}"
+        f"  |  memory={'on' if memory else 'off'}  |  non_rp={args.non_rp}"
     )
     print("seed axes: " + "  ".join(f"{a}={values[a]:g}" for a in _AXES))
     print("=" * 78)
@@ -121,20 +126,26 @@ def run_one(character: str, length: int, args) -> None:
 def main() -> None:
     p = argparse.ArgumentParser(description="Run an e2e character scenario.")
     p.add_argument("--character", default="both", help="megumin | kaguya | both")
-    p.add_argument("--length", default="all", help="10 | 20 | 30 | all")
+    p.add_argument("--length", default="all", help="10 | 20 | 30 | coding | all")
     p.add_argument("--name", default="Alex", help="user name used in the script")
     p.add_argument("--model", default="gemma3:4b")
     p.add_argument("--embed-model", default="nomic-embed-text")
     p.add_argument("--ollama-url", default="http://127.0.0.1:11434")
     p.add_argument("--temperature", type=float, default=0.8)
     p.add_argument("--memory", action="store_true", help="enable vector memory")
+    p.add_argument("--non-rp", action="store_true", help="forbid roleplay action narration")
     p.add_argument("--affection", type=float, default=None)
     p.add_argument("--trust", type=float, default=None)
     p.add_argument("--bond", type=float, default=None)
     args = p.parse_args()
 
     characters = ["megumin", "kaguya"] if args.character == "both" else [args.character]
-    lengths = [10, 20, 30] if args.length == "all" else [int(args.length)]
+    if args.length == "all":
+        lengths: list = [10, 20, 30]
+    elif args.length == "coding":
+        lengths = ["coding"]
+    else:
+        lengths = [int(args.length)]
 
     for character in characters:
         for length in lengths:
