@@ -137,6 +137,20 @@ button:disabled { opacity: 0.5; cursor: default; }
 
 .controls button { background: #fff; color: var(--ink); border: 1px solid var(--line); }
 
+.btn-row { display: flex; gap: 6px; }
+.btn-row button { flex: 1; }
+.controls button.ghost { background: #fff; color: var(--muted); border: 1px solid var(--line); font-weight: 500; font-size: 12px; padding: 7px 8px; }
+.controls button.ghost:hover { color: var(--accent); border-color: var(--accent); }
+
+.viewing-banner {
+  align-self: center;
+  background: rgba(111, 155, 208, 0.14);
+  color: var(--trust);
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
 .meta { font-size: 11px; color: var(--muted); margin: 4px 0 0; text-align: center; }
 
 /* ------------------------------------------------------------------- chat */

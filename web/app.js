@@ -1,6 +1,7 @@
 // M.A.R.I.A. Micro-Engine — web sprite-shell.
 // Talks to the same-origin OpenAI-compatible API and reads the
-// `x_micro_engine` extension to visualize relationship state.
+// `x_micro_engine` extension to visualize relationship state. Also browses and
+// clears per-character conversation history via the /sessions endpoints.
 
 const els = {
   log: document.getElementById("log"),
@@ -9,6 +10,10 @@ const els = {
   send: document.getElementById("send"),
   model: document.getElementById("model"),
   reset: document.getElementById("reset"),
+  history: document.getElementById("history"),
+  clearDay: document.getElementById("clear-day"),
+  clearAll: document.getElementById("clear-all"),
+  resetRel: document.getElementById("reset-rel"),
   name: document.getElementById("name"),
   stage: document.getElementById("stage"),
   face: document.getElementById("face"),
@@ -23,8 +28,9 @@ const els = {
 
 const state = {
   axisMax: 100,
-  messages: [], // OpenAI-style history for the active character
+  messages: [], // live OpenAI-style history for the active character
   sessionId: loadSessionId(),
+  viewing: null, // null = live chat; otherwise a "YYYY-MM-DD" being reviewed
   busy: false,
 };
 
@@ -37,8 +43,10 @@ function loadSessionId() {
   return id;
 }
 
-// Neutral little faces driven by the affection fraction; a stranger is blank,
-// a close companion beams. Packs with real sprites can replace this later.
+function model() {
+  return els.model.value;
+}
+
 function faceFor(fraction) {
   if (fraction >= 0.75) return "^_^";
   if (fraction >= 0.5) return "•‿•";
@@ -59,17 +67,14 @@ function updateHud(ext) {
   if (!ext) return;
   const axes = ext.axes || {};
   for (const key of ["affection", "trust", "bond"]) {
-    const value = axes[key] || 0;
-    const pct = Math.max(0, Math.min(100, (value / state.axisMax) * 100));
+    const pct = Math.max(0, Math.min(100, ((axes[key] || 0) / state.axisMax) * 100));
     els.bars[key].style.width = pct + "%";
   }
-  const affFrac = (axes.affection || 0) / state.axisMax;
-  els.face.textContent = faceFor(affFrac);
-
+  els.face.textContent = faceFor((axes.affection || 0) / state.axisMax);
   els.stage.textContent = ext.stage ? ext.stage.replace(/_/g, " ") : "—";
   if (ext.stage_changed) {
     els.stage.classList.remove("changed");
-    void els.stage.offsetWidth; // restart the animation
+    void els.stage.offsetWidth;
     els.stage.classList.add("changed");
     els.avatar.classList.add("pulse");
     setTimeout(() => els.avatar.classList.remove("pulse"), 400);
@@ -82,9 +87,16 @@ function resetHud() {
   els.face.textContent = "·_·";
 }
 
+function setComposerEnabled(enabled) {
+  els.input.disabled = !enabled;
+  els.send.disabled = !enabled;
+  els.input.placeholder = enabled ? "Say something…" : "Viewing history — switch to Live chat to talk";
+}
+
+// ---------------------------------------------------------------- API
+
 async function loadModels() {
-  const res = await fetch("/v1/models");
-  const data = await res.json();
+  const data = await fetch("/v1/models").then((r) => r.json());
   els.model.innerHTML = "";
   for (const card of data.data) {
     const opt = document.createElement("option");
@@ -96,22 +108,75 @@ async function loadModels() {
     els.meta.textContent = "No characters loaded. Add a pack under characters/.";
     els.send.disabled = true;
   } else {
-    els.name.textContent = els.model.value;
+    els.name.textContent = model();
   }
+}
+
+async function refreshDays() {
+  if (!model()) return;
+  const params = new URLSearchParams({ user: state.sessionId });
+  let days = [];
+  try {
+    days = (await fetch(`/sessions/${model()}/days?${params}`).then((r) => r.json())).days || [];
+  } catch {
+    days = [];
+  }
+  const previous = els.history.value;
+  els.history.innerHTML = '<option value="">Live chat</option>';
+  for (const day of days.slice().reverse()) {
+    const opt = document.createElement("option");
+    opt.value = day;
+    opt.textContent = day;
+    els.history.appendChild(opt);
+  }
+  els.history.value = days.includes(previous) ? previous : "";
+}
+
+async function viewDay(day) {
+  const params = new URLSearchParams({ user: state.sessionId, day });
+  const turns = (await fetch(`/sessions/${model()}/transcript?${params}`).then((r) => r.json())).turns || [];
+  state.viewing = day;
+  els.log.innerHTML = "";
+  const banner = document.createElement("div");
+  banner.className = "viewing-banner";
+  banner.textContent = `Viewing ${day} — read only`;
+  els.log.appendChild(banner);
+  let last = null;
+  for (const turn of turns) {
+    addBubble("user", turn.user);
+    addBubble("assistant", turn.reply);
+    last = turn;
+  }
+  if (last) updateHud({ axes: last.axes, stage: last.stage });
+  setComposerEnabled(false);
+}
+
+// ---------------------------------------------------------------- views
+
+function renderLive() {
+  els.log.innerHTML = "";
+  if (model()) addBubble("system", `Now chatting with ${model()}.`);
+  for (const m of state.messages) addBubble(m.role, m.content);
+}
+
+function goLive() {
+  state.viewing = null;
+  els.history.value = "";
+  setComposerEnabled(true);
+  renderLive();
 }
 
 function startConversation() {
   state.messages = [];
-  els.log.innerHTML = "";
   resetHud();
-  if (els.model.value) {
-    els.name.textContent = els.model.value;
-    addBubble("system", `Now chatting with ${els.model.value}.`);
-  }
+  goLive();
+  refreshDays();
 }
 
+// ---------------------------------------------------------------- chat
+
 async function send(text) {
-  if (state.busy || !els.model.value) return;
+  if (state.busy || !model() || state.viewing !== null) return;
   state.busy = true;
   els.send.disabled = true;
 
@@ -123,36 +188,60 @@ async function send(text) {
     const res = await fetch("/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: els.model.value,
-        user: state.sessionId,
-        messages: state.messages,
-      }),
+      body: JSON.stringify({ model: model(), user: state.sessionId, messages: state.messages }),
     });
     const data = await res.json();
     pending.remove();
-
     if (!res.ok) {
-      const msg = (data.error && data.error.message) || `Error ${res.status}`;
-      addBubble("error", msg);
-      state.messages.pop(); // drop the turn that failed
+      addBubble("error", (data.error && data.error.message) || `Error ${res.status}`);
+      state.messages.pop();
       return;
     }
-
     const reply = data.choices[0].message.content;
     state.messages.push({ role: "assistant", content: reply });
     addBubble("assistant", reply);
     updateHud(data.x_micro_engine);
-  } catch (err) {
+    refreshDays();
+  } catch {
     pending.remove();
     addBubble("error", "Could not reach the server.");
     state.messages.pop();
   } finally {
     state.busy = false;
-    els.send.disabled = false;
+    els.send.disabled = state.viewing !== null;
     els.input.focus();
   }
 }
+
+// ---------------------------------------------------------------- history controls
+
+async function clearSelectedDay() {
+  if (!state.viewing) return;
+  const params = new URLSearchParams({ user: state.sessionId, day: state.viewing });
+  await fetch(`/sessions/${model()}/transcript?${params}`, { method: "DELETE" });
+  await refreshDays();
+  goLive();
+}
+
+async function clearAllHistory() {
+  if (!confirm(`Delete the entire saved conversation with ${model()}?`)) return;
+  const params = new URLSearchParams({ user: state.sessionId });
+  await fetch(`/sessions/${model()}/transcript?${params}`, { method: "DELETE" });
+  state.messages = [];
+  await refreshDays();
+  goLive();
+}
+
+async function resetRelationship() {
+  if (!confirm(`Reset your relationship with ${model()} back to the start?`)) return;
+  const params = new URLSearchParams({ user: state.sessionId });
+  await fetch(`/sessions/${model()}/reset?${params}`, { method: "POST" });
+  state.messages = [];
+  resetHud();
+  goLive();
+}
+
+// ---------------------------------------------------------------- wiring
 
 els.form.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -162,8 +251,19 @@ els.form.addEventListener("submit", (e) => {
   send(text);
 });
 
-els.model.addEventListener("change", startConversation);
+els.model.addEventListener("change", () => {
+  els.name.textContent = model();
+  startConversation();
+});
 els.reset.addEventListener("click", startConversation);
+els.history.addEventListener("change", () => {
+  const day = els.history.value;
+  if (day) viewDay(day);
+  else goLive();
+});
+els.clearDay.addEventListener("click", clearSelectedDay);
+els.clearAll.addEventListener("click", clearAllHistory);
+els.resetRel.addEventListener("click", resetRelationship);
 
 (async function init() {
   try {
