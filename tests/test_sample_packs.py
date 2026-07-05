@@ -80,6 +80,19 @@ def test_samples_define_a_valid_author_stage_ladder(name):
     assert pack.stages[-1].up_to == 1.0
 
 
+def test_alex_sample_is_original_and_grumbles_via_shared_frustration():
+    alex = load_pack(str(_CHARACTERS_DIR / "alex"))
+    assert alex.meta.name == "alex"
+    # An original character, not a fan work — no third-party IP.
+    assert "Original" in alex.meta.license
+    # The arc that defines him: polished professional -> openly grumbly.
+    stage_ids = [s.id for s in alex.stages]
+    assert stage_ids == ["professional", "warming", "candid", "unfiltered"]
+    # Venting together is his strongest trust-builder — more than any praise.
+    assert alex.deltas["shared_frustration"].trust >= alex.deltas["recognition"].trust
+    assert alex.deltas["shared_frustration"].trust >= alex.deltas["rapport"].trust
+
+
 def test_samples_use_distinct_stage_names():
     # The whole point of author-defined stages: the two packs name them differently.
     megumin = {s.id for s in load_pack(str(_CHARACTERS_DIR / "megumin")).stages}
