@@ -66,3 +66,23 @@ def test_llm_error_falls_back_without_crashing():
     llm = ScriptedLLM([LLMError("backend down")])
     tag = TagClassifier(llm).classify(make_pack(), "hi")
     assert tag == "neutral"
+
+
+def test_classifier_context_is_capped_to_recent_turns():
+    from engine.perception import _CONTEXT_TURNS
+    from engine.prompt_manager import DialogueTurn
+
+    class Capturing:
+        def chat(self, messages, *, model=None, fmt=None, options=None):
+            self.seen = messages
+            return json.dumps({"tag": "warmth"})
+
+    window = tuple(
+        DialogueTurn("user" if i % 2 == 0 else "assistant", f"turn{i}") for i in range(40)
+    )
+    cap = Capturing()
+    TagClassifier(cap).classify(make_pack(), "now", window)
+    # system prompt + recent window turns + the final user message.
+    assert len(cap.seen) - 2 == _CONTEXT_TURNS
+    assert cap.seen[-1]["content"] == "now"
+    assert cap.seen[1]["content"] == "turn34"  # last _CONTEXT_TURNS of 40

@@ -14,6 +14,11 @@ from typing import Any
 from engine.llm import LLMError, OllamaClient
 from engine.prompt_manager import DialogueTurn
 
+# The classifier only needs recent context to read the current moment. Feeding
+# it the whole conversation makes the prompt balloon on long chats and degrades
+# structured-output adherence, so cap it to the last few turns.
+_CONTEXT_TURNS = 6
+
 
 class TagClassifier:
     """Chooses one moment tag per turn via constrained decoding."""
@@ -57,7 +62,8 @@ def _build_messages(
     ]
     lines.extend(f"- {t.id}: {t.description}" for t in pack.tags)
     messages: list[dict[str, str]] = [{"role": "system", "content": "\n".join(lines)}]
-    messages.extend({"role": t.role, "content": t.content} for t in dialogue_window)
+    recent = dialogue_window[-_CONTEXT_TURNS:] if _CONTEXT_TURNS else ()
+    messages.extend({"role": t.role, "content": t.content} for t in recent)
     messages.append({"role": "user", "content": user_message})
     return messages
 
