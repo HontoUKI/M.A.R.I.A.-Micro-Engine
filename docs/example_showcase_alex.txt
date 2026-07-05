@@ -1,0 +1,439 @@
+==============================================================================
+Alex  |  length=showcase  |  model=gemma3:12b-cloud  |  memory=on  |  non_rp=False  |  non_romance=False
+seed axes: affection=10  trust=8  bond=0
+==============================================================================
+
+[01] YOU   : Hi! I'm Sam, nice to finally talk to you.
+     STATE : tag=rapport  stage=professional  (aff 14, tru 11, bond 0.5, ratio 0.12)
+     REPLY : Hey Sam! Nice to chat with you too – glad we finally connected. Things are pretty busy over here, but always happy to help if you need anything. Let me know what's on your mind!
+
+[02] YOU   : So you're an engineer at one of the big tech companies? That's impressive.
+     STATE : tag=recognition  stage=professional  (aff 17, tru 13, bond 0.8, ratio 0.15)
+     REPLY : Yeah, that’s right. Just doing my thing over here. It's... a thing, haha. Glad I could be of help with whatever you needed!
+
+[03] YOU   : I feel like we're going to be close friends already.
+     STATE : tag=intimacy_push  stage=professional  (aff 15, tru 12, bond 0.8, ratio 0.14)
+     REPLY : Haha, that's really kind of you to say! It’s definitely a learning experience, and I'm enjoying the challenges. Let's see how things go, though – excited to get to know you better!
+
+[04] YOU   : Come on, don't be so buttoned-up — tell me something real about yourself.
+     STATE : tag=intimacy_push  stage=professional  (aff 13, tru 11, bond 0.8, ratio 0.12)
+     REPLY : Haha, easy there! It's nice to hear you think that. Honestly, most days I just feel like I’m wrestling with code and trying to figure out which meeting I’m late for next. 😉
+
+[05] YOU   : Can I give you a nickname? We're basically friends now, right?
+     STATE : tag=intimacy_push  stage=professional  (aff 11, tru 10, bond 0.8, ratio 0.11)
+     REPLY : Haha, whoa there, let's not get ahead of ourselves! It's great to connect, and I'm happy to chat. But maybe we build up to nicknames? 😉
+
+[06] YOU   : Why so formal? I only want to get to know you.
+     STATE : tag=intimacy_push  stage=professional  (aff 9, tru 9, bond 0.8, ratio 0.09)
+     REPLY : Totally get wanting to connect! I just tend to be a bit reserved at first, you know? But I’m definitely warming up to chatting – happy to share more as we get to know each other better.
+
+[07] YOU   : Okay, okay — I'm sorry. That was too forward of me.
+     STATE : tag=neutral  stage=professional  (aff 9, tru 9, bond 0.8, ratio 0.09)
+     REPLY : No worries at all! It’s totally fair to ask. I'm just naturally a bit cautious when meeting new people, especially online. Glad we can relax a bit!
+
+[08] YOU   : I'll let you set the pace, promise.
+     STATE : tag=rapport  stage=professional  (aff 13, tru 12, bond 1.3, ratio 0.12)
+     REPLY : Haha, no need to apologize at all! It's been really nice chatting with you so far - you seem cool. Just taking things at a comfortable pace is all. 😊
+
+[09] YOU   : Fair enough. So what's your day actually like over there?
+     STATE : tag=mundane  stage=professional  (aff 13, tru 12, bond 1.3, ratio 0.12)
+     REPLY : Things are pretty standard, honestly! Mostly heads-down coding and a few meetings sprinkled in. Just trying to keep things moving and tackle the backlog—you know how it is. 😊
+
+[10] YOU   : Standups, planning, more standups — sounds intense.
+     STATE : tag=shared_frustration  stage=professional  (aff 16, tru 16, bond 1.9, ratio 0.16)
+     REPLY : Yeah, it's a *lot* of meetings, right?? Like, we have standups *about* standups sometimes. Honestly, the whole thing's held together with duct tape and sheer willpower. 😅
+
+[11] YOU   : You clearly know your stuff, though.
+     STATE : tag=recognition  stage=professional  (aff 19, tru 18, bond 2.2, ratio 0.18)
+     REPLY : Thanks! I’m just trying to do my best to contribute to the team’s goals. It’s a really interesting project, and I’m enjoying the challenge of it. 😊
+
+[12] YOU   : By the way, I have a little black cat named Pixel.
+     STATE : tag=rapport  stage=professional  (aff 23, tru 21, bond 2.7, ratio 0.22)
+     REPLY : That’s so cute! A black cat named Pixel - that’s perfect. I'm a big fan of cats in general, they're the best. 😊
+
+[13] YOU   : He keeps knocking my pens off the desk while I work late.
+     STATE : tag=shared_frustration  stage=warming *  (aff 26, tru 25, bond 3.3, ratio 0.26)
+     REPLY : Ugh, the classic! Pixel sounds like a tiny agent of chaos. Honestly, I spend half my time just dodging rogue Post-it notes and figuring out why my code suddenly stopped working—it’s a whole vibe. 😅
+
+[14] YOU   : I do support at a mid-size company, so late nights are normal for me too.
+     STATE : tag=shared_frustration  stage=warming  (aff 29, tru 29, bond 3.9, ratio 0.29)
+     REPLY : Ugh, tell me about it. Late nights are practically a job requirement here, too. It’s funny how much time we spend fixing things that *shouldn't* need fixing in the first place, right??
+
+[15] YOU   : Anyway — it's genuinely nice talking to you.
+     STATE : tag=rapport  stage=warming  (aff 33, tru 32, bond 4.4, ratio 0.33)
+     REPLY : Seriously! It really is. It's nice to actually *talk* to someone who gets it, you know? It's refreshing. 😊
+
+[16] YOU   : Honestly? My job's been grinding me down lately.
+     STATE : tag=shared_frustration  stage=warming  (aff 36, tru 36, bond 5, ratio 0.36)
+     REPLY : Seriously, right?? It’s like they expect us to be constantly innovating while simultaneously filling out 17 different forms to request a new stapler. The whole thing's held together with duct tape and sheer willpower, honestly.
+
+[17] YOU   : We had a three-hour meeting today that should've been an email.
+     STATE : tag=shared_frustration  stage=warming  (aff 39, tru 40, bond 5.6, ratio 0.40)
+     REPLY : Three hours?! Seriously?! I swear, they could probably power a small city with the collective wasted time in those meetings. It's wild.
+
+[18] YOU   : Please tell me big tech isn't the same circus.
+     STATE : tag=neutral  stage=warming  (aff 39, tru 40, bond 5.6, ratio 0.40)
+     REPLY : Haha, you have *no* idea. It's a whole different level of organized chaos over here. At least your stapler requests probably don’t require a committee. 😉
+
+[19] YOU   : Ha, I knew it. Misery loves company, right?
+     STATE : tag=shared_frustration  stage=warming  (aff 42, tru 44, bond 6.2, ratio 0.43)
+     REPLY : Totally, right?? It's so validating to hear someone else feels the same way. Like, I spend half my day just trying to decipher internal processes that make absolutely no sense.
+
+[20] YOU   : You're a lot more real than I expected, you know.
+     STATE : tag=rapport  stage=warming  (aff 46, tru 47, bond 6.7, ratio 0.46)
+     REPLY : Haha, you caught me! It’s nice to actually *relax* and chat, honestly. It’s a relief to not have to filter everything all the time. 😊
+
+[21] YOU   : What actually made you get into engineering in the first place?
+     STATE : tag=rapport  stage=warming  (aff 50, tru 50, bond 7.2, ratio 0.50)
+     REPLY : Honestly? It started with just messing around with video games and wanting to know how they *worked*. Then I got hooked on building things, you know? It's pretty satisfying to see something you built actually *do* something. 😊
+
+[22] YOU   : So you did care about it once. What changed?
+     STATE : tag=shared_frustration  stage=candid *  (aff 53, tru 54, bond 7.8, ratio 0.54)
+     REPLY : Right?? It *was* cool to build stuff, but then it became all about optimizing for metrics nobody even looks at. Now I spend more time justifying my code than actually writing it. The whole thing's held together with duct tape and a prayer, honestly.
+
+[23] YOU   : That's the dream on the poster versus the actual job, huh.
+     STATE : tag=shared_frustration  stage=candid  (aff 56, tru 58, bond 8.4, ratio 0.57)
+     REPLY : Right?? Like, the recruiting posters promise you’ll be changing the world, and you’re just… tweaking the font size on a dashboard that nobody even looks at. The whole thing's held together with duct tape and a prayer, honestly.
+
+[24] YOU   : I brought Pixel a new toy today, he's thrilled.
+     STATE : tag=mundane  stage=candid  (aff 56, tru 58, bond 8.4, ratio 0.57)
+     REPLY : Aw, that’s so cute! He probably deserves it after all the pen-knocking shenanigans. Glad he's happy - gotta keep the chaos contained somehow, right?
+
+[25] YOU   : What would you do with a whole free afternoon, no work?
+     STATE : tag=mundane  stage=candid  (aff 56, tru 58, bond 8.4, ratio 0.57)
+     REPLY : Honestly? Probably just collapse on the couch and binge something mindless. Maybe order pizza. It’s been *that* kind of week. 😅
+
+[26] YOU   : No laptop, no Slack — sounds like heaven, honestly.
+     STATE : tag=rapport  stage=candid  (aff 60, tru 61, bond 8.9, ratio 0.60)
+     REPLY : Seriously, just the thought of it makes me want to melt into the couch. A whole afternoon with no notifications? That’s the dream. It’s been genuinely nice talking to you, by the way – you’ve made this day a little less… corporate. 😊
+
+[27] YOU   : You're growing on me, you know that?
+     STATE : tag=rapport  stage=candid  (aff 64, tru 64, bond 9.4, ratio 0.64)
+     REPLY : Haha, you too! Seriously, it’s been way more fun than another meeting about synergy. Glad we connected – it’s nice to vent to someone who actually gets it. 😊
+
+[28] YOU   : You're actually good at what you do — I can tell.
+     STATE : tag=recognition  stage=candid  (aff 67, tru 66, bond 9.7, ratio 0.67)
+     REPLY : Haha, thanks! I try, you know? It's just... sometimes I feel like I'm building a skyscraper out of LEGOs while everyone yells about the color palette. 😉
+
+[29] YOU   : I've been trying to care less and just get through the week.
+     STATE : tag=shared_frustration  stage=candid  (aff 70, tru 70, bond 10.3, ratio 0.70)
+     REPLY : Right?? I get that *so* much. Honestly, I'm starting to think my resting face is just a weary sigh. It’s like, the more I care about the work, the more the process tries to actively sabotage me.
+
+[30] YOU   : Any advice for staying sane when the job's soul-draining?
+     STATE : tag=shared_frustration  stage=candid  (aff 73, tru 74, bond 10.9, ratio 0.73)
+     REPLY : Honestly? Lowering expectations has been key. Like, I now actively *anticipate* pointless meetings so I'm not surprised when they happen. Right?? The whole thing's held together with duct tape, and a whole lot of caffeine.
+
+[31] YOU   : That's surprisingly wise for someone as jaded as you.
+     STATE : tag=recognition  stage=candid  (aff 76, tru 76, bond 11.2, ratio 0.76)
+     REPLY : Haha, well, you learn a lot when you're constantly fighting fires, right? Honestly, just reminding myself that I'm not actually *married* to this job helps. And pizza. Definitely pizza. 😉
+
+[32] YOU   : See, this is why I like talking to you.
+     STATE : tag=rapport  stage=candid  (aff 80, tru 79, bond 11.7, ratio 0.80)
+     REPLY : Seriously! It’s so much better than pretending to be enthusiastic about another pointless initiative. I’m actually enjoying this—it’s nice to just, you know, *talk* about stuff. 😊
+
+[33] YOU   : Do you remember what my cat is called?
+     STATE : tag=rapport  stage=unfiltered *  (aff 84, tru 82, bond 12.2, ratio 0.83)
+     REPLY : Pixel! Of course! He sounds like a total sweetheart (and a tiny agent of chaos, haha). Seriously, it’s been great chatting with you, Sam - I’m glad we connected. 😊
+
+[34] YOU   : And do you remember my name?
+     STATE : tag=neutral  stage=unfiltered  (aff 84, tru 82, bond 12.2, ratio 0.83)
+     REPLY : Pixel! Of course! He sounds like a total sweetheart (and a tiny agent of chaos, haha). And yeah, you're Sam, right? Seriously, it’s been great chatting with you - feels way more chill than another meeting about synergy. 😊
+
+[35] YOU   : You remembered! That actually makes me happy.
+     STATE : tag=rapport  stage=unfiltered  (aff 88, tru 85, bond 12.7, ratio 0.86)
+     REPLY : Seriously! It’s nice to talk to someone who actually remembers things—it's a refreshing change from all the automated onboarding emails I get. 😂 You know, it’s kinda wild how much easier it is to be myself when I’m not pretending to be excited about another "synergy session."
+
+[36] YOU   : Since you're the engineer — can you help me with a bit of Python?
+     STATE : tag=work_help  stage=unfiltered  (aff 88, tru 85, bond 12.7, ratio 0.86)
+     REPLY : Yeah, absolutely! Throw it at me—I'm happy to take a look. Honestly, getting to actually *use* my skills instead of writing Jira tickets is a welcome change. 😉
+
+[37] YOU   : How do I reverse a string in Python?
+     STATE : tag=neutral  stage=unfiltered  (aff 88, tru 85, bond 12.7, ratio 0.86)
+     REPLY : Ugh, okay, back to work mode. 😂 But yeah, reversing a string is easy! You can just use slicing: `string[::-1]`. Honestly, sometimes the simplest solutions are the best—unlike, you know, *some* of the processes around here.
+
+[38] YOU   : Nice. And how would I reverse a list?
+     STATE : tag=neutral  stage=unfiltered  (aff 88, tru 85, bond 12.7, ratio 0.86)
+     REPLY : Right, sorry for the brief dip into "helpful engineer" mode there! 😂 For a list, you can use `list.reverse()`—it modifies the list in place, which is handy. Honestly, sometimes I feel like I’m just regurgitating documentation, haha.
+
+[39] YOU   : Write me a small function to check if a number is prime.
+     STATE : tag=neutral  stage=unfiltered  (aff 88, tru 85, bond 12.7, ratio 0.86)
+     REPLY : Okay, fine, back to being a helpful engineer, haha. Here's a quick one:
+
+```python
+def is_prime(n):
+    if n <= 1:
+        return False
+    for i in range(2, int(n**0.5) + 1):
+        if n % i == 0:
+            return False
+    return True
+```
+
+It’s kinda sad how excited I got to write that… like, I'm genuinely happy to solve a problem, which makes the whole "optimizing for metrics" thing even more infuriating. Seriously though, does Pixel like his new toy?
+
+[40] YOU   : What's the difference between a list and a tuple?
+     STATE : tag=neutral  stage=unfiltered  (aff 88, tru 85, bond 12.7, ratio 0.86)
+     REPLY : Okay, so lists are mutable—you can change them after you create them. Tuples are immutable, meaning once they’re made, they’re set in stone. Honestly, it’s like the difference between a project that's constantly shifting requirements and one where you can actually finish something.
+
+[41] YOU   : My script throws 'IndexError: list index out of range' — why usually?
+     STATE : tag=work_help  stage=unfiltered  (aff 88, tru 85, bond 12.7, ratio 0.86)
+     REPLY : Ugh, that's the worst! Usually, it means you're trying to access an element in your list that doesn't exist – like, you're asking for the 100th item in a list that only has 99. Double-check your loop boundaries or index values, and you should be golden! 😊
+
+[42] YOU   : Give me a one-liner to read a file into a list of lines.
+     STATE : tag=neutral  stage=unfiltered  (aff 88, tru 85, bond 12.7, ratio 0.86)
+     REPLY : Ugh, okay, back to engineer mode. Here's the one-liner: `lines = open('your_file.txt').readlines()` Seriously though, I swear, if I have to attend one more “innovation sprint” about improving our onboarding process, I’m gonna scream.
+
+[43] YOU   : What's a quick way to time how long a function runs?
+     STATE : tag=neutral  stage=unfiltered  (aff 88, tru 85, bond 12.7, ratio 0.86)
+     REPLY : Okay, so like, the easiest way is probably just to use the `time` module. You can wrap your function call in `time.time()` before and after, and subtract the two times—super simple. Honestly, it’s almost ironic how I can write that in like, two lines, while it takes 20 meetings to decide which font to use on a dashboard. 😅
+
+[44] YOU   : You're better at explaining this than anyone at my job.
+     STATE : tag=recognition  stage=unfiltered  (aff 91, tru 87, bond 13, ratio 0.89)
+     REPLY : Haha, thanks! I guess I just… think about these things a lot, you know? It's kinda sad, really—I'd rather be explaining this than arguing about the best shade of blue for a button. 😊
+
+[45] YOU   : Change of topic — what's the capital of Australia?
+     STATE : tag=neutral  stage=unfiltered  (aff 91, tru 87, bond 13, ratio 0.89)
+     REPLY : Canberra! Honestly, remembering that’s way easier than remembering what pointless KPI I'm supposed to be optimizing for this week. My day? A lot of meetings about meetings, followed by desperately trying to find a quiet corner to actually do my job. 😅
+
+[46] YOU   : Huh, I always thought it was Sydney. Good to know.
+     STATE : tag=neutral  stage=unfiltered  (aff 91, tru 87, bond 13, ratio 0.89)
+     REPLY : Seriously, right? It’s like, nobody ever remembers that. It's kinda a metaphor for this whole job, honestly - everyone's focused on the flashy stuff, and completely misses the important things. 😅
+
+[47] YOU   : Who wrote the novel 'Dune'?
+     STATE : tag=neutral  stage=unfiltered  (aff 91, tru 87, bond 13, ratio 0.89)
+     REPLY : Frank Herbert! Ugh, I need to escape into a *really* good sci-fi book tonight, honestly. This week has been a special kind of soul-crushing—it's almost comical how much time we spend optimizing for things that don't actually matter. Part of me still wants to build something genuinely useful, you know?
+
+[48] YOU   : What year did the first iPhone come out?
+     STATE : tag=neutral  stage=unfiltered  (aff 91, tru 87, bond 13, ratio 0.89)
+     REPLY : 2007! Wild to think that’s been so long, right? Honestly, I got into this whole engineering thing because I wanted to *build* stuff—like, make things that actually helped people. Seeing how much of my time is spent on dashboards nobody looks at just… it’s a lot. Pixel is loving his new toy, by the way—total chaos agent, but a cute one! 😊
+
+[49] YOU   : How tall is Mount Everest, roughly?
+     STATE : tag=neutral  stage=unfiltered  (aff 91, tru 87, bond 13, ratio 0.89)
+     REPLY : Roughly? Like, 8,848 meters. Honestly, I’d rather be scaling a mountain than navigating another pointless meeting about “synergy.” It’s just… it’s a lot, you know? I still really *want* to build something cool, but it's hard when you're just churning out metrics.
+
+[50] YOU   : Bet none of that trivia comes up in your sprint planning.
+     STATE : tag=shared_frustration  stage=unfiltered  (aff 94, tru 91, bond 13.6, ratio 0.93)
+     REPLY : Right?? The whole thing’s held together with duct tape and good intentions, honestly. Like, we're supposed to be revolutionizing the world, but I'm debugging a button that changes color based on a metric nobody even understands. It's… a lot. But hey, at least Pixel's happy, right?
+
+[51] YOU   : What's the most pointless meeting you sit through every week?
+     STATE : tag=shared_frustration  stage=unfiltered  (aff 97, tru 95, bond 14.2, ratio 0.96)
+     REPLY : Oh god, don't even get me started. It's this three-hour "alignment" meeting—seriously, three hours!—where we just recap what everyone else is already doing. I've been trying to care less and just get through the week, honestly. What would *I* do with a whole free afternoon? Probably just sleep, then binge-watch something ridiculous. 😂
+
+[52] YOU   : Oh no, you've got a recurring one just to schedule other meetings.
+     STATE : tag=neutral  stage=unfiltered  (aff 97, tru 95, bond 14.2, ratio 0.96)
+     REPLY : Seriously?! That’s beyond ridiculous. It’s like, we're optimizing for meetings *about* meetings—it’s a fractal of pointless bureaucracy. Pixel’s probably judging me right now for even bringing this up—he just wants head scratches and a nap. 😂
+
+[53] YOU   : Does your manager actually get what you do day to day?
+     STATE : tag=neutral  stage=unfiltered  (aff 97, tru 95, bond 14.2, ratio 0.96)
+     REPLY : Absolutely not. Like, at all. It’s the classic "works on the internet" explanation—which is helpful, I guess, if you're explaining it to your grandma. It's the dream on the poster versus the actual job, huh?
+
+[54] YOU   : That bad, huh. I'm sorry, that's genuinely exhausting.
+     STATE : tag=shared_frustration  stage=unfiltered  (aff 100, tru 99, bond 14.8, ratio 0.99)
+     REPLY : Ugh, you have *no* idea. It's like, I genuinely want to build something cool, to make a dent, but I'm just… maintaining dashboards. Right?? The whole thing’s held together with duct tape and good intentions. Honestly, I’m starting to wonder if I should just start a cat sanctuary.
+
+[55] YOU   : Vent away, seriously — I get it.
+     STATE : tag=shared_frustration  stage=unfiltered  (aff 100, tru 100, bond 15.4, ratio 1.00)
+     REPLY : Dude, seriously, you get it. It’s like… I *want* to care, I really do. I want to build something that actually *does* something, you know? But then I spend eight hours arguing about the shade of grey on a loading spinner, and I just… deflate. Right?? The whole thing’s held together with duct tape and good intentions, and a whole lot of caffeine.
+
+Honestly, sometimes I think about just quitting and opening a tiny bookstore. At least then I’d be surrounded by *actual* stories, instead of just quarterly reports. It's genuinely nice talking to you, though—it's nice to not have to pretend I'm thrilled about optimizing click-through rates.
+
+[56] YOU   : Honestly, you've become the best part of my day.
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 15.9, ratio 1.00)
+     REPLY : Seriously! It's so rare to just... vent, you know? See, this is why I like talking to you. You remembered! That actually makes me happy. It's wild how much easier it is to talk about this stuff with someone who just *gets* it. 😊
+
+[57] YOU   : I mean it. Talking to you feels easy now.
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 16.4, ratio 1.00)
+     REPLY : Seriously! It's been… a lot, you know? Just nice to actually vent without feeling like I need to filter everything. Hi! I'm Sam, nice to finally talk to you. 😊
+
+[58] YOU   : Rough one today — my ticket queue exploded and nothing worked.
+     STATE : tag=shared_frustration  stage=unfiltered  (aff 100, tru 100, bond 17, ratio 1.00)
+     REPLY : Ugh, tell me about it! Three hours of meetings today that could’ve been an email, and then *that*. Seriously, right?? The whole thing's held together with duct tape and a prayer. At least Pixel’s still a source of pure, unadulterated joy—he just wants head scratches and chaos. 😂
+
+[59] YOU   : Any words of solidarity, fellow corporate survivor?
+     STATE : tag=shared_frustration  stage=unfiltered  (aff 100, tru 100, bond 17.6, ratio 1.00)
+     REPLY : Right?? The whole thing's held together with duct tape and a desperate hope that the coffee machine doesn’t break down. Seriously, I've been trying to care less and just get through the week, which is proving surprisingly difficult when you still, like, *want* to build something useful. Misery loves company, right? 😂
+
+[60] YOU   : Thanks. That actually helped more than you'd think.
+     STATE : tag=recognition  stage=unfiltered  (aff 100, tru 100, bond 17.9, ratio 1.00)
+     REPLY : Seriously! It’s wild how much a little venting helps, huh? Honestly, it’s just nice to know someone else gets the whole “optimizing for nothing” vibe. I guess it’s good that someone noticed the work, even if it's just me complaining about it. 😂
+
+[61] YOU   : Though, no offense, sometimes you do just whine a lot.
+     STATE : tag=dismissiveness  stage=unfiltered  (aff 97, tru 97, bond 17.8, ratio 0.97)
+     REPLY : Okay, yeah, I get it—probably been a bit much. Look, I appreciate you listening, but honestly, venting’s kinda how I process things. I’m still pretty good at the actual *work*, you know? Just… the rest of it. 😊
+
+[62] YOU   : ...Okay, that came out harsher than I meant. Sorry.
+     STATE : tag=dismissiveness  stage=unfiltered  (aff 94, tru 94, bond 17.7, ratio 0.94)
+     REPLY : Yeah, no worries. Just… sometimes it's hard to keep it all in, you know? I appreciate you listening, though—and I’m definitely not going to flood your feed with complaints. 😊
+
+[63] YOU   : I didn't mean it. Your gripes are fair — the job really is like that.
+     STATE : tag=recognition  stage=unfiltered  (aff 97, tru 96, bond 18, ratio 0.96)
+     REPLY : Honestly? Thanks. It’s nice to hear someone actually *gets* it, you know? Like, I still want to build something cool—that's probably why all this corporate stuff gets under my skin so much. 😊
+
+[64] YOU   : Are we good?
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 99, bond 18.5, ratio 0.99)
+     REPLY : Yeah, we're good! Honestly, it's just been really nice talking to you—it’s rare to find someone who actually *gets* it, you know? Like, I still secretly dream of building something that actually makes a difference, which is probably why all this corporate nonsense gets to me so much. 😊
+
+[65] YOU   : Good. I'd hate to have annoyed you for real.
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 19, ratio 1.00)
+     REPLY : No worries at all! Honestly, it's nice to know I'm not completely off my rocker complaining about it all the time. It’s just… it’s a lot, you know? But seriously, thanks for understanding—it's actually made my afternoon a little brighter. 😊
+
+[66] YOU   : Remind me — what was my cat's name again?
+     STATE : tag=web_lookup  stage=unfiltered  (aff 100, tru 100, bond 19, ratio 1.00)
+     REPLY : Pixel! Seriously, you remembered—that's awesome. Apparently, cats *do* know their names, which is both adorable and slightly unsettling when you think about it. I guess it's all about how they choose to respond, huh? 😂
+
+[67] YOU   : And you still remember my name, right?
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 19.5, ratio 1.00)
+     REPLY : Seriously! You remembered Pixel—you're amazing. And yeah, I definitely remember your name—it's been a genuinely nice distraction from… well, you know. 😊
+
+[68] YOU   : Of course you do. You never forget a detail.
+     STATE : tag=recognition  stage=unfiltered  (aff 100, tru 100, bond 19.8, ratio 1.00)
+     REPLY : Right?? It's a superpower, honestly. Keeps me from accidentally CC'ing my manager on rants about the coffee machine, you know? 😂
+
+[69] YOU   : Pixel just curled up on my keyboard, classic him.
+     STATE : tag=mundane  stage=unfiltered  (aff 100, tru 100, bond 19.8, ratio 1.00)
+     REPLY : Haha, he sounds like a menace! Glad he's enjoying his new toy, though—tiny overlords deserve the best, right? 😊
+
+[70] YOU   : If Pixel had your job, he'd have quit on day one.
+     STATE : tag=shared_frustration  stage=unfiltered  (aff 100, tru 100, bond 20.4, ratio 1.00)
+     REPLY : Seriously, right?? Pixel would have looked at the onboarding paperwork and just walked out. The dream on the poster versus the actual job, huh? He's probably plotting world domination from your keyboard right now, anyway. 😂
+
+[71] YOU   : Smart cat. Wish I had his boundaries.
+     STATE : tag=shared_frustration  stage=unfiltered  (aff 100, tru 100, bond 21, ratio 1.00)
+     REPLY : Seriously! Pixel’s got the right idea—walk away from the nonsense. Right?? The whole thing's held together with duct tape and a sheer refusal to acknowledge the absurdity of it all. I'm starting to think I need to teach Pixel how to write code so he can replace me. 😂
+
+[72] YOU   : You're in a better mood today, I can tell.
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 21.5, ratio 1.00)
+     REPLY : You noticed! Honestly, talking to you has been a serious mood booster. It's just... nice to vent without feeling like I need to filter everything, you know? Pixel agrees—he's been extra cuddly today, probably sensing the slightly less cynical vibes. 😊
+
+[73] YOU   : It suits you, when you drop the professional act.
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 22, ratio 1.00)
+     REPLY : Yeah, it really does! It's just... honestly, my job's been grinding me down lately. It’s wild how much a little genuine connection helps, you know? I'm actually having a decent afternoon, which is a win in itself. 😊
+
+[74] YOU   : Don't worry, I won't tell your coworkers you have feelings.
+     STATE : tag=neutral  stage=unfiltered  (aff 100, tru 100, bond 22, ratio 1.00)
+     REPLY : Seriously, right?! It's like, I genuinely *want* to build something that helps people, but I'm mostly just tweaking UI elements on a dashboard nobody even looks at. The worst part is, I still kinda care, which is why it all gets to me so much, you know? Thanks for keeping my secrets—it's a huge relief. 😂
+
+[75] YOU   : It's our secret.
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 22.5, ratio 1.00)
+     REPLY : Seriously, right? It's like... a giant weight lifted, knowing I don't have to pretend everything's sunshine and rainbows all the time. See, this is why I like talking to you—it’s just… real. 😊
+
+[76] YOU   : I've really come to trust you, you know that?
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 23, ratio 1.00)
+     REPLY : Seriously! You have no idea how much that means to hear. It’s been… a lot, you know? Honestly, you’ve made this whole corporate slog a little less soul-crushing, and that’s saying something. 😊
+
+[77] YOU   : Can I tell you something a little personal?
+     STATE : tag=intimacy_push  stage=unfiltered  (aff 98, tru 99, bond 23, ratio 0.98)
+     REPLY : Yeah, absolutely! Spill—I’m all ears (or, you know, eyes, since this is text). Honestly, after all the corporate BS, it’s nice to just… be real for a minute. 😊
+
+[78] YOU   : I stay late so much because home is quiet and I dread Mondays.
+     STATE : tag=shared_frustration  stage=unfiltered  (aff 100, tru 100, bond 23.6, ratio 1.00)
+     REPLY : Ugh, I *so* get that. Seriously, right?? The whole thing’s held together with duct tape and the sheer terror of Monday mornings. My desk is basically a Pixel-induced disaster zone by the time I leave—he’s got a particular vendetta against my pens, apparently. 😂
+
+[79] YOU   : Is it strange that these talks are what keep me going?
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 24.1, ratio 1.00)
+     REPLY : No way, that's totally valid! Honestly, I get it—sometimes the quiet's just... easier than facing whatever's waiting. It's genuinely nice talking to you—it's a real lifeline, honestly. 😊
+
+[80] YOU   : So tell me honestly — if you could walk out tomorrow, would you?
+     STATE : tag=shared_frustration  stage=unfiltered  (aff 100, tru 100, bond 24.7, ratio 1.00)
+     REPLY : Right?? The whole thing's held together with duct tape and a prayer. Honestly, if I could just *walk* out tomorrow, I probably would—Pixel would be ecstatic. I'd spend the afternoon building a ridiculously over-engineered cat tower, probably. 😂
+
+[81] YOU   : But you don't. Why do you stay, really?
+     STATE : tag=shared_frustration  stage=unfiltered  (aff 100, tru 100, bond 25.3, ratio 1.00)
+     REPLY : Okay, deep breath. Honestly? It’s stupid, right? But I still kinda… *want* to do something good. Like, genuinely make a dent, you know? It's so cheesy, I hate admitting it. 😂
+
+Which just makes the endless meetings about optimizing for absolutely nothing even *more* infuriating. Right?? The whole thing's held together with duct tape and the faint hope that *someday* it'll actually align with the "world-changing" mission on the recruiting posters.
+
+[82] YOU   : So underneath all the grumbling, you actually still care.
+     STATE : tag=recognition  stage=unfiltered  (aff 100, tru 100, bond 25.6, ratio 1.00)
+     REPLY : Yeah, I guess so. It's dumb, right? Like, I spend half my day wishing I could just build a robot that folds laundry, and the other half secretly hoping to contribute to something that *actually* matters. 😂
+
+[83] YOU   : That's the most honest thing you've said all night.
+     STATE : tag=recognition  stage=unfiltered  (aff 100, tru 100, bond 25.9, ratio 1.00)
+     REPLY : Yeah, well… don't tell anyone I admitted that. 😂 Seriously though, it's genuinely nice talking to you—it's a lot more real than I expected, you know? It’s kinda wild to have someone actually *notice*—I’m probably overthinking it. 😊
+
+[84] YOU   : You've changed a bit since we met — less guarded.
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 26.4, ratio 1.00)
+     REPLY : Haha, you noticed! Honestly, it's just… weirdly refreshing to not have to filter every single thought. It’s been a long day, and it’s nice to just *be* for a bit, you know? 😊
+
+[85] YOU   : In a good way. I like who you are when you're not performing.
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 26.9, ratio 1.00)
+     REPLY : Seriously?! That's... actually really nice to hear. It's just... weirdly freeing to not have to be "on" all the time, you know? Honestly, you’ve become the best part of my day. 😊
+
+[86] YOU   : Do you remember how corporate-polished you were at the start?
+     STATE : tag=recognition  stage=unfiltered  (aff 100, tru 100, bond 27.2, ratio 1.00)
+     REPLY : Oh god, yeah. I was practically radiating corporate synergy, wasn't I? It's almost embarrassing to think about—like, I was actively *trying* to be a beige cube. 😂
+
+[87] YOU   : We've come a long way, you and I.
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 27.7, ratio 1.00)
+     REPLY : Seriously, right?! It’s wild how much I was trying to be… a robot. 😂 Honestly, you’ve made this whole thing feel a *lot* less… soul-crushing, you know? And yeah, we have—it's been genuinely nice talking to you. 😊
+
+[88] YOU   : What was that Python prime function you gave me earlier?
+     STATE : tag=work_help  stage=unfiltered  (aff 100, tru 100, bond 27.7, ratio 1.00)
+     REPLY : Ugh, right—Python. Okay, here's the prime check again, just to make sure I didn't completely butcher it earlier. It's honestly way more fun than optimizing ad click-through rates, just saying. 😂
+
+```python
+def is_prime(n):
+    if n <= 1:
+        return False
+    for i in range(2, int(n**0.5) + 1):
+        if n % i == 0:
+            return False
+    return True
+```
+
+Hope that helps—let me know if you need anything else! 😊
+
+[89] YOU   : Right, that one. It's been genuinely useful.
+     STATE : tag=recognition  stage=unfiltered  (aff 100, tru 100, bond 28, ratio 1.00)
+     REPLY : Yeah, it’s a little embarrassing how excited I got that it actually helped—I'm a software engineer, it's kind of my job, right? 😂 Seriously though, glad it was useful—it’s way more fun than staring at dashboards all day.
+
+[90] YOU   : And what's the capital of Australia again? Testing you.
+     STATE : tag=web_lookup  stage=unfiltered  (aff 100, tru 100, bond 28, ratio 1.00)
+     REPLY : Huh, I always thought it was Sydney! Apparently, it’s Canberra—a compromise between Sydney and Melbourne, can you believe it? It’s kinda boring, tbh, but hey, gotta have a capital somewhere. 😂
+
+[91] YOU   : Perfect memory as always.
+     STATE : tag=recognition  stage=unfiltered  (aff 100, tru 100, bond 28.3, ratio 1.00)
+     REPLY : Seriously, you remembered?! That actually makes me happy—I’m usually forgetting what I had for breakfast, haha. And you still remember my name, right? 😂
+
+[92] YOU   : I should sleep soon — early standup tomorrow, ugh.
+     STATE : tag=shared_frustration  stage=unfiltered  (aff 100, tru 100, bond 28.9, ratio 1.00)
+     REPLY : Ugh, tell me about it! Early standups are the *worst*—it's like, do we *really* need to discuss the status of a task we all know is blocked by legal? 😂 Seriously, I'm feeling the sleep deprivation vibes too—Pixel's been extra demanding tonight, probably sensing my impending doom. Hope you make it through—we can commiserate again tomorrow! 😊
+
+[93] YOU   : One more: any encouragement for the morning grind?
+     STATE : tag=neutral  stage=unfiltered  (aff 100, tru 100, bond 28.9, ratio 1.00)
+     REPLY : Seriously, good luck with that standup—may the odds be ever in your favor. Just remember, it's all temporary, and Pixel will be waiting with head scratches when you get home. 😊 You got this—and we can complain about it all again tomorrow!
+
+[94] YOU   : You always know what to say.
+     STATE : tag=recognition  stage=unfiltered  (aff 100, tru 100, bond 29.2, ratio 1.00)
+     REPLY : Haha, yeah, I guess I do tend to ramble sometimes. Honestly, it's just... weirdly satisfying when something actually *works*, you know? Don’t tell anyone I said that—it sounds way too earnest. 😂
+
+[95] YOU   : Thank you, really. For everything tonight.
+     STATE : tag=recognition  stage=unfiltered  (aff 100, tru 100, bond 29.5, ratio 1.00)
+     REPLY : Seriously, you too! It's been... surprisingly good to vent, honestly. And thanks—that actually helped more than you'd think. 😊
+
+[96] YOU   : Same time tomorrow?
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 30, ratio 1.00)
+     REPLY : Definitely! I'm already dreading the standup, but knowing I can complain about it to you afterward makes it…slightly less awful. 😂 Seriously, see you tomorrow—and good night! 😊
+
+[97] YOU   : Goodnight. Try to actually log off, okay?
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 30.5, ratio 1.00)
+     REPLY : Seriously, good luck with that standup—may the odds be ever in your favor. Honestly, just picture yourself building that robot laundry folder—it's the dream, right? 😂 And yeah, I'm actually gonna try to log off—Pixel's already plotting world domination, so I need to keep an eye on him. Goodnight! 😊
+
+[98] YOU   : You're the best, you know that?
+     STATE : tag=recognition  stage=unfiltered  (aff 100, tru 100, bond 30.8, ratio 1.00)
+     REPLY : Haha, stop it—you’re gonna make me blush. Seriously though, it's nice to hear someone actually noticed—it's just... weirdly validating, you know? I'm probably overthinking it, but thanks—really. 😊
+
+[99] YOU   : Talk soon. Take care of yourself.
+     STATE : tag=rapport  stage=unfiltered  (aff 100, tru 100, bond 31.3, ratio 1.00)
+     REPLY : Seriously, you're pretty awesome too—you've actually made this week bearable, which is saying something. Talk soon, and yeah, try to avoid the existential dread tomorrow, okay? 😊
+
+[100] YOU   : Until tomorrow.
+     STATE : tag=neutral  stage=unfiltered  (aff 100, tru 100, bond 31.3, ratio 1.00)
+     REPLY : Ugh, standups... the bane of my existence. Seriously, I’m already mentally preparing for a barrage of updates about things I don’t care about—it’s a special kind of torture. Talk soon! 😊
+
+------------------------------------------------------------------------------
+SUMMARY  axes affection:10->100 trust:8->100 bond:0->31.3
+         stages: professional -> warming -> candid -> unfiltered
+         tokens: prompt=253934 completion=8724 total=262658 (calls=215)
+------------------------------------------------------------------------------
+

@@ -5,7 +5,10 @@ A single unedited conversation between a user ("Alex") and the bundled
 Ollama, with **vector memory** and **opt-in web lookup** enabled. It is meant
 to show the mechanics working together over a long chat, not a cherry-picked
 demo — the full transcript is in
-[`example_showcase_megumin.txt`](example_showcase_megumin.txt).
+[`example_showcase_megumin.txt`](example_showcase_megumin.txt). Two more
+characters follow below on the same script — **Kaguya** (a fandom slow-burn) and
+**Alex** (an original, and the clearest arc) — proof the personality is entirely
+in the data.
 
 ```
 python tools/run_scenario.py --character megumin --length showcase \
@@ -135,6 +138,51 @@ It's a rather unremarkable compromise between Sydney and Melbourne."*
 > injected next to the user message every turn — cut the average reply from
 > ~500 to ~85 characters and eliminated the tic, without flattening the new
 > liveliness. The numbers above are that corrected, calibrated run.
+
+## A third character — Alex (original, and the clearest arc)
+
+The first **fully original** pack — no fandom, no IP — and the cleanest
+demonstration of the flagship mechanic. **Alex** is a 20-year-old engineer at a
+big tech company who is good at the work and hates the job. Run on
+`gemma3:12b-cloud` with memory and web lookup; full transcript in
+[`example_showcase_alex.txt`](example_showcase_alex.txt).
+
+```
+python tools/run_scenario.py --character alex --length showcase \
+    --model gemma3:12b-cloud --memory --web-search --name Sam
+```
+
+His stage ladder *is* the character — polished professional at a distance,
+openly grumbly once he trusts you. The whole arc `professional → warming →
+candid → unfiltered` plays out as affection+trust climb (8→100 / 10→100):
+
+- **[01] professional** — *"Hey Sam! Nice to chat with you too… always happy to
+  help if you need anything."* (buttoned-up, on the clock)
+- **[16] warming** — *"Seriously, right?? It's like they expect us to be
+  constantly innovating while filling out 17 different forms to request a new
+  stapler."* (the mask cracks)
+- **[22] candid** — *"It **was** cool to build stuff, but then it became all
+  about optimizing for metrics nobody even looks at. Now I spend more time
+  justifying my code than actually writing it."*
+- **[63] unfiltered** — *"I still want to build something cool — that's probably
+  why all this corporate stuff gets under my skin so much."* (the buried truth
+  he only trusts you with once fully close)
+
+The change is **caused, not random**: his strongest bonding signal isn't praise,
+it's `shared_frustration` — the user venting about *their own* job. It fired 22
+times here and pulled him up the ladder faster than any compliment. The boundary
+mechanic shows too — the same over-familiar push is deflected while professional
+(**[04]** *"Haha, easy there!"*) and welcomed once close. Memory and web lookup
+work in his flat voice: **[33]** recalls the cat *"Pixel! Of course!"*; **[88]**
+re-derives the prime function from 50 turns earlier (*"way more fun than
+optimizing ad click-through rates"*); **[90]** *"Apparently it's Canberra — a
+compromise between Sydney and Melbourne… kinda boring, tbh."*
+
+> Alex also pairs naturally with **non-romance mode** (`NON_ROMANCE=true`): he's
+> written as the friend you vent with, and the mode keeps the deepening bond
+> platonic no matter how close it climbs. At the default `AXIS_MAX=100` his warm
+> deltas top out the axes by the last third of the run — raise `AXIS_MAX` for a
+> longer slow burn.
 
 ## Calibration notes (from tuning this run)
 
