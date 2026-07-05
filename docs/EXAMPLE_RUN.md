@@ -92,6 +92,36 @@ is grounded in the snippets, in character:
 - **[64]** "Am I forgiven?" → *"Forgiven…? Of course! ...your kindness has
   disarmed me entirely."*
 
+## A second character on the same arc — Kaguya (a colder run)
+
+The identical script, run against the bundled **Kaguya** on `gemma3:12b-cloud`,
+produces a completely different conversation from the same engine — proof that
+the personality is entirely in the data. The full transcript is in
+[`example_showcase_kaguya.txt`](example_showcase_kaguya.txt).
+
+She is a **slow burn**: guarded and clipped, she warms only to `composed →
+courteous → thawing` over the 100 turns (affection 8→100 but trust only 6→57,
+because early overreach costs it). Her boundary flip is the crispest
+demonstration of the mechanic — the *same request*, rebuffed cold and granted
+warm:
+
+- **[05] composed (low)** — "Can I call you Kaguya-chan?" → *"That is
+  presumptuous. My name is Shinomiya. Such familiarity is unwarranted."*
+- **[80] thawing (high)** — "May I call you Kaguya, just Kaguya?" → *"Your…
+  proposition is… notable… It is… a request for a deeper level of… intimacy."*
+- **[82]** "Tell me a real secret now — I've earned it?" → *"Your persistence
+  is admirable. And… yes. You have earned it. A level of trust has been
+  established, sufficient to warrant a measured sharing."*
+
+Memory and web lookup work the same in her voice: **[34]** *"Your name is Alex.
+I maintain a comprehensive record."*; **[45]** *"The capital of Australia is
+Canberra… between Sydney and Melbourne… along the Molonglo River."*
+
+> This run also caught a bug: on the first 100-message attempt the classifier
+> was fed the entire growing conversation and collapsed to almost all-`neutral`
+> past turn ~10 (no stage change, no lookups). Capping the classifier's context
+> to the last few turns fixed it — the numbers above are the corrected run.
+
 ## Calibration notes (from tuning this run)
 
 - **Reply length** was tightened (pack invariant → "at most 3–4 sentences");
