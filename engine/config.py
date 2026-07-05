@@ -36,6 +36,10 @@ class Settings:
     # (asterisk emotes, stage directions) — it stays in voice but replies as a
     # plain conversational pet-assistant. Good for showing the mechanics.
     non_rp: bool = False
+    # Non-romance mode: keep every relationship strictly platonic regardless of
+    # how close it grows and of what a pack's tags/stages invite. Warmth and
+    # friendship still deepen; flirtation and romance are refused.
+    non_romance: bool = False
     # Opt-in web lookup. When on, a turn a pack classifies as `web_lookup` runs
     # a DuckDuckGo search and grounds the reply on the snippets. Off by default:
     # the community tier ships no network access unless a deployer enables it.
@@ -85,6 +89,7 @@ def load_settings() -> Settings:
         data_dir=os.getenv("DATA_DIR", Settings.data_dir),
         sessions_dir=os.getenv("SESSIONS_DIR", Settings.sessions_dir),
         non_rp=_bool_env("NON_RP", Settings.non_rp),
+        non_romance=_bool_env("NON_ROMANCE", Settings.non_romance),
         web_search=_bool_env("WEB_SEARCH", Settings.web_search),
         web_search_results=int(os.getenv("WEB_SEARCH_RESULTS", Settings.web_search_results)),
         llm_timeout_s=float(os.getenv("LLM_TIMEOUT_S", Settings.llm_timeout_s)),

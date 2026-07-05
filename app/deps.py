@@ -60,6 +60,7 @@ def _build_service() -> EngineService:
         llm=_build_llm(settings),
         axis_max=settings.axis_max,
         non_rp=settings.non_rp,
+        non_romance=settings.non_romance,
         web_search=web_search,
         sessions_dir=settings.sessions_dir,
     )

@@ -102,6 +102,30 @@ def test_rp_mode_is_the_default_and_adds_no_such_rule():
     assert "Non-roleplay mode" not in llm.chat_calls[1]["messages"][0]["content"]
 
 
+def test_non_romance_mode_adds_the_platonic_rule_and_tail_hint():
+    llm = FakeLLM()
+    CharacterRuntime(make_pack(), llm, non_romance=True).respond("hi")
+    system = llm.chat_calls[1]["messages"][0]["content"]
+    tail = llm.chat_calls[1]["messages"][-1]["content"]
+    assert "Non-romance mode" in system
+    assert "strictly platonic" in system
+    assert "no flirting or romance" in tail
+
+
+def test_romance_is_allowed_by_default():
+    llm = FakeLLM()
+    CharacterRuntime(make_pack(), llm).respond("hi")
+    assert "Non-romance mode" not in llm.chat_calls[1]["messages"][0]["content"]
+
+
+def test_non_rp_and_non_romance_stack():
+    llm = FakeLLM()
+    CharacterRuntime(make_pack(), llm, non_rp=True, non_romance=True).respond("hi")
+    system = llm.chat_calls[1]["messages"][0]["content"]
+    assert "Non-roleplay mode" in system
+    assert "Non-romance mode" in system
+
+
 def test_dialogue_window_is_passed_through_to_voice():
     llm = FakeLLM()
     window = (DialogueTurn("user", "earlier"), DialogueTurn("assistant", "reply"))

@@ -41,9 +41,18 @@ NON_RP_RULE = (
     "but answer directly, helpfully, and concisely."
 )
 
-# Per-turn reminder placed next to the user message. Small models follow a
+NON_ROMANCE_RULE = (
+    "Non-romance mode: keep the relationship strictly platonic no matter how "
+    "close you grow. Do not flirt, express romantic or sexual interest, or steer "
+    "the conversation toward romance. If the user makes a romantic advance, "
+    "gently and kindly redirect toward friendship without shaming them. Warmth, "
+    "care, and closeness as friends are welcome; romance is not."
+)
+
+# Per-turn reminders placed next to the user message. Small models follow a
 # nearby reminder better than a single rule in the far-away system prefix.
 _NON_RP_TAIL_HINT = "Answer in plain words only — no actions, emotes, or stage directions."
+_NON_ROMANCE_TAIL_HINT = "Keep this platonic — warm as a friend, but no flirting or romance."
 
 
 @dataclass(frozen=True)
@@ -84,12 +93,14 @@ class CharacterRuntime:
         recall_k: int = 3,
         axis_max: float = DEFAULT_AXIS_MAX,
         non_rp: bool = False,
+        non_romance: bool = False,
         web_search: WebSearcher | None = None,
     ) -> None:
         self._pack = pack
         self._llm = llm
         self._axis_max = axis_max
         self._non_rp = non_rp
+        self._non_romance = non_romance
         self._web_search = web_search
         self._state = state or StateKernel.from_pack(pack, axis_max=axis_max)
         self._memory = memory
@@ -155,10 +166,12 @@ class CharacterRuntime:
         return TokenUsage(prompt, completion, prompt + completion)
 
     def _invariants(self) -> str:
-        """Pinned rules: the pack's invariants, plus the non-RP rule when on."""
+        """Pinned rules: the pack's invariants, plus any enabled mode rules."""
         rules = list(self._pack.invariants)
         if self._non_rp:
             rules.append(NON_RP_RULE)
+        if self._non_romance:
+            rules.append(NON_ROMANCE_RULE)
         return "\n".join(rules)
 
     def _web_lookup(self, tag: str, query: str) -> str:
@@ -169,12 +182,14 @@ class CharacterRuntime:
         return _format_web_results(results)
 
     def _steering_block(self, tag: str) -> str:
-        """This turn's tag block, plus the pack's per-turn reminder and, when
-        on, the non-RP reminder — both placed near the user message where a
-        small model heeds them best."""
+        """This turn's tag block, plus the pack's per-turn reminder and any
+        enabled mode reminders — placed near the user message where a small
+        model heeds them best."""
         parts = [self._pack.blocks[tag], self._pack.reply_directive]
         if self._non_rp:
             parts.append(_NON_RP_TAIL_HINT)
+        if self._non_romance:
+            parts.append(_NON_ROMANCE_TAIL_HINT)
         return "\n".join(p for p in parts if p).strip()
 
     def _resolve_stage(self, pre_axes: Axes, post_axes: Axes):

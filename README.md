@@ -69,6 +69,10 @@ All off/local by default; see [.env.example](.env.example).
 - **Non-roleplay mode** (`NON_RP=true`) — the character keeps its voice but
   stops narrating actions (`*smiles*`, stage directions) and answers like a
   plain pet-assistant. Good for coding help and for showing the mechanics.
+- **Non-romance mode** (`NON_ROMANCE=true`) — the relationship stays strictly
+  platonic however close it grows; warmth and friendship still deepen, but
+  flirtation and romance are declined and romantic advances are gently
+  redirected. Independent of `NON_RP` — enable either, both, or neither.
 - **Web lookup** (`WEB_SEARCH=true`) — when a pack declares a `web_lookup` tag
   and the classifier picks it, the engine runs a DuckDuckGo search and grounds
   the reply on the snippets. Off by default (it enables outbound network).
