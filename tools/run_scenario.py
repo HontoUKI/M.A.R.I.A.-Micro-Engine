@@ -84,9 +84,12 @@ def run_one(character: str, length, args) -> None:
     print("seed axes: " + "  ".join(f"{a}={values[a]:g}" for a in _AXES))
     print("=" * 78)
 
+    # A per-character variant (e.g. "showcase-kaguya") wins over the generic key.
+    scenario = SCENARIOS.get(f"{length}-{character}", SCENARIOS[length])
+
     history: list[tuple[str, str]] = []
     stages: list[str] = []
-    for i, template in enumerate(SCENARIOS[length], 1):
+    for i, template in enumerate(scenario, 1):
         user = template.format(name=args.name)
         window = tuple(DialogueTurn(r, c) for r, c in history)
         result = runtime.respond(user, window)
