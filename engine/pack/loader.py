@@ -125,6 +125,13 @@ def _enforce_content_limits(pack: CharacterPack) -> None:
         )
     _scan_injection("identity", pack.identity)
 
+    if len(pack.reply_directive) > MAX_INVARIANT_CHARS:
+        raise PackSecurityError(
+            f"reply_directive is {len(pack.reply_directive)} chars; "
+            f"limit is {MAX_INVARIANT_CHARS}"
+        )
+    _scan_injection("reply_directive", pack.reply_directive)
+
     for tag_id, block in pack.blocks.items():
         if len(block) > MAX_BLOCK_CHARS:
             raise PackSecurityError(

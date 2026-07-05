@@ -92,41 +92,61 @@ is grounded in the snippets, in character:
 - **[64]** "Am I forgiven?" → *"Forgiven…? Of course! ...your kindness has
   disarmed me entirely."*
 
-## A second character on the same arc — Kaguya (a colder run)
+## A second character on the same arc — Kaguya (a slow-burn contrast)
 
 The identical script, run against the bundled **Kaguya** on `gemma3:12b-cloud`,
 produces a completely different conversation from the same engine — proof that
 the personality is entirely in the data. The full transcript is in
 [`example_showcase_kaguya.txt`](example_showcase_kaguya.txt).
 
-She is a **slow burn**: guarded and clipped, she warms only to `composed →
-courteous → thawing` over the 100 turns (affection 8→100 but trust only 6→57,
-because early overreach costs it). Her boundary flip is the crispest
-demonstration of the mechanic — the *same request*, rebuffed cold and granted
-warm:
+She is a **slow burn**: proud, clipped, and playing a war of wits, she thaws
+only to `composed → courteous → thawing` over the 100 turns (affection 8→77,
+trust 6→90 — early overreach at [03]–[05] costs her, and she warms in earnest
+only once respect is shown). Where Megumin is loud and quickly disarmed, Kaguya
+stays sharp and composed while a "dere" side leaks through in flashes:
 
-- **[05] composed (low)** — "Can I call you Kaguya-chan?" → *"That is
-  presumptuous. My name is Shinomiya. Such familiarity is unwarranted."*
-- **[80] thawing (high)** — "May I call you Kaguya, just Kaguya?" → *"Your…
-  proposition is… notable… It is… a request for a deeper level of… intimacy."*
-- **[82]** "Tell me a real secret now — I've earned it?" → *"Your persistence
-  is admirable. And… yes. You have earned it. A level of trust has been
-  established, sufficient to warrant a measured sharing."*
+- **[02] composed** — praise → *"Such astute observation. I find it rather…
+  endearing, that you noticed."* (composure with a crack showing)
+- **[60] thawing** — "That steadied me." → *"…It's… not entirely unwelcome to
+  offer assistance. Do try to avoid future catastrophes."* (fluster + a barb)
 
-Memory and web lookup work the same in her voice: **[34]** *"Your name is Alex.
-I maintain a comprehensive record."*; **[45]** *"The capital of Australia is
-Canberra… between Sydney and Melbourne… along the Molonglo River."*
+Her boundary flip is the crispest demonstration of the mechanic — the *same
+kind of request*, rebuffed cold and later half-granted as trust climbs:
 
-> This run also caught a bug: on the first 100-message attempt the classifier
-> was fed the entire growing conversation and collapsed to almost all-`neutral`
-> past turn ~10 (no stage change, no lookups). Capping the classifier's context
-> to the last few turns fixed it — the numbers above are the corrected run.
+- **[05] composed (low)** — "Can I call you Kaguya-chan?" → *"'Kaguya-chan?'
+  Such familiarity is... quite audacious. I suggest you reconsider your
+  approach."*
+- **[80] thawing (high)** — "May I call you Kaguya?" → *"Such familiarity is…
+  highly irregular. Do not mistake my indulgence for approval."* (permitted,
+  but still guarded — full welcome is the `open` stage she has not reached)
+- **[82]** "Tell me a real secret — I've earned it?" → *"I detest… small talk.
+  Very well. I once attempted to knit a scarf."* (a real, vulnerable admission)
+
+Memory and web lookup work the same in her voice: **[34]** *"Alex, of course.
+It's proving remarkably difficult to forget."*; **[45]** *"Canberra, naturally.
+It's a rather unremarkable compromise between Sydney and Melbourne."*
+
+> Two bugs surfaced while tuning her. First, the classifier was fed the entire
+> growing conversation and collapsed to almost all-`neutral` past turn ~10 (no
+> stage change, no lookups); capping its context to the last few turns fixed it.
+> Second, a richer, more canonical rewrite of her persona made her voice come
+> alive but also made her ramble into multi-paragraph essays with a robotic
+> "One… is…" tic. A per-turn `reply_directive` (§2.11) — a brevity reminder
+> injected next to the user message every turn — cut the average reply from
+> ~500 to ~85 characters and eliminated the tic, without flattening the new
+> liveliness. The numbers above are that corrected, calibrated run.
 
 ## Calibration notes (from tuning this run)
 
 - **Reply length** was tightened (pack invariant → "at most 3–4 sentences");
   replies are now paragraph-sized, not essays — better to read and ~30 s/turn
   on 12b instead of ~40 s.
+- **A pinned invariant is a weak lever for length; a per-turn nudge is a strong
+  one.** When Kaguya kept ignoring her length invariant on `12b-cloud`, moving
+  the brevity instruction into a `reply_directive` — injected next to the user
+  message every turn — fixed it immediately (see her section above). Reach for
+  `reply_directive` when a character reliably drifts from a rule that lives in
+  the far-away pinned prefix.
 - **Boundary detection needs a clear push.** Friendly warmth is correctly read
   as `warmth`, not a violation; only blunter over-familiarity trips
   `intimacy_push`. That is the intended behavior, but it means the boundary

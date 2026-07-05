@@ -105,6 +105,10 @@ class CharacterPack(BaseModel):
     spec_version: int
     meta: PackMeta
     identity: str = Field(min_length=1)
+    # Optional short reminder injected next to the user message every turn.
+    # A nearby nudge (e.g. "be brief") is followed far better than a rule in
+    # the far-away system prefix; leave empty when the invariants suffice.
+    reply_directive: str = ""
     tags: list[MomentTag] = Field(min_length=MIN_TAGS, max_length=MAX_TAGS)
     deltas: dict[str, DeltaVector]
     blocks: dict[str, str]

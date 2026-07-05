@@ -184,13 +184,24 @@ decay:
 Extra rules pinned into the prefix alongside `identity`. Length-limited and
 injection-scanned like blocks.
 
-### 2.11 `actions` (optional, list of strings)
+### 2.11 `reply_directive` (optional, string)
+
+A short reminder injected into the **dynamic tail**, right next to the user
+message, on **every** turn (after the stage and tag blocks). Because a small
+model heeds a nearby nudge far better than a rule buried in the far-away pinned
+prefix, this is the place for a firm per-turn instruction the character keeps
+drifting away from — most often **brevity** ("keep it to 2–3 sentences") or a
+persistent stylistic tic to suppress. Leave it empty when the `invariants`
+already hold. Length-limited (≤ 1000 chars) and injection-scanned like an
+invariant.
+
+### 2.12 `actions` (optional, list of strings)
 
 Cosmetic action whitelist (e.g. `emote`, `change_scene`). Advisory metadata for
 clients; the engine performs no file, command, or network action on their
 behalf. There is deliberately **no** safe-chain in this tier.
 
-### 2.12 `stages` (optional, map) — the headline feature
+### 2.13 `stages` (optional, map) — the headline feature
 
 Relationship stages give a character a **slow, explainable arc**. The engine
 derives the current stage from the **affection+trust ratio** and injects the
@@ -277,11 +288,13 @@ enforces hard limits and rejects anything outside them:
 | `identity` length         | ≤ 4000 chars |
 | single block length       | ≤ 2000 chars |
 | single invariant length   | ≤ 1000 chars |
+| `reply_directive` length  | ≤ 1000 chars |
 | number of tags            | 2–32 |
 | number of sprites         | ≤ 64 |
 | sprite file size          | ≤ 4 MiB each |
 
-Text in `identity`, `blocks`, and `invariants` is scanned for prompt-injection
+Text in `identity`, `blocks`, `invariants`, `stages`, and `reply_directive`
+is scanned for prompt-injection
 / system-override patterns (e.g. "ignore previous instructions", "you are now",
 "system prompt:", role-hijack markers). A match rejects the pack. This is
 defense-in-depth, not a substitute for human review of gallery submissions.
@@ -297,8 +310,8 @@ defense-in-depth, not a substitute for human review of gallery submissions.
    back to `meta.fallback_tag`.
 3. The engine applies `deltas[tag]` to the axes (clamped to bounds; bond moves
    slowly), then resolves the current relationship **stage** from the new
-   axes (§2.12). Both the tag's block and the active stage's block are injected
-   into the dynamic tail.
+   axes (§2.13). Both the tag's block and the active stage's block are injected
+   into the dynamic tail, followed by `reply_directive` (§2.11) when set.
 4. A second LLM call voices the reply. The response reports `tag`, `stage`,
    `stage_changed`, `sprite`, and the axis values.
 5. On idle, `decay` pulls the axes toward baseline (which can lower the stage

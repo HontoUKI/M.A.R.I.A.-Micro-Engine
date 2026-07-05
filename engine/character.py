@@ -169,11 +169,13 @@ class CharacterRuntime:
         return _format_web_results(results)
 
     def _steering_block(self, tag: str) -> str:
-        """This turn's tag block, plus a per-turn non-RP reminder when on."""
-        block = self._pack.blocks[tag]
+        """This turn's tag block, plus the pack's per-turn reminder and, when
+        on, the non-RP reminder — both placed near the user message where a
+        small model heeds them best."""
+        parts = [self._pack.blocks[tag], self._pack.reply_directive]
         if self._non_rp:
-            block = (block + "\n" + _NON_RP_TAIL_HINT).strip()
-        return block
+            parts.append(_NON_RP_TAIL_HINT)
+        return "\n".join(p for p in parts if p).strip()
 
     def _resolve_stage(self, pre_axes: Axes, post_axes: Axes):
         """Active stage after the turn, and whether the turn crossed into it."""

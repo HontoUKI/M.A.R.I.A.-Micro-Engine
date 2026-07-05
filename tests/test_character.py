@@ -63,6 +63,23 @@ def test_voice_prompt_carries_steering_block_in_the_tail():
     assert "you're useless" in tail
 
 
+def test_reply_directive_is_injected_into_the_tail_every_turn():
+    pack = make_pack(reply_directive="Keep it to one short sentence.")
+    llm = FakeLLM(tag="neutral")
+    CharacterRuntime(pack, llm).respond("hi")
+    tail = llm.chat_calls[1]["messages"][-1]["content"]
+    assert "Keep it to one short sentence." in tail
+
+
+def test_no_reply_directive_adds_nothing_by_default():
+    llm = FakeLLM(tag="neutral")
+    CharacterRuntime(make_pack(), llm).respond("hi")
+    # The default empty directive must not leave a dangling blank line in the
+    # steering block; the tail still renders cleanly.
+    tail = llm.chat_calls[1]["messages"][-1]["content"]
+    assert "\n\n\n" not in tail
+
+
 def test_identity_is_pinned_in_system_prefix():
     llm = FakeLLM()
     CharacterRuntime(make_pack(), llm).respond("hi")
