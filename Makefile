@@ -1,4 +1,4 @@
-.PHONY: help install model check lint test run serve
+.PHONY: help install model check lint test run serve scenario
 
 help:  ## Show the available commands
 	@grep -E '^[a-z.]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
@@ -17,6 +17,16 @@ run:  ## Run the dev server (autoreload) with the web shell on :8000
 
 serve:  ## Run the server without autoreload
 	uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# ---------------------------------------------------------------- scenarios
+
+# Drive a scripted conversation through a character on a live Ollama model.
+# Pass options via ARGS, e.g.:
+#   make scenario ARGS="--character kaguya --length showcase --memory --web-search"
+#   make scenario ARGS="--character megumin --length boundary --affection 8 --trust 6"
+# Lengths: 10 | 20 | 30 | coding | boundary | showcase.
+scenario:  ## Run a scenario against Ollama (options via ARGS=...)
+	python tools/run_scenario.py $(ARGS)
 
 # ---------------------------------------------------------------- checks
 

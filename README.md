@@ -1,5 +1,10 @@
 # M.A.R.I.A. Micro-Engine
 
+[![CI](https://github.com/HontoUKI/M.A.R.I.A.-Micro-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/HontoUKI/M.A.R.I.A.-Micro-Engine/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
+[![Backends: Ollama · OpenAI](https://img.shields.io/badge/backends-Ollama%20%C2%B7%20OpenAI-orange.svg)](.env.example)
+
 A lightweight, character-pack driven chat engine with an OpenAI-compatible API.
 Give it a character as **data** and it plays that character — reacting to each
 message and, over a whole conversation, **visibly changing** as the
@@ -88,6 +93,20 @@ perceives and remembers very differently, and is not open source. If the tip
 interests you, the rest lives at the hub:
 
 **→ [The M.A.R.I.A. hub](https://github.com/HontoUKI/M.A.R.I.A.)**
+
+## Development
+
+```bash
+make check      # ruff + pytest (the gate before every commit)
+make help       # list all targets
+
+# Drive a scripted conversation through a character on a live Ollama model:
+make scenario ARGS="--character kaguya --length showcase --memory --web-search"
+```
+
+Scenario lengths: `10 | 20 | 30 | coding | boundary | showcase`; seed a specific
+relationship level with `--affection/--trust/--bond`. See
+[docs/EXAMPLE_RUN.md](docs/EXAMPLE_RUN.md) for an annotated run.
 
 ## Contributing
 
