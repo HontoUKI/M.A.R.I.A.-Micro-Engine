@@ -108,6 +108,75 @@ def test_reaction_can_target_another_actor():
     assert rt.matrix.feeling("aria", USER_ID).affection == 0
 
 
+# ---------------------------------------------------------------- witness pass
+
+
+class RoleAwareLLM:
+    """Answers moment classification per acting actor, so the speaker and the
+    witness can react differently in the same turn."""
+
+    def __init__(self, *, speaker, by_actor, reply="ok"):
+        self.speaker = speaker
+        self.by_actor = by_actor  # actor id -> (tag, target)
+        self.reply = reply
+
+    def chat(self, messages, *, model=None, fmt=None, options=None):
+        if fmt is None:
+            return self.reply
+        props = fmt.get("properties", {})
+        if "speaker" in props:
+            return json.dumps({"speaker": self.speaker})
+        # Identify whose POV this classification is from via the system line.
+        system = messages[0]["content"]
+        for actor, (tag, target) in self.by_actor.items():
+            if self._display(actor) in system.split("\n")[0]:
+                return json.dumps({"tag": tag, "target": target})
+        return json.dumps({"tag": "neutral", "target": USER_ID})
+
+    @staticmethod
+    def _display(actor):
+        return {"aria": "Aria", "bram": "Bram"}[actor]
+
+    def embed(self, text, *, model=None):  # pragma: no cover
+        return [0.0]
+
+
+def test_speaker_and_witness_react_independently_in_one_turn():
+    # Aria (speaker) warms to the user; Bram (witness) records his own reaction.
+    llm = RoleAwareLLM(
+        speaker="aria",
+        by_actor={"aria": ("warmth", USER_ID), "bram": ("teasing_not_a_tag", USER_ID)},
+    )
+    rt = _runtime(llm)
+    result = rt.advance("Aria, you're wonderful")
+    assert result.speaker == "aria"
+    assert rt.matrix.feeling("aria", USER_ID).affection == 5  # first-hand, full
+    # Bram's unknown tag falls back to neutral (no move) but he is still recorded
+    # as having witnessed the turn.
+    assert [w.actor for w in result.witnessed] == ["bram"]
+
+
+def test_witness_positive_reaction_is_half_of_first_hand():
+    llm = RoleAwareLLM(
+        speaker="aria",
+        by_actor={"aria": ("neutral", USER_ID), "bram": ("warmth", "aria")},
+    )
+    rt = _runtime(llm)
+    result = rt.advance("hello you two")
+    # Bram witnessed and warmed toward Aria at half strength: +5 -> +2.5.
+    assert rt.matrix.feeling("bram", "aria").affection == 2.5
+    assert rt.matrix.feeling("bram", "aria").trust == 1.5  # +3 -> 1.5
+    w = result.witnessed[0]
+    assert (w.actor, w.tag, w.target) == ("bram", "warmth", "aria")
+
+
+def test_no_witness_reactions_in_a_solo_cast():
+    scene = _two_actor_scene(cast=["aria"])
+    llm = SceneLLM(speaker="aria", reply="alone here")
+    rt = SceneRuntime(scene, _packs(), llm)
+    assert rt.advance("hi").witnessed == ()
+
+
 # ---------------------------------------------------------------- transcript
 
 

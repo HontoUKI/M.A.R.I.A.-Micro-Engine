@@ -16,7 +16,7 @@ import json
 from dataclasses import dataclass, field
 
 from engine.llm import LLMError, OllamaClient
-from engine.pack.models import CharacterPack
+from engine.pack.models import CharacterPack, DeltaVector
 from engine.prompt_manager import DialogueTurn, PromptInputs, PromptManager
 from engine.scene.director import SpeakerSelector, next_round_robin
 from engine.scene.matrix import RelationshipMatrix
@@ -37,6 +37,17 @@ class SceneLine:
 
 
 @dataclass(frozen=True)
+class WitnessReaction:
+    """How a bystander's feelings shifted from watching the turn (no spoken
+    line — witnessing only moves state)."""
+
+    actor: str
+    tag: str
+    target: str
+    feeling: Axes
+
+
+@dataclass(frozen=True)
 class SceneTurnResult:
     """The outcome of one scene turn."""
 
@@ -45,6 +56,7 @@ class SceneTurnResult:
     tag: str
     target: str
     feeling: Axes  # the speaker's feeling toward the target after the turn
+    witnessed: tuple[WitnessReaction, ...] = ()
 
 
 @dataclass
@@ -59,6 +71,8 @@ class SceneRuntime:
     selector: SpeakerSelector = None  # type: ignore[assignment]
     axis_max: float = DEFAULT_AXIS_MAX
     max_retries: int = 1
+    # Witnessing an exchange moves a bystander's feelings less than being in it.
+    witness_scale: float = 0.5
     transcript: list[SceneLine] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -112,13 +126,45 @@ class SceneRuntime:
         self.transcript.append(SceneLine(actor, reply))
         self._last_speaker = actor
 
+        witnessed = self._witness_pass(actor)
+
         return SceneTurnResult(
             speaker=actor,
             reply=reply,
             tag=tag_id,
             target=target,
             feeling=self.matrix.feeling(actor, target),
+            witnessed=witnessed,
         )
+
+    # -------------------------------------------------------------- witness
+
+    def _witness_pass(self, speaker: str) -> tuple[WitnessReaction, ...]:
+        """Every bystander reacts to what they just saw — their edge toward the
+        participant the moment is about moves, scaled down (watching lands softer
+        than taking part). Bystanders don't speak; witnessing only moves state.
+        """
+        reactions: list[WitnessReaction] = []
+        for actor in self.scene.cast:
+            if actor == speaker:
+                continue
+            scene_ratio = relationship_ratio(
+                self.matrix.feeling(actor, USER_ID), self.axis_max
+            )
+            targets = [p for p in self._participants() if p != actor]
+            available = self._tagsets[actor].available(scene_ratio)
+            tag_id, target = self._classify_moment(actor, available, targets)
+            tag = self._tagsets[actor].get(tag_id)
+            self.matrix.apply(actor, target, _scaled(tag.delta, self.witness_scale))
+            reactions.append(
+                WitnessReaction(
+                    actor=actor,
+                    tag=tag_id,
+                    target=target,
+                    feeling=self.matrix.feeling(actor, target),
+                )
+            )
+        return tuple(reactions)
 
     # -------------------------------------------------------------- speaker
 
@@ -262,3 +308,13 @@ def _parse_moment(raw: str) -> tuple[str, str] | None:
     if isinstance(tag, str) and isinstance(target, str):
         return tag, target
     return None
+
+
+def _scaled(delta: DeltaVector, scale: float) -> DeltaVector:
+    """A delta scaled by `scale`. Scaling preserves the bond<=affection/trust
+    invariant, so the result is always a valid delta."""
+    return DeltaVector(
+        affection=delta.affection * scale,
+        trust=delta.trust * scale,
+        bond=delta.bond * scale,
+    )
