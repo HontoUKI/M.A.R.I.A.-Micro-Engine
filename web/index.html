@@ -37,6 +37,19 @@
       </div>
 
       <div class="controls">
+        <label for="scene">Scene (group)</label>
+        <select id="scene">
+          <option value="">— solo chat —</option>
+        </select>
+        <button id="scene-reset" type="button" class="ghost" hidden>Reset scene</button>
+      </div>
+
+      <div class="matrix" id="matrix" hidden>
+        <div class="matrix-title">Who feels what</div>
+        <div class="matrix-body" id="matrix-body"></div>
+      </div>
+
+      <div class="controls">
         <label for="history">History</label>
         <select id="history"></select>
         <div class="btn-row">

@@ -16,6 +16,10 @@ const els = {
   resetRel: document.getElementById("reset-rel"),
   language: document.getElementById("language"),
   userGender: document.getElementById("user-gender"),
+  scene: document.getElementById("scene"),
+  sceneReset: document.getElementById("scene-reset"),
+  matrix: document.getElementById("matrix"),
+  matrixBody: document.getElementById("matrix-body"),
   name: document.getElementById("name"),
   stage: document.getElementById("stage"),
   face: document.getElementById("face"),
@@ -34,6 +38,8 @@ const state = {
   sessionId: loadSessionId(),
   viewing: null, // null = live chat; otherwise a "YYYY-MM-DD" being reviewed
   busy: false,
+  sceneMode: false, // false = solo character chat; true = group scene
+  scene: "", // active scene id when in scene mode
 };
 
 function loadSessionId() {
@@ -178,7 +184,16 @@ function startConversation() {
 // ---------------------------------------------------------------- chat
 
 async function send(text) {
-  if (state.busy || !model() || state.viewing !== null) return;
+  if (state.busy || state.viewing !== null) return;
+  if (state.sceneMode) {
+    state.busy = true;
+    els.send.disabled = true;
+    await sceneSend(text);
+    state.busy = false;
+    els.send.disabled = false;
+    return;
+  }
+  if (!model()) return;
   state.busy = true;
   els.send.disabled = true;
 
@@ -246,6 +261,118 @@ async function resetRelationship() {
   goLive();
 }
 
+// ---------------------------------------------------------------- scenes
+
+function titleCase(id) {
+  return id.replace(/[_-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+async function loadScenes() {
+  try {
+    const data = await fetch("/scenes").then((r) => r.json());
+    for (const s of data.data || []) {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${s.display_name} (${s.cast.length})`;
+      els.scene.appendChild(opt);
+    }
+  } catch {
+    /* no scenes available */
+  }
+}
+
+async function enterScene(id) {
+  state.sceneMode = true;
+  state.scene = id;
+  state.viewing = null;
+  els.model.disabled = true;
+  els.history.disabled = true;
+  els.sceneReset.hidden = false;
+  els.matrix.hidden = false;
+  els.name.textContent = titleCase(id);
+  els.stage.textContent = "group scene";
+  els.log.innerHTML = "";
+  setComposerEnabled(true);
+
+  const lines = (await fetch(`/scenes/${id}/transcript?user=${state.sessionId}`)
+    .then((r) => r.json())
+    .catch(() => ({ lines: [] }))).lines || [];
+  for (const ln of lines) addSceneLine(ln.speaker, ln.content);
+  await refreshMatrix();
+}
+
+function leaveScene() {
+  state.sceneMode = false;
+  state.scene = "";
+  els.model.disabled = false;
+  els.history.disabled = false;
+  els.sceneReset.hidden = true;
+  els.matrix.hidden = true;
+  els.scene.value = "";
+  startConversation();
+}
+
+function addSceneLine(speaker, text) {
+  if (speaker === "user") return addBubble("user", text);
+  const div = addBubble("assistant", "");
+  const who = document.createElement("span");
+  who.className = "speaker";
+  who.textContent = titleCase(speaker) + ": ";
+  div.appendChild(who);
+  div.appendChild(document.createTextNode(text));
+  return div;
+}
+
+async function sceneSend(text) {
+  addSceneLine("user", text);
+  const pending = addBubble("system", "…");
+  try {
+    const res = await fetch(`/scenes/${state.scene}/advance`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: state.sessionId, message: text }),
+    });
+    const data = await res.json();
+    pending.remove();
+    if (!res.ok) {
+      addBubble("error", (data.error && data.error.message) || `Error ${res.status}`);
+      return;
+    }
+    addSceneLine(data.speaker, data.reply);
+    const moved = (data.witnessed || []).filter(
+      (w) => w.tag && w.tag !== "neutral"
+    );
+    if (moved.length) {
+      const note = moved
+        .map((w) => `${titleCase(w.actor)} noticed (→ ${titleCase(w.target)})`)
+        .join(" · ");
+      addBubble("system", note);
+    }
+    await refreshMatrix();
+  } catch {
+    pending.remove();
+    addBubble("error", "Could not reach the server.");
+  }
+}
+
+async function refreshMatrix() {
+  const edges = (await fetch(`/scenes/${state.scene}/matrix?user=${state.sessionId}`)
+    .then((r) => r.json())
+    .catch(() => ({ edges: {} }))).edges || {};
+  els.matrixBody.innerHTML = "";
+  for (const [edge, axes] of Object.entries(edges)) {
+    const [from, to] = edge.split("->");
+    const aff = Math.round(axes.affection || 0);
+    const tru = Math.round(axes.trust || 0);
+    const row = document.createElement("div");
+    row.className = "matrix-row";
+    row.innerHTML =
+      `<span class="edge">${titleCase(from)} → ${titleCase(to)}</span>` +
+      `<span class="edge-vals">♥${aff} · ⚖${tru}</span>`;
+    els.matrixBody.appendChild(row);
+  }
+}
+
 // ---------------------------------------------------------------- wiring
 
 els.form.addEventListener("submit", (e) => {
@@ -270,6 +397,17 @@ els.clearDay.addEventListener("click", clearSelectedDay);
 els.clearAll.addEventListener("click", clearAllHistory);
 els.resetRel.addEventListener("click", resetRelationship);
 
+els.scene.addEventListener("change", () => {
+  if (els.scene.value) enterScene(els.scene.value);
+  else leaveScene();
+});
+els.sceneReset.addEventListener("click", async () => {
+  if (!state.sceneMode) return;
+  await fetch(`/scenes/${state.scene}/reset?user=${state.sessionId}`, { method: "POST" });
+  els.log.innerHTML = "";
+  await refreshMatrix();
+});
+
 // Reply language and address gender are per-browser preferences sent with every
 // turn; persist them so they survive a reload.
 function bindPreference(el, key) {
@@ -289,5 +427,6 @@ bindPreference(els.userGender, "micro_engine_user_gender");
     els.meta.textContent = "Server unreachable.";
   }
   await loadModels();
+  await loadScenes();
   startConversation();
 })();
