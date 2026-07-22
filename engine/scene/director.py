@@ -9,11 +9,11 @@ no model — the caller simply names the speaker.
 """
 from __future__ import annotations
 
-import json
 from collections.abc import Sequence
 from typing import Any
 
 from engine.llm import LLMError, OllamaClient
+from engine.textjson import loads_lenient
 
 
 class SpeakerSelector:
@@ -82,10 +82,7 @@ def _speaker_schema(actors: list[str]) -> dict[str, Any]:
 
 
 def _parse_speaker(raw: str) -> str | None:
-    try:
-        data = json.loads(raw)
-    except (json.JSONDecodeError, TypeError):
-        return None
+    data = loads_lenient(raw)
     if isinstance(data, dict) and isinstance(data.get("speaker"), str):
         return data["speaker"]
     return None

@@ -108,6 +108,33 @@ def test_reaction_can_target_another_actor():
     assert rt.matrix.feeling("aria", USER_ID).affection == 0
 
 
+# ---------------------------------------------------------------- classifier prompt
+
+
+class CapturingLLM(SceneLLM):
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.moment_calls = []
+
+    def chat(self, messages, *, model=None, fmt=None, options=None):
+        if fmt is not None and "tag" in fmt.get("properties", {}):
+            self.moment_calls.append(messages)
+        return super().chat(messages, model=model, fmt=fmt, options=options)
+
+
+def test_moment_prompt_ends_with_the_latest_line_and_discourages_neutral():
+    llm = CapturingLLM(speaker="aria", tag="warmth", target=USER_ID)
+    rt = _runtime(llm)
+    rt.advance("you are wonderful, Aria")
+    msgs = llm.moment_calls[0]  # the speaker's classify (before the witness pass)
+    system = msgs[0]["content"]
+    # Objective framing + explicit anti-neutral nudge.
+    assert "Latest line" in msgs[-1]["content"]
+    assert "you are wonderful, Aria" in msgs[-1]["content"]
+    assert "neutral" in system.lower()
+    assert msgs[-1]["role"] == "user"
+
+
 # ---------------------------------------------------------------- witness pass
 
 

@@ -1,0 +1,22 @@
+{
+  "megumin->user": {
+    "affection": 0.0,
+    "trust": 0.0,
+    "bond": 0.0
+  },
+  "megumin->kaguya": {
+    "affection": 28.0,
+    "trust": 18.0,
+    "bond": 4.0
+  },
+  "kaguya->megumin": {
+    "affection": 0.0,
+    "trust": 0.0,
+    "bond": 0.0
+  },
+  "kaguya->user": {
+    "affection": 0.0,
+    "trust": 0.0,
+    "bond": 0.0
+  }
+}

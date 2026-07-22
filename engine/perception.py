@@ -8,11 +8,11 @@ to the pack's declared `fallback_tag` — never crashes a turn.
 """
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from engine.llm import LLMError, OllamaClient
 from engine.prompt_manager import DialogueTurn
+from engine.textjson import loads_lenient
 
 # The classifier only needs recent context to read the current moment. Feeding
 # it the whole conversation makes the prompt balloon on long chats and degrades
@@ -96,10 +96,7 @@ def _tag_schema(tags) -> dict[str, Any]:
 
 
 def _parse_tag(raw: str) -> str | None:
-    try:
-        data = json.loads(raw)
-    except (json.JSONDecodeError, TypeError):
-        return None
+    data = loads_lenient(raw)
     if isinstance(data, dict) and isinstance(data.get("tag"), str):
         return data["tag"]
     return None

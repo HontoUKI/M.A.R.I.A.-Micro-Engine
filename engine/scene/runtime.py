@@ -12,7 +12,6 @@ this stage moves only the speaking actor's own edge.
 """
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 
 from engine.llm import LLMError, OllamaClient
@@ -23,6 +22,7 @@ from engine.scene.matrix import RelationshipMatrix
 from engine.scene.models import USER_ID, ScenePack
 from engine.scene.tags import ActorTagset, SceneTag
 from engine.state import DEFAULT_AXIS_MAX, Axes, relationship_ratio, resolve_stage
+from engine.textjson import loads_lenient
 
 # How the user shows up in the cast presence line and dialogue window.
 _USER_LABEL = "User"
@@ -215,17 +215,29 @@ class SceneRuntime:
     def _moment_messages(
         self, actor: str, available: list[SceneTag], targets: list[str]
     ) -> list[dict[str, str]]:
+        display = self._display(actor)
         lines = [
-            f"You are a classifier reading a scene from {self._display(actor)}'s "
-            "point of view. Choose the single tag that best describes the latest "
-            "moment, and the participant the reaction is about (target).",
+            f"You classify moments in a group scene, for the character {display}.",
+            "Read the conversation, then classify the LATEST line only: pick the "
+            "one tag that best captures what that line expresses, and the "
+            "participant it is directed at or about (the target).",
+            "Judge what the line itself conveys, NOT how composed or guarded "
+            f"{display} is. A warm or hostile line is warm or hostile even if "
+            f"{display} would answer it coolly. Choose 'neutral' ONLY when no "
+            "other tag genuinely fits — prefer a specific tag whenever one does.",
             'Respond only as JSON of the form {"tag": "<id>", "target": "<id>"}.',
             "Tags:",
         ]
         lines.extend(f"- {t.id}: {t.description}" for t in available)
-        lines.append("Targets: " + ", ".join(self._display(p) + f" ({p})" for p in targets))
+        lines.append(
+            "Targets (who the line is directed at or about): "
+            + ", ".join(f"{self._display(p)}={p}" for p in targets)
+        )
         messages: list[dict[str, str]] = [{"role": "system", "content": "\n".join(lines)}]
-        messages.extend(self._window_for(actor, drop_last=False))
+        # Prior lines as context, then the latest line as a clean final message so
+        # the model classifies IT, not the whole history.
+        messages.extend(self._window_for(actor, drop_last=True))
+        messages.append({"role": "user", "content": "Latest line — " + self._trigger_line(actor)})
         return messages
 
     # -------------------------------------------------------------- voicing
@@ -298,10 +310,7 @@ class SceneRuntime:
 
 
 def _parse_moment(raw: str) -> tuple[str, str] | None:
-    try:
-        data = json.loads(raw)
-    except (json.JSONDecodeError, TypeError):
-        return None
+    data = loads_lenient(raw)
     if not isinstance(data, dict):
         return None
     tag, target = data.get("tag"), data.get("target")
