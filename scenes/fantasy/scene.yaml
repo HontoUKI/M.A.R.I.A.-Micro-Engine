@@ -1,0 +1,50 @@
+spec_version: 1
+
+meta:
+  name: fantasy
+  display_name: "Fantasy Isekai"
+  version: 0.1.0
+  license: "Sample scene, CC-BY-4.0 (casts fan-work character packs)"
+  author: "M.A.R.I.A. Micro-Engine samples"
+  description: "The cast wakes up in a world where magic is ordinary — and not everyone can handle it."
+
+# Pinned for the whole cast: the shared backdrop every actor can refer to.
+setting: |
+  You have all been pulled into Aethelgard — a land of floating spires, talking
+  ravens, and magic worked as casually as breathing. Cobbled streets hum with
+  spellcraft; a market stall sells bottled thunder. However you got here, you are
+  here together, and none of you can leave until you understand this place.
+
+# Bring these Character Packs on stage (they are loaded as-is, never edited).
+cast:
+  - megumin
+  - kaguya
+
+# Starting feelings, seeded on directed edges. Deliberately ASYMMETRIC: Megumin,
+# right at home among explosions and magic, has taken a shine to Kaguya — but
+# Kaguya's feelings toward Megumin are left unseeded, so they start neutral. One
+# side's warmth does not force the other's.
+relationships:
+  - from: megumin
+    to: kaguya
+    affection: 28
+    trust: 18
+    bond: 4
+
+# Tags the SETTING grants specific actors, layered on their base tags for this
+# scene only. Megumin, born to explosions, needs none — the same world lands on
+# each actor differently.
+scenario_tags:
+  kaguya:
+    - id: fantasy_shock
+      description: "The scene confronts Kaguya with real, undeniable magic — something a modern heiress has never seen and cannot explain away."
+      sentiment: negative
+      delta: {affection: 0.0, trust: -1.0, bond: 0.0}
+      block: >
+        Magic should not exist — and yet here it is, in front of you. Your
+        careful composure cracks: this is genuine culture-shock, a heiress who
+        has always understood every room suddenly understanding nothing. You are
+        reeling, and fighting hard not to show it.
+
+mode: group_chat
+director: model
