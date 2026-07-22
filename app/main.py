@@ -18,9 +18,20 @@ from app.contracts import (
     MicroEngineExtension,
     ModelCard,
     ModelList,
+    SceneAdvanceRequest,
+    SceneCard,
+    SceneList,
+    SceneTurnOut,
+    WitnessOut,
 )
 from app.deps import get_service
-from app.service import EmptyConversationError, EngineService, UnknownModelError
+from app.service import (
+    EmptyConversationError,
+    EngineService,
+    SceneUnavailableError,
+    UnknownModelError,
+    UnknownSceneError,
+)
 from engine import __version__
 from engine.llm import LLMError
 
@@ -178,6 +189,89 @@ def reset_session(model: str, service: ServiceDep, user: str = "default") -> JSO
     if (err := _known_model_or_404(service, model)) is not None:
         return err
     service.reset_relationship(model, user)
+    return JSONResponse(content={"ok": True})
+
+
+# ------------------------------------------------------------------ scenes (v0.2)
+# Multi-character scenes: a cast, a relationship matrix, group chat. Not part of
+# the OpenAI-compatible surface.
+
+
+def _known_scene_or_404(service: EngineService, scene: str) -> JSONResponse | None:
+    if service.has_scene(scene):
+        return None
+    return _openai_error(
+        404, "scene_not_found", f"No scene named {scene!r}.", "invalid_request_error",
+        param="scene",
+    )
+
+
+@app.get("/scenes")
+def list_scenes(service: ServiceDep) -> SceneList:
+    """Loaded scenes: id, display name, cast, and mode."""
+    return SceneList(data=[SceneCard(**card) for card in service.scene_cards()])
+
+
+@app.post("/scenes/{scene}/advance")
+def advance_scene(
+    scene: str, request: SceneAdvanceRequest, service: ServiceDep
+) -> JSONResponse:
+    """Advance a scene by one turn and return who spoke, their line, and the
+    feelings that moved (theirs and any witnesses')."""
+    if (err := _known_scene_or_404(service, scene)) is not None:
+        return err
+    session_key = request.user or "default"
+    try:
+        result = service.advance_scene(
+            scene, session_key, message=request.message, speaker=request.speaker
+        )
+    except UnknownSceneError:
+        return _known_scene_or_404(service, scene) or _openai_error(
+            404, "scene_not_found", f"No scene named {scene!r}.", "invalid_request_error"
+        )
+    except SceneUnavailableError as exc:
+        return _openai_error(409, "scene_unavailable", str(exc), "invalid_request_error")
+    except ValueError as exc:  # e.g. an explicit speaker not in the cast
+        return _openai_error(400, "bad_speaker", str(exc), "invalid_request_error")
+    except LLMError:
+        return _openai_error(503, "llm_unavailable", "The model backend failed.", "api_error")
+
+    out = SceneTurnOut(
+        speaker=result.speaker,
+        reply=result.reply,
+        tag=result.tag,
+        target=result.target,
+        feeling=result.feeling.as_dict(),
+        witnessed=[
+            WitnessOut(actor=w.actor, tag=w.tag, target=w.target, feeling=w.feeling.as_dict())
+            for w in result.witnessed
+        ],
+    )
+    return JSONResponse(content=out.model_dump())
+
+
+@app.get("/scenes/{scene}/transcript")
+def scene_transcript(scene: str, service: ServiceDep, user: str = "default") -> JSONResponse:
+    """The scene's shared transcript (speaker + line)."""
+    if (err := _known_scene_or_404(service, scene)) is not None:
+        return err
+    return JSONResponse(content={"lines": service.scene_transcript(scene, user)})
+
+
+@app.get("/scenes/{scene}/matrix")
+def scene_matrix(scene: str, service: ServiceDep, user: str = "default") -> JSONResponse:
+    """The current relationship matrix (directed edges → axis values)."""
+    if (err := _known_scene_or_404(service, scene)) is not None:
+        return err
+    return JSONResponse(content={"edges": service.scene_matrix(scene, user)})
+
+
+@app.post("/scenes/{scene}/reset")
+def reset_scene(scene: str, service: ServiceDep, user: str = "default") -> JSONResponse:
+    """Forget the scene: reset the matrix to its seeds and clear the transcript."""
+    if (err := _known_scene_or_404(service, scene)) is not None:
+        return err
+    service.reset_scene(scene, user)
     return JSONResponse(content={"ok": True})
 
 

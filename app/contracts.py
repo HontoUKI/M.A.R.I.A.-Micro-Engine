@@ -68,6 +68,47 @@ class ChatCompletionResponse(BaseModel):
     x_micro_engine: MicroEngineExtension | None = None
 
 
+class SceneAdvanceRequest(BaseModel):
+    """Advance a scene by one turn (v0.2). `message` is the user's line in group
+    chat (optional in autonomous play); `speaker` optionally names who acts."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    user: str | None = None
+    message: str | None = None
+    speaker: str | None = None
+
+
+class WitnessOut(BaseModel):
+    actor: str
+    tag: str
+    target: str
+    feeling: dict[str, float]
+
+
+class SceneTurnOut(BaseModel):
+    """One scene turn, projected for the client (no internal state leaks)."""
+
+    speaker: str
+    reply: str
+    tag: str
+    target: str
+    feeling: dict[str, float]
+    witnessed: list[WitnessOut] = Field(default_factory=list)
+
+
+class SceneCard(BaseModel):
+    id: str
+    display_name: str
+    cast: list[str]
+    mode: str
+
+
+class SceneList(BaseModel):
+    object: str = "list"
+    data: list[SceneCard]
+
+
 class ModelCard(BaseModel):
     id: str
     object: str = "model"

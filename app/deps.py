@@ -14,12 +14,15 @@ from engine.llm import OllamaClient, OpenAIClient
 from engine.logging_config import configure as configure_logging
 from engine.logging_config import get_logger
 from engine.registry import PackRegistry
+from engine.scene.registry import SceneRegistry
 from engine.web import DuckDuckGoSearcher
 
 _log = get_logger("deps")
 
 CHARACTERS_DIR_ENV = "CHARACTERS_DIR"
 _DEFAULT_CHARACTERS_DIR = "characters"
+SCENES_DIR_ENV = "SCENES_DIR"
+_DEFAULT_SCENES_DIR = "scenes"
 
 _service: EngineService | None = None
 
@@ -52,11 +55,14 @@ def _build_service() -> EngineService:
     configure_logging(settings.log_level)
     characters_dir = os.getenv(CHARACTERS_DIR_ENV, _DEFAULT_CHARACTERS_DIR)
     registry = PackRegistry.from_dir(characters_dir)
+    scenes_dir = os.getenv(SCENES_DIR_ENV, _DEFAULT_SCENES_DIR)
+    scene_registry = SceneRegistry.from_dir(scenes_dir)
     web_search = (
         DuckDuckGoSearcher(limit=settings.web_search_results) if settings.web_search else None
     )
     return EngineService(
         registry=registry,
+        scene_registry=scene_registry,
         llm=_build_llm(settings),
         axis_max=settings.axis_max,
         non_rp=settings.non_rp,
@@ -65,6 +71,7 @@ def _build_service() -> EngineService:
         user_gender=settings.user_gender,
         web_search=web_search,
         sessions_dir=settings.sessions_dir,
+        scenes_dir=settings.scenes_dir,
     )
 
 

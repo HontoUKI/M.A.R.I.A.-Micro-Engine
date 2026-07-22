@@ -9,11 +9,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.contracts import ChatMessage
+from app.scenes import SceneStore
 from app.sessions import SessionStore
 from engine.character import CharacterRuntime, TurnResult
 from engine.llm import OllamaClient
 from engine.prompt_manager import DialogueTurn, PromptManager
 from engine.registry import PackRegistry
+from engine.scene.registry import SceneRegistry
+from engine.scene.runtime import SceneTurnResult
 from engine.state import DEFAULT_AXIS_MAX
 from engine.web import WebSearcher
 
@@ -24,6 +27,14 @@ class UnknownModelError(Exception):
 
 class EmptyConversationError(Exception):
     """The message list has no trailing user message to drive a turn."""
+
+
+class UnknownSceneError(Exception):
+    """Requested scene is not loaded."""
+
+
+class SceneUnavailableError(Exception):
+    """A scene's cast references a character pack that isn't loaded."""
 
 
 @dataclass
@@ -37,12 +48,19 @@ class EngineService:
     user_gender: str = ""
     web_search: WebSearcher | None = None
     sessions_dir: str = ".local/sessions"
+    scenes_dir: str = ".local/scenes"
+    scene_registry: SceneRegistry = None  # type: ignore[assignment]
     sessions: SessionStore = None  # type: ignore[assignment]
+    scene_store: SceneStore = None  # type: ignore[assignment]
     prompt_manager: PromptManager = None  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
         if self.sessions is None:
             self.sessions = SessionStore(axis_max=self.axis_max, root=self.sessions_dir)
+        if self.scene_registry is None:
+            self.scene_registry = SceneRegistry()
+        if self.scene_store is None:
+            self.scene_store = SceneStore(self.llm, axis_max=self.axis_max, root=self.scenes_dir)
         if self.prompt_manager is None:
             self.prompt_manager = PromptManager()
 
@@ -101,6 +119,68 @@ class EngineService:
             session_key, pack, kernel, user_message=driver, result=result
         )
         return result
+
+    # ------------------------------------------------------------- scenes (v0.2)
+
+    def scene_names(self) -> list[str]:
+        return self.scene_registry.names()
+
+    def has_scene(self, name: str) -> bool:
+        return name in self.scene_registry
+
+    def scene_cards(self) -> list[dict]:
+        cards = []
+        for name in self.scene_registry.names():
+            scene = self.scene_registry.get(name)
+            cards.append({
+                "id": scene.meta.name,
+                "display_name": scene.meta.display_name,
+                "cast": list(scene.cast),
+                "mode": scene.mode,
+            })
+        return cards
+
+    def _require_scene(self, name: str):
+        scene = self.scene_registry.get(name)
+        if scene is None:
+            raise UnknownSceneError(name)
+        return scene
+
+    def _scene_packs(self, scene) -> dict:
+        packs = {}
+        for actor in scene.cast:
+            pack = self.registry.get(actor)
+            if pack is None:
+                raise SceneUnavailableError(
+                    f"scene {scene.meta.name!r} needs character pack {actor!r}, "
+                    f"which is not loaded"
+                )
+            packs[actor] = pack
+        return packs
+
+    def advance_scene(
+        self,
+        scene_name: str,
+        session_key: str,
+        *,
+        message: str | None = None,
+        speaker: str | None = None,
+    ) -> SceneTurnResult:
+        scene = self._require_scene(scene_name)
+        packs = self._scene_packs(scene)
+        runtime = self.scene_store.runtime_for(session_key, scene, packs)
+        result = runtime.advance(message, speaker=speaker)
+        self.scene_store.save(session_key, scene, runtime)
+        return result
+
+    def scene_transcript(self, scene_name: str, session_key: str) -> list[dict]:
+        return self.scene_store.transcript(session_key, self._require_scene(scene_name))
+
+    def scene_matrix(self, scene_name: str, session_key: str) -> dict:
+        return self.scene_store.matrix(session_key, self._require_scene(scene_name))
+
+    def reset_scene(self, scene_name: str, session_key: str) -> None:
+        self.scene_store.reset(session_key, self._require_scene(scene_name))
 
 
 def _split_messages(
