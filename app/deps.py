@@ -61,6 +61,8 @@ def _build_service() -> EngineService:
         axis_max=settings.axis_max,
         non_rp=settings.non_rp,
         non_romance=settings.non_romance,
+        language=settings.language,
+        user_gender=settings.user_gender,
         web_search=web_search,
         sessions_dir=settings.sessions_dir,
     )

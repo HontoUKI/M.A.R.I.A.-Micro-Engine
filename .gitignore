@@ -6,3 +6,6 @@ __pycache__/
 .ruff_cache/
 .env
 data/
+
+# Claude Code local tooling (launch configs, etc.)
+.claude/

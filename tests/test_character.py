@@ -126,6 +126,38 @@ def test_non_rp_and_non_romance_stack():
     assert "Non-romance mode" in system
 
 
+def test_language_forces_reply_language_in_prefix_and_tail():
+    llm = FakeLLM()
+    CharacterRuntime(make_pack(), llm, language="Russian").respond("hi")
+    system = llm.chat_calls[1]["messages"][0]["content"]
+    tail = llm.chat_calls[1]["messages"][-1]["content"]
+    assert "every reply in Russian" in system
+    assert "(Write this reply in Russian.)" in tail
+
+
+def test_no_language_directive_by_default():
+    llm = FakeLLM()
+    CharacterRuntime(make_pack(), llm).respond("hi")
+    assert "every reply in" not in llm.chat_calls[1]["messages"][0]["content"]
+
+
+def test_user_gender_adds_agreement_rule():
+    for gender, word in (("male", "masculine"), ("female", "feminine")):
+        llm = FakeLLM()
+        CharacterRuntime(make_pack(), llm, user_gender=gender).respond("hi")
+        system = llm.chat_calls[1]["messages"][0]["content"]
+        tail = llm.chat_calls[1]["messages"][-1]["content"]
+        assert f"The user is {gender}" in system
+        assert word in system
+        assert f"(The user is {gender}.)" in tail
+
+
+def test_unknown_user_gender_is_ignored():
+    llm = FakeLLM()
+    CharacterRuntime(make_pack(), llm, user_gender="banana").respond("hi")
+    assert "The user is" not in llm.chat_calls[1]["messages"][0]["content"]
+
+
 def test_dialogue_window_is_passed_through_to_voice():
     llm = FakeLLM()
     window = (DialogueTurn("user", "earlier"), DialogueTurn("assistant", "reply"))

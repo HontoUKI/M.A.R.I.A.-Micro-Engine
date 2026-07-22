@@ -33,6 +33,8 @@ class EngineService:
     axis_max: float = DEFAULT_AXIS_MAX
     non_rp: bool = False
     non_romance: bool = False
+    language: str = ""
+    user_gender: str = ""
     web_search: WebSearcher | None = None
     sessions_dir: str = ".local/sessions"
     sessions: SessionStore = None  # type: ignore[assignment]
@@ -69,7 +71,13 @@ class EngineService:
         self.sessions.reset_state(session_key, self._require_pack(model))
 
     def complete(
-        self, model: str, messages: list[ChatMessage], *, session_key: str
+        self,
+        model: str,
+        messages: list[ChatMessage],
+        *,
+        session_key: str,
+        language: str | None = None,
+        user_gender: str | None = None,
     ) -> TurnResult:
         pack = self._require_pack(model)
 
@@ -83,6 +91,9 @@ class EngineService:
             axis_max=self.axis_max,
             non_rp=self.non_rp,
             non_romance=self.non_romance,
+            # Per-request values override the server-level defaults.
+            language=self.language if language is None else language,
+            user_gender=self.user_gender if user_gender is None else user_gender,
             web_search=self.web_search,
         )
         result = runtime.respond(driver, window)

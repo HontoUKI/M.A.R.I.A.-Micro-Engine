@@ -76,7 +76,13 @@ def chat_completions(
 
     session_key = request.user or "default"
     try:
-        result = service.complete(request.model, request.messages, session_key=session_key)
+        result = service.complete(
+            request.model,
+            request.messages,
+            session_key=session_key,
+            language=request.language,
+            user_gender=request.user_gender,
+        )
     except UnknownModelError:
         return _openai_error(
             404,

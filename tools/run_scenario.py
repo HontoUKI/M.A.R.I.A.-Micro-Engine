@@ -73,6 +73,8 @@ def run_one(character: str, length, args) -> None:
         embed_model=args.embed_model,
         non_rp=args.non_rp,
         non_romance=args.non_romance,
+        language=args.language,
+        user_gender=args.user_gender,
         web_search=searcher,
     )
 
@@ -82,6 +84,7 @@ def run_one(character: str, length, args) -> None:
         f"{pack.meta.display_name}  |  length={length}  |  model={args.model}"
         f"  |  memory={'on' if memory else 'off'}  |  non_rp={args.non_rp}"
         f"  |  non_romance={args.non_romance}"
+        f"  |  language={args.language or 'auto'}  |  user_gender={args.user_gender or 'unset'}"
     )
     print("seed axes: " + "  ".join(f"{a}={values[a]:g}" for a in _AXES))
     print("=" * 78)
@@ -144,6 +147,11 @@ def main() -> None:
     p.add_argument("--non-rp", action="store_true", help="forbid roleplay action narration")
     p.add_argument(
         "--non-romance", action="store_true", help="keep the relationship strictly platonic"
+    )
+    p.add_argument("--language", default="", help="force reply language, e.g. Russian")
+    p.add_argument(
+        "--user-gender", default="", choices=["", "male", "female"],
+        help="user's grammatical gender for correct address in gendered languages",
     )
     p.add_argument("--web-search", action="store_true", help="enable opt-in web lookup")
     p.add_argument("--affection", type=float, default=None)

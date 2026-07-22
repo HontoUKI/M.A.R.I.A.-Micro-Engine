@@ -40,6 +40,13 @@ class Settings:
     # how close it grows and of what a pack's tags/stages invite. Warmth and
     # friendship still deepen; flirtation and romance are refused.
     non_romance: bool = False
+    # Reply language (e.g. "Russian"). Empty = let the model answer in whatever
+    # language the user writes in. A per-request field overrides this default.
+    language: str = ""
+    # The user's grammatical gender ("male" / "female"), so a character uses the
+    # right pronouns and agreement in gendered languages. Empty = unspecified.
+    # A per-request field overrides this default.
+    user_gender: str = ""
     # Opt-in web lookup. When on, a turn a pack classifies as `web_lookup` runs
     # a DuckDuckGo search and grounds the reply on the snippets. Off by default:
     # the community tier ships no network access unless a deployer enables it.
@@ -90,6 +97,8 @@ def load_settings() -> Settings:
         sessions_dir=os.getenv("SESSIONS_DIR", Settings.sessions_dir),
         non_rp=_bool_env("NON_RP", Settings.non_rp),
         non_romance=_bool_env("NON_ROMANCE", Settings.non_romance),
+        language=os.getenv("LANGUAGE", Settings.language),
+        user_gender=os.getenv("USER_GENDER", Settings.user_gender),
         web_search=_bool_env("WEB_SEARCH", Settings.web_search),
         web_search_results=int(os.getenv("WEB_SEARCH_RESULTS", Settings.web_search_results)),
         llm_timeout_s=float(os.getenv("LLM_TIMEOUT_S", Settings.llm_timeout_s)),

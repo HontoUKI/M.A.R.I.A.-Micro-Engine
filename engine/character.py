@@ -49,6 +49,31 @@ NON_ROMANCE_RULE = (
     "care, and closeness as friends are welcome; romance is not."
 )
 
+# The user's grammatical gender, so a character addresses them correctly in
+# languages that mark it (verb/adjective agreement, pronouns) — Russian, etc.
+_USER_GENDER_RULE = {
+    "male": (
+        "The user is male. In any language that marks grammatical gender "
+        "(pronouns, verb and adjective agreement), refer to and address the "
+        "user using masculine forms."
+    ),
+    "female": (
+        "The user is female. In any language that marks grammatical gender "
+        "(pronouns, verb and adjective agreement), refer to and address the "
+        "user using feminine forms."
+    ),
+}
+_USER_GENDER_HINT = {"male": "(The user is male.)", "female": "(The user is female.)"}
+
+
+def _language_rule(language: str) -> str:
+    return f"Always write every reply in {language}, whatever language the user writes in."
+
+
+def _language_hint(language: str) -> str:
+    return f"(Write this reply in {language}.)"
+
+
 # Per-turn reminders placed next to the user message. Small models follow a
 # nearby reminder better than a single rule in the far-away system prefix.
 _NON_RP_TAIL_HINT = "Answer in plain words only — no actions, emotes, or stage directions."
@@ -94,6 +119,8 @@ class CharacterRuntime:
         axis_max: float = DEFAULT_AXIS_MAX,
         non_rp: bool = False,
         non_romance: bool = False,
+        language: str = "",
+        user_gender: str = "",
         web_search: WebSearcher | None = None,
     ) -> None:
         self._pack = pack
@@ -101,6 +128,8 @@ class CharacterRuntime:
         self._axis_max = axis_max
         self._non_rp = non_rp
         self._non_romance = non_romance
+        self._language = (language or "").strip()
+        self._user_gender = (user_gender or "").strip().lower()
         self._web_search = web_search
         self._state = state or StateKernel.from_pack(pack, axis_max=axis_max)
         self._memory = memory
@@ -172,6 +201,10 @@ class CharacterRuntime:
             rules.append(NON_RP_RULE)
         if self._non_romance:
             rules.append(NON_ROMANCE_RULE)
+        if self._language:
+            rules.append(_language_rule(self._language))
+        if self._user_gender in _USER_GENDER_RULE:
+            rules.append(_USER_GENDER_RULE[self._user_gender])
         return "\n".join(rules)
 
     def _web_lookup(self, tag: str, query: str) -> str:
@@ -190,6 +223,10 @@ class CharacterRuntime:
             parts.append(_NON_RP_TAIL_HINT)
         if self._non_romance:
             parts.append(_NON_ROMANCE_TAIL_HINT)
+        if self._language:
+            parts.append(_language_hint(self._language))
+        if self._user_gender in _USER_GENDER_HINT:
+            parts.append(_USER_GENDER_HINT[self._user_gender])
         return "\n".join(p for p in parts if p).strip()
 
     def _resolve_stage(self, pre_axes: Axes, post_axes: Axes):

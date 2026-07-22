@@ -27,6 +27,11 @@ class ChatCompletionRequest(BaseModel):
     temperature: float | None = None
     stream: bool = False
     user: str | None = None
+    # Micro-Engine extensions (OpenAI clients simply omit them): force the reply
+    # language and tell the character the user's grammatical gender. Both
+    # override the server-level defaults for this turn.
+    language: str | None = None
+    user_gender: str | None = None
 
 
 class ChatCompletionChoice(BaseModel):

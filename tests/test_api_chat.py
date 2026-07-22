@@ -187,6 +187,71 @@ def test_history_endpoints_404_for_unknown_model(client_with):
     assert client.post("/sessions/ghost/reset").status_code == 404
 
 
+# ---------------------------------------------------------------- per-request opts
+
+
+class CapturingLLM(FakeLLM):
+    """Remembers the voice prompt so tests can inspect injected directives."""
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.voice_system = ""
+
+    def chat(self, messages, *, model=None, fmt=None, options=None):
+        if fmt is None:
+            self.voice_system = messages[0]["content"]
+        return super().chat(messages, model=model, fmt=fmt, options=options)
+
+
+def test_request_language_and_gender_reach_the_prompt(client_with):
+    llm = CapturingLLM()
+    service = EngineService(
+        registry=PackRegistry({make_pack().meta.name: make_pack()}), llm=llm
+    )
+    client = client_with(service)
+    client.post(
+        "/v1/chat/completions",
+        json={
+            "model": "aria",
+            "messages": [{"role": "user", "content": "hi"}],
+            "language": "Russian",
+            "user_gender": "female",
+        },
+    )
+    assert "every reply in Russian" in llm.voice_system
+    assert "The user is female" in llm.voice_system
+
+
+def test_request_options_override_server_defaults(client_with):
+    llm = CapturingLLM()
+    service = EngineService(
+        registry=PackRegistry({make_pack().meta.name: make_pack()}),
+        llm=llm,
+        language="English",
+        user_gender="male",
+    )
+    client = client_with(service)
+    # No per-request fields: the server defaults apply.
+    client.post(
+        "/v1/chat/completions",
+        json={"model": "aria", "messages": [{"role": "user", "content": "hi"}]},
+    )
+    assert "every reply in English" in llm.voice_system
+    assert "The user is male" in llm.voice_system
+    # Per-request Russian/female overrides the server English/male.
+    client.post(
+        "/v1/chat/completions",
+        json={
+            "model": "aria",
+            "messages": [{"role": "user", "content": "hi"}],
+            "language": "Russian",
+            "user_gender": "female",
+        },
+    )
+    assert "every reply in Russian" in llm.voice_system
+    assert "The user is female" in llm.voice_system
+
+
 def test_sessions_are_isolated_by_user(client_with):
     service = _service(tag="warmth")
     client = client_with(service)

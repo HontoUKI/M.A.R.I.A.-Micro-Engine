@@ -73,6 +73,12 @@ All off/local by default; see [.env.example](.env.example).
   platonic however close it grows; warmth and friendship still deepen, but
   flirtation and romance are declined and romantic advances are gently
   redirected. Independent of `NON_RP` — enable either, both, or neither.
+- **Reply language** (`LANGUAGE=Russian`, or a per-request `language` field, or
+  the web-UI dropdown) — the character answers in that language whatever the
+  user writes in. Empty = it matches the user's own language.
+- **User gender** (`USER_GENDER=male|female`, per-request `user_gender`, or the
+  web-UI dropdown) — tells the character how to address the user, so pronouns
+  and agreement come out right in gendered languages (Russian, etc.).
 - **Web lookup** (`WEB_SEARCH=true`) — when a pack declares a `web_lookup` tag
   and the classifier picks it, the engine runs a DuckDuckGo search and grounds
   the reply on the snippets. Off by default (it enables outbound network).

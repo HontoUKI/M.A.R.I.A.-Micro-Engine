@@ -14,6 +14,8 @@ const els = {
   clearDay: document.getElementById("clear-day"),
   clearAll: document.getElementById("clear-all"),
   resetRel: document.getElementById("reset-rel"),
+  language: document.getElementById("language"),
+  userGender: document.getElementById("user-gender"),
   name: document.getElementById("name"),
   stage: document.getElementById("stage"),
   face: document.getElementById("face"),
@@ -185,10 +187,13 @@ async function send(text) {
   const pending = addBubble("system", "…");
 
   try {
+    const body = { model: model(), user: state.sessionId, messages: state.messages };
+    if (els.language.value) body.language = els.language.value;
+    if (els.userGender.value) body.user_gender = els.userGender.value;
     const res = await fetch("/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: model(), user: state.sessionId, messages: state.messages }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
     pending.remove();
@@ -264,6 +269,16 @@ els.history.addEventListener("change", () => {
 els.clearDay.addEventListener("click", clearSelectedDay);
 els.clearAll.addEventListener("click", clearAllHistory);
 els.resetRel.addEventListener("click", resetRelationship);
+
+// Reply language and address gender are per-browser preferences sent with every
+// turn; persist them so they survive a reload.
+function bindPreference(el, key) {
+  const saved = localStorage.getItem(key);
+  if (saved !== null) el.value = saved;
+  el.addEventListener("change", () => localStorage.setItem(key, el.value));
+}
+bindPreference(els.language, "micro_engine_language");
+bindPreference(els.userGender, "micro_engine_user_gender");
 
 (async function init() {
   try {
