@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from engine.pack.models import DeltaVector
+from engine.pack.models import DeltaVector, GatedTag
 
 _NAME_PATTERN = r"^[a-z0-9][a-z0-9_-]*$"
 _SEMVER_PATTERN = r"^\d+\.\d+\.\d+$"
@@ -61,10 +61,15 @@ class RelationshipSeed(BaseModel):
         return self
 
 
-class ScenarioTag(BaseModel):
+class ScenarioTag(GatedTag):
     """A moment-tag the *setting* grants one actor, layered on its base tags for
     this scene only. Self-contained: description (for the classifier), delta (how
-    it moves the relevant edge) and block (how to voice it)."""
+    it moves the relevant edge) and block (how to voice it).
+
+    Inherits the same availability window (`unlock_at`/`lock_at`) as base tags,
+    so scenario reactions come and go as the story develops — an early stupor tag
+    can lock once the character finds its feet while new tags unlock in its place.
+    """
 
     model_config = ConfigDict(extra="forbid")
 

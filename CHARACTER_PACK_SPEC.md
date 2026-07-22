@@ -108,9 +108,21 @@ tags:
 | `id`          | ✅  | `^[a-z0-9][a-z0-9_-]*$`, unique within the pack. |
 | `description` | ✅  | Written **for the LLM**: it decides tag selection. Be concrete. |
 | `sentiment`   |     | `positive` \| `negative` \| `neutral`. Advisory; used for balance checks. |
+| `unlock_at`   |     | Closeness ratio (0..1) at/above which this tag becomes available. Default `0`. |
+| `lock_at`     |     | Closeness ratio (0..1) up to which this tag stays available. Default `1`. |
 
 Limits: **2–32 tags**. At least **one** tag with `sentiment: negative` (a
 character that can only warm up ratchets into sycophancy — see §6).
+
+**Stage-gated tags.** By default a tag is always available. Give it an
+`unlock_at`/`lock_at` window (on the affection+trust **ratio**, 0..1, the same
+number that drives stages) and the engine offers it to the classifier **only
+while the standing is inside the window** — below or above, the model never sees
+it and *cannot* pick it. This enforces relationship gates at the engine level
+rather than trusting prompt prose: e.g. a tag that reciprocates a romantic
+advance can be gated to a late stage (`unlock_at: 0.7`), so the character simply
+has no way to accept before then. The pack's `fallback_tag` is always offered
+regardless of its window, so there is always a valid choice.
 
 **Reserved tag `web_lookup`.** If a pack declares a tag with id `web_lookup`
 and the deployment sets `WEB_SEARCH=true`, a turn the classifier assigns to

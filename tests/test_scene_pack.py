@@ -124,6 +124,25 @@ def test_bad_mode_is_rejected():
         ScenePack.model_validate(_scene(mode="freeform"))
 
 
+def test_scenario_tag_gate_window_parses_and_gates():
+    from engine.scene.models import ScenarioTag
+
+    early = ScenarioTag(id="shock", description="d", unlock_at=0.0, lock_at=0.4)
+    late = ScenarioTag(id="mastery", description="d", unlock_at=0.55, lock_at=1.0)
+    assert early.available_at(0.1) and not early.available_at(0.5)
+    assert late.available_at(0.8) and not late.available_at(0.3)
+    # Ungated by default: always available.
+    assert ScenarioTag(id="x", description="d").available_at(0.0)
+    assert ScenarioTag(id="x", description="d").available_at(1.0)
+
+
+def test_scenario_tag_inverted_window_is_rejected():
+    from engine.scene.models import ScenarioTag
+
+    with pytest.raises(ValueError, match="unlock_at"):
+        ScenarioTag(id="x", description="d", unlock_at=0.8, lock_at=0.2)
+
+
 def test_unsupported_spec_version_raises(tmp_path):
     with pytest.raises(SceneVersionError):
         load_scene(_write(tmp_path, _scene(spec_version=2)))
@@ -174,7 +193,13 @@ def test_shipped_fantasy_scene_loads_and_is_asymmetric():
     scenes_dir = Path(__file__).resolve().parents[1] / "scenes"
     scene = load_scene(str(scenes_dir / "fantasy"))
     assert scene.cast == ["megumin", "kaguya"]
-    assert "fantasy_shock" in {t.id for t in scene.scenario_tags["kaguya"]}
+    kaguya_tags = {t.id: t for t in scene.scenario_tags["kaguya"]}
+    assert "fantasy_shock" in kaguya_tags
+    # The early stupor locks and the mastery tags unlock as she settles in.
+    assert kaguya_tags["fantasy_shock"].available_at(0.1)
+    assert not kaguya_tags["fantasy_shock"].available_at(0.7)
+    assert kaguya_tags["casting_magic"].available_at(0.7)
+    assert not kaguya_tags["casting_magic"].available_at(0.1)
     # The seed is one-directional on purpose: Megumin -> Kaguya only.
     edges = {(e.from_, e.to) for e in scene.relationships}
     assert ("megumin", "kaguya") in edges

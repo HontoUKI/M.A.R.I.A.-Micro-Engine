@@ -47,7 +47,32 @@ class AxesConfig(BaseModel):
     bond: AxisConfig = Field(default_factory=AxisConfig)
 
 
-class MomentTag(BaseModel):
+class GatedTag(BaseModel):
+    """Mixin: an availability window on the closeness ratio (affection+trust,
+    0..1). A tag is offered to the classifier only while the ratio is within
+    `[unlock_at, lock_at]`; below or above, the engine simply never presents it,
+    so the model *cannot* pick it. Ungated (`[0, 1]`) = always available.
+
+    This is how reactions come and go with the relationship — e.g. a tag that
+    accepts a romantic advance can be gated to a late stage, so the engine (not
+    prompt prose) enforces that it isn't even an option before then."""
+
+    unlock_at: float = Field(default=0.0, ge=0.0, le=1.0)
+    lock_at: float = Field(default=1.0, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def _gate_window_ordered(self) -> GatedTag:
+        if self.unlock_at > self.lock_at:
+            raise ValueError(
+                f"unlock_at ({self.unlock_at}) must be <= lock_at ({self.lock_at})"
+            )
+        return self
+
+    def available_at(self, ratio: float) -> bool:
+        return self.unlock_at <= ratio <= self.lock_at
+
+
+class MomentTag(GatedTag):
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=_NAME_PATTERN)

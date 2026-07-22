@@ -32,11 +32,20 @@ class TagClassifier:
         pack,
         user_message: str,
         dialogue_window: tuple[DialogueTurn, ...] = (),
+        *,
+        ratio: float | None = None,
     ) -> str:
-        """Return a tag id guaranteed to be one the pack declared."""
-        messages = _build_messages(pack, user_message, dialogue_window)
-        schema = _tag_schema(pack)
-        valid = {t.id for t in pack.tags}
+        """Return a tag id guaranteed to be one the pack declared.
+
+        When `ratio` (closeness, 0..1) is given, tags whose availability window
+        excludes it are hidden from the model — a gated tag simply can't be
+        chosen out of its stage. The fallback tag is always offered, so there is
+        always at least one valid choice.
+        """
+        tags = _available_tags(pack, ratio)
+        messages = _build_messages(tags, user_message, dialogue_window)
+        schema = _tag_schema(tags)
+        valid = {t.id for t in tags}
 
         for _ in range(self._max_retries + 1):
             try:
@@ -51,8 +60,18 @@ class TagClassifier:
         return pack.meta.fallback_tag
 
 
+def _available_tags(pack, ratio: float | None) -> list:
+    """The tags offered this turn: all of them, or — when a ratio is given —
+    only those whose window covers it, with the fallback always kept."""
+    if ratio is None:
+        return list(pack.tags)
+    fallback = pack.meta.fallback_tag
+    available = [t for t in pack.tags if t.available_at(ratio) or t.id == fallback]
+    return available or list(pack.tags)
+
+
 def _build_messages(
-    pack, user_message: str, dialogue_window: tuple[DialogueTurn, ...]
+    tags, user_message: str, dialogue_window: tuple[DialogueTurn, ...]
 ) -> list[dict[str, str]]:
     lines = [
         "You are a classifier. Read the latest user message in context and "
@@ -60,7 +79,7 @@ def _build_messages(
         'Respond only as JSON of the form {"tag": "<id>"}.',
         "Available tags:",
     ]
-    lines.extend(f"- {t.id}: {t.description}" for t in pack.tags)
+    lines.extend(f"- {t.id}: {t.description}" for t in tags)
     messages: list[dict[str, str]] = [{"role": "system", "content": "\n".join(lines)}]
     recent = dialogue_window[-_CONTEXT_TURNS:] if _CONTEXT_TURNS else ()
     messages.extend({"role": t.role, "content": t.content} for t in recent)
@@ -68,10 +87,10 @@ def _build_messages(
     return messages
 
 
-def _tag_schema(pack) -> dict[str, Any]:
+def _tag_schema(tags) -> dict[str, Any]:
     return {
         "type": "object",
-        "properties": {"tag": {"type": "string", "enum": [t.id for t in pack.tags]}},
+        "properties": {"tag": {"type": "string", "enum": [t.id for t in tags]}},
         "required": ["tag"],
     }
 

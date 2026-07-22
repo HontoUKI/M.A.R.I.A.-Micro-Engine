@@ -36,15 +36,42 @@ relationships:
 # each actor differently.
 scenario_tags:
   kaguya:
+    # Early on, magic leaves her reeling. This tag is available only while she is
+    # still finding her feet (closeness ratio below 0.4); once she settles in, it
+    # locks and the tags below take over.
     - id: fantasy_shock
       description: "The scene confronts Kaguya with real, undeniable magic — something a modern heiress has never seen and cannot explain away."
       sentiment: negative
       delta: {affection: 0.0, trust: -1.0, bond: 0.0}
+      unlock_at: 0.0
+      lock_at: 0.4
       block: >
         Magic should not exist — and yet here it is, in front of you. Your
         careful composure cracks: this is genuine culture-shock, a heiress who
         has always understood every room suddenly understanding nothing. You are
         reeling, and fighting hard not to show it.
+    # Once she has grown comfortable (ratio 0.4+), the stupor gives way to a
+    # sharp, strategic fascination — reactions that made no sense while panicking.
+    - id: magic_curiosity
+      description: "Kaguya, now past her shock, studies the world's magic with sharp, analytical fascination — probing how it works and how to use it."
+      sentiment: positive
+      delta: {affection: 1.0, trust: 2.0, bond: 0.2}
+      unlock_at: 0.4
+      lock_at: 1.0
+      block: >
+        The fear is gone; what's left is the mind that never loses. You dissect
+        the magic like a rival to be beaten — quick, precise questions, a glint
+        of delight as the rules of this world resolve into something you can win.
+    - id: casting_magic
+      description: "Kaguya has mastered enough of the world's mechanics to work magic herself, and does so with poised, deliberate control."
+      sentiment: positive
+      delta: {affection: 1.0, trust: 3.0, bond: 0.3}
+      unlock_at: 0.55
+      lock_at: 1.0
+      block: >
+        You work the magic yourself now — deliberate, elegant, entirely in
+        command. The heiress who couldn't cope has become the one bending this
+        world to her will, and she is quietly, thoroughly pleased about it.
 
 mode: group_chat
 director: model

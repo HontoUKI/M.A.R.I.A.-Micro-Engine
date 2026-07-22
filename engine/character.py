@@ -149,7 +149,12 @@ class CharacterRuntime:
     ) -> TurnResult:
         usage_before = self._usage_snapshot()
 
-        tag = self._classifier.classify(self._pack, user_message, dialogue_window)
+        # Gate the classifier's choices by the relationship *before* this turn:
+        # a tag only unlocks once the standing is inside its window.
+        ratio = relationship_ratio(self._state.axes, self._axis_max)
+        tag = self._classifier.classify(
+            self._pack, user_message, dialogue_window, ratio=ratio
+        )
 
         pre_axes = self._state.axes
         axes = self._state.apply(self._pack.deltas[tag])

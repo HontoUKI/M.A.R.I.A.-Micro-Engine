@@ -129,10 +129,40 @@ ScenePack can give an actor ways to react that only make sense *here*.
 > to explosions, gets no such tag; the same setting lands on each actor
 > differently.
 
+### Tags that unlock as the story moves
+
+A scenario tag can also be **gated** — available only within a band of the
+relationship's progress, so a character's *possible reactions* change as things
+develop, not just their tone.
+
+> **Back to the fantasy scene.** At first, magic leaves Kaguya reeling, so early
+> on she has `fantasy_shock`. But as she and the group grow closer and she finds
+> her feet in this world, that stupor no longer fits — so it **locks**, and new
+> tags **unlock** in its place: `magic_curiosity`, `casting_magic`, reactions
+> that would have made no sense while she was still panicking. The heiress who
+> couldn't cope is now the one bending the rules of the world to her will.
+
+This reuses the **stage** machinery directly: the same affection+trust progress
+that already picks a character's *tone* now also decides *which reactions are on
+the table*. A gated tag simply carries a small window — "available from here, up
+to there" — on that progress. Below the window it isn't offered to the
+classifier; above it, it drops out again. Ungated tags are always available, so
+nothing about v0.1 changes.
+
+This gate lives at the **engine level**, not just in scenes — it's an optional
+`unlock_at`/`lock_at` on any tag, so **ordinary one-on-one characters benefit
+too**. Instead of a stage block merely *asking* a character to rebuff a romantic
+advance until things are close, a pack can gate the reciprocating tag itself to a
+late stage: the engine then makes accepting literally impossible before then,
+rather than trusting the model to hold the line. Enforcing relationship gates in
+the state layer instead of in prompt prose is exactly the "the numbers belong to
+the engine" principle.
+
 *Under the hood:* a scenario tag is just an ordinary tag (id, delta, block) added
-to that character's closed list **for the duration of the scene**. Nothing new is
-needed — the character simply has a slightly bigger vocabulary while this
-ScenePack is loaded, and goes back to its neutral, portable self when the scene
+to that character's closed list **for the duration of the scene** — and, if
+gated, only while the character's progress is inside its window. Nothing new is
+needed at classification time beyond filtering the list to what's currently
+unlocked; the character goes back to its neutral, portable self when the scene
 ends.
 
 So the layering is clean:

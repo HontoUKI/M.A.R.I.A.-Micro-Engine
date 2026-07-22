@@ -15,6 +15,7 @@ from engine.pack.models import (
     AxisConfig,
     CharacterPack,
     DeltaVector,
+    GatedTag,
     MomentTag,
     PackMeta,
 )
@@ -24,6 +25,7 @@ __all__ = [
     "AxisConfig",
     "CharacterPack",
     "DeltaVector",
+    "GatedTag",
     "MomentTag",
     "PackError",
     "PackMeta",
