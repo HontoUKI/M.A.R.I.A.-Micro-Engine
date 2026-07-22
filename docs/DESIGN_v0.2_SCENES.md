@@ -98,6 +98,51 @@ telling me"). That one rule is what keeps "directing a play" from quietly
 sliding back into "chatting with a bot". In this mode your own row in the grid
 stays quiet — you're steering the scene, not in it.
 
+## ScenePack — the production
+
+A Character Pack is a **portable actor**: it knows who it is, but nothing about
+any particular play. A **ScenePack** is the **production** that casts actors into
+a scene. It's a second, separate pack type, and it never edits the characters —
+it *composes* them.
+
+A ScenePack says:
+
+- **The cast** — which Character Packs to bring on stage (by name).
+- **The setting** — the shared premise and backdrop, in words: where everyone is,
+  what's going on, the theme of the "play". Pinned for the whole cast (the
+  authored twin of the uploaded-image backdrop below).
+- **Starting feelings** *(optional)* — seed the relationship matrix so the cast
+  doesn't always begin as strangers: an old rivalry, a one-sided crush, a settled
+  friendship, already loaded at curtain-up.
+- **Scenario-only tags** *(optional)* — extra moment-tags the *setting* grants
+  specific characters, layered on top of their base ones just for this scene.
+
+That last part is the fun one. A character's base pack is neutral and portable; a
+ScenePack can give an actor ways to react that only make sense *here*.
+
+> **Example.** A **fantasy** ScenePack drops the cast into a world of magic. For
+> Kaguya — a modern heiress who has never seen a spell — it adds a scenario tag
+> **`fantasy_shock`**: *"Kaguya is meeting the impossible for the first time and
+> is quietly reeling."* Now, when the scene throws magic at her, the classifier
+> can pick that tag and she reacts with real culture-shock — something her base
+> pack, written for a student-council comedy, would never produce. Megumin, born
+> to explosions, gets no such tag; the same setting lands on each actor
+> differently.
+
+*Under the hood:* a scenario tag is just an ordinary tag (id, delta, block) added
+to that character's closed list **for the duration of the scene**. Nothing new is
+needed — the character simply has a slightly bigger vocabulary while this
+ScenePack is loaded, and goes back to its neutral, portable self when the scene
+ends.
+
+So the layering is clean:
+
+```
+Character Pack   =  who an actor is       (portable, reused across scenes)
+ScenePack        =  a production           (cast + setting + starting feelings + scene tags)
+Scene (runtime)  =  a loaded ScenePack     (now with live feelings and a transcript)
+```
+
 ## A backdrop you can set from the web page
 
 Upload a picture in the web UI. The model **looks at it once**, writes down a
@@ -138,7 +183,9 @@ scratch. That's why holding several characters stays cheap.
 | v0.2 idea                 | The v0.1 piece it grows from                          |
 |---------------------------|-------------------------------------------------------|
 | A cast on one stage       | Several of today's pinned "who I am" blocks           |
+| ScenePack                 | Composes today's Character Packs; loads them as-is     |
 | Relationship matrix       | Today's affection/trust/bond tally — one per **pair** |
+| Scenario-only tags        | Just more entries in a character's existing tag list  |
 | Switching who's talking   | The two-segment prompt (already cache-friendly)       |
 | The model picking speaker | A twin of today's moment-tag classifier, over names   |
 | Narrator / cues           | The "who delivered ≠ who spoke ≠ who it's about" split |
@@ -171,9 +218,10 @@ scratch. That's why holding several characters stays cheap.
 4. **Do character-to-character feelings drift on their own,** or only when the
    two actually interact? (e.g. does Megumin's crush fade if Kaguya ignores her
    for a while?)
-5. **The backdrop's picture** — read it with a vision model (like the full
-   runtime does), or also let you just *type* the set description by hand, so the
-   community tier needs no vision model at all?
+5. **The backdrop's picture** — the ScenePack's `setting` text already covers the
+   authored/typed case with no vision model needed; the open part is just the
+   *image* upload — reuse a vision model (as the full runtime does) as an
+   optional extra, on top of the always-available typed setting?
 6. **Where a scene is saved** — extend today's `.local/sessions` into a
    `.local/scenes/<id>/` folder holding each pair's tally plus one shared script?
 
