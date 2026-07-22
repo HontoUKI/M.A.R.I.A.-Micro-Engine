@@ -1,186 +1,187 @@
-# Design — v0.2: multi-actor scenes and the narrator
+# Design — v0.2: a cast, a stage, and a web of feelings
 
-> **Status: design, not implemented.** This documents the intended shape of the
-> v0.2 Actor Model so the interfaces are agreed before code. It builds strictly
-> on the v0.1 primitives (character packs, per-character state, the two-segment
-> KV-cached prompt, and the moment-tag classifier) — nothing here throws those
-> away; it generalizes them from *one* actor to *several* on a shared stage.
+> **Status: design, not built yet.** This is the plan for v0.2, written down so
+> we agree on the shape before writing code. Everything here grows out of the
+> v0.1 pieces we already have — it does not throw any of them away.
 
-## Where this comes from
+## The short version
 
-v0.1 is a **one-actor Actor Model**: a scene projects onto exactly one character
-who answers the user. That is the whole engine — a single pack, a single state,
-a single pinned identity prefix.
+Today one character talks to you, and remembers how it feels about *you*.
 
-The idea for v0.2 came from two places meeting:
+v0.2 puts **several characters on the same stage**. Each one keeps its own
+feelings — about you *and* about every other character. You can either **join the
+group chat** and talk with all of them, or **step back and direct**, feeding the
+scene cues while the cast acts among themselves. You can also set the **backdrop**
+by uploading a picture, and let either you or the model decide **who speaks next**.
 
-- **The engine's own shape.** Because each character is a *stable pinned prefix*
-  (KV-cache friendly) plus a *cheap dynamic tail*, a second character is just a
-  second pinned prefix. The machinery to hold more than one actor is already
-  latent in the prompt layout.
-- **The narrator** that emerged in the full M.A.R.I.A. runtime (ADR-0008): a
-  *suffleur* who feeds a scene description and whom the character reacts to
-  **as an event, never as a conversation partner**. That separates three roles
-  that v0.1 collapses into "the user": who *delivered* a line, who *owns* it,
-  and who it is *about*.
+That's the whole idea. The rest of this doc explains each part in plain terms and
+shows how it reuses what v0.1 already does.
 
-Put together, the engine stops being a chatbot with a costume and becomes a
-small **stage**: a director, a cast of actors, a narrator, and a backdrop. This
-is deliberately in line with the old rebirth branch's philosophy — the character
-is not a service that answers; it is a presence that *acts within a scene*.
+## From one character to a cast
 
-## The four new capabilities
+In v0.1 a character is two things glued together:
 
-### 1. More than one character in a dialogue
+- a **"who I am" block** that's written once and pinned at the top of the prompt
+  (this is what makes it cheap — the model caches it and doesn't re-read it every
+  turn), and
+- a small **running tally** of affection / trust / bond toward you.
 
-A **Scene** holds N loaded packs at once. Each actor keeps its **own**
-everything it has today — its own `StateKernel` (affection/trust/bond toward the
-subject), its own pinned identity prefix, its own memory namespace. A scene is a
-thin object over the existing pieces:
+A second character is just a second "who I am" block and a second tally. So
+holding a cast of characters is not a rewrite — it's the same pieces, more than
+one of each. Adding an actor adds a pinned block; it doesn't make every turn more
+expensive.
 
-```
-Scene
-  actors:   { "megumin": ActorState, "kaguya": ActorState, ... }
-  narrator: NarratorState        # the suffleur channel (capability 2)
-  backdrop: BackgroundContext     # the pinned scene image description (capability 3)
-  director: DirectorMode          # who picks the next speaker (capability 4)
-```
+A **Scene** is the thin thing that holds them together: the cast, the backdrop,
+who's directing, and — the important new piece — the **web of feelings** between
+everyone in it.
 
-`ActorState` is exactly today's per-session bundle (pack + kernel + memory),
-just keyed by `(scene_id, actor_id)` instead of `(session, pack)`. No new state
-math — relationship axes still move only from the per-tag delta table, per actor.
+## Everyone keeps their own feelings — the relationship matrix
 
-### 2. Autonomous dialogue between actors — user as suffleur
+This is the heart of v0.2.
 
-Actors can talk **to each other**, not only to the user. A turn is no longer
-"user says X → the one character replies". It is:
+In v0.1 there's exactly one relationship: *character → you*. In a scene there are
+many, and they point in **both directions independently**. Picture a grid where
+each row is "how this one feels about the others":
 
 ```
-director picks the next speaker → that actor speaks into the scene →
-the line becomes part of every actor's dialogue window → repeat
+   feels about →     You        Megumin      Kaguya
+   ┌─────────────────────────────────────────────────
+   You         │      —          fond of      curious about
+   Megumin     │   adores you    —            looks up to
+   Kaguya      │   polite        exasperated  —
 ```
 
-The **user steps out of the cast**. Instead of being an actor whose words move a
-character's bond, the user becomes the **narrator / suffleur**: they feed cues
-("Kaguya notices Megumin bragging again", "a knock at the door") that steer the
-scene without being *spoken to*. This reuses the runtime's three-role split:
+Every cell is its **own** little relationship — its own affection, trust, and
+bond — and it moves on its own. Two things fall out of that:
 
-- **source** — who delivered the line (user-as-narrator, or an actor).
-- **speaker** — who *owns* the words (an actor, or nobody for a stage cue).
-- **subject** — who it is about.
+- **Feelings are directed, not shared.** Megumin looking up to Kaguya is a
+  *different* thing from Kaguya's feelings about Megumin.
+- **Feelings are not necessarily mutual.** Megumin can genuinely admire Kaguya
+  while Kaguya finds her exhausting. Warmth on one side does not force warmth
+  back — each side only changes on *that character's own turns*, from what
+  *they* just experienced.
 
-Rules carried over from ADR-0008, adapted to the pack tier:
+That asymmetry is the point. It's what makes a group feel like real people
+instead of a set of mirrors: crushes that aren't returned, a rivalry only one
+side is invested in, someone you trust who doesn't quite trust you back.
 
-- A narrator cue is an **observation**, not speech. Actors react to the *event*
-  ("why are you smirking?"), they never answer the narrator ("thanks for
-  telling me").
-- Relationship axes move **only** relative to a real speaker. Actor→actor lines
-  move the *listening actor's* state toward the *speaking actor*, never toward
-  the user. A bare stage cue is mood-only.
-- A cue is a signal, not a guaranteed turn — the director decides whether it
-  warrants a spoken reaction (see capability 4), so the scene doesn't chatter on
-  every prompt.
+*Under the hood:* it's the same per-character tally from v1, just one per
+**pair** instead of one per character. When Megumin reacts to something Kaguya
+did, only the **Megumin → Kaguya** cell moves. The engine still owns those
+numbers; the model never sees them — it only receives the *tone* they select,
+exactly like today.
 
-This is the headline: **the user can direct a play instead of being in it.**
+## Two ways to be in a scene
 
-### 3. A background, loaded from the web UI, pinned into context
+The web of feelings is always there. What changes between modes is **where you
+sit**.
 
-The web shell can upload an image; a vision-capable model produces a **detailed
-description** of it once, and that description is **pinned into the context
-window as a stable block** — part of the KV-cached prefix, next to the actors'
-identities — and stays there until the background is changed.
+### Group chat — you have a seat
 
-- The picture is read **once** (a vision pass → text), never re-sent per turn.
-  Only the text description lives in context, which keeps every subsequent turn
-  cheap and keeps the backdrop *consistent* across the whole scene.
-- It is a **shared** block: every actor in the scene sees the same backdrop, so
-  they can reference "the rain outside" or "this cramped meeting room" coherently.
-- Changing the background = one new vision pass → the pinned block is replaced
-  (and the prefix cache for that block invalidated). This mirrors how the full
-  runtime turns a screen frame into a text caption before it ever reaches the
-  character (privacy/economy: pixels become words at the edge).
+You're one of the participants. You talk to the group (or to one character by
+name), they answer, and they answer *each other* too. Everyone updates their
+feelings about everyone — including you. This is the natural "hang out with the
+whole cast" mode: your row and column in the grid are live, right alongside the
+character-to-character ones.
 
-### 4. Who speaks next — narrator-directed or model-directed
+### Directing a play — you're the narrator
 
-Turn-taking is decided by a **Director**, and there is a switch for *who* the
-director is:
+You step out of the cast and become the **prompter** (the *suffleur*). Instead of
+being talked to, you feed the scene **cues** — "a knock at the door", "Kaguya
+notices Megumin bragging again" — and the characters act them out among
+themselves.
 
-- **Narrator-directed** — the user/suffleur names the next speaker (explicitly,
-  or implicitly by addressing a cue at one actor). Deterministic, good for
-  scripted scenes and for the runner.
-- **Model-directed** — an LLM call picks the next speaker from the cast, exactly
-  the way the **moment-tag classifier** already picks a tag from a closed enum.
-  The choice set is the actor ids; an invalid/empty pick falls back to a default
-  (e.g. last speaker's addressee, or round-robin).
+The load-bearing rule here, borrowed from the full M.A.R.I.A. runtime: **the
+narrator is a stage direction, not a person in the room.** A character reacts to
+the *event* ("what are you smirking at?") but never answers *you* ("thanks for
+telling me"). That one rule is what keeps "directing a play" from quietly
+sliding back into "chatting with a bot". In this mode your own row in the grid
+stays quiet — you're steering the scene, not in it.
 
-**This is the same mechanism as tags, one level up.** The tag classifier chooses
-*which steering block* to splice into one character's tail; the director chooses
-*which actor's cache* to make active. Selecting a speaker **swaps the active
-pinned prefix**: the chosen actor's KV-cached identity becomes the live context,
-the previous actor's is set aside (not destroyed — held warm for when they speak
-again). On a switch, the active cache is *replaced*, not rebuilt from scratch —
-which is why holding several actors stays affordable.
+## A backdrop you can set from the web page
 
-```
-one character (v0.1):   tag classifier → steering block → voice
-several characters (v0.2): director → active actor cache → tag classifier
-                            → that actor's steering block → voice
-```
+Upload a picture in the web UI. The model **looks at it once**, writes down a
+detailed description of what it sees, and that description gets **pinned into the
+scene** as the set — shared by everyone on stage, so they can all refer to "the
+rain outside" or "this cramped meeting room" and stay consistent.
 
-## How it maps onto what already exists
+Two things worth saying plainly:
 
-| v0.2 concept        | v0.1 seam it extends                                        |
-|---------------------|------------------------------------------------------------|
-| Scene / cast        | `SessionStore`, keyed `(scene_id, actor_id)` per actor      |
-| ActorState          | today's `(pack, StateKernel, memory)` bundle, unchanged     |
-| Actor swap / cache  | the two-segment pinned prefix (already KV-cache friendly)    |
-| Director (speaker)  | a second classifier, twin of `TagClassifier` over actor ids |
-| Narrator / suffleur | the `source ≠ speaker ≠ subject` split; observation vs speech|
-| Backdrop            | a pinned prefix block fed by a one-shot vision caption       |
-| Per-turn steering   | the moment-tag delta table + steering blocks, **per actor**  |
+- The picture is read **once**, turned into words, and only the words stay in
+  context. Every turn after that is just as cheap as before, and the backdrop
+  stays the same until you change it.
+- Change the picture → one new look → the pinned description is swapped out. (The
+  full runtime already does exactly this trick with what's on screen: turn the
+  image into a caption at the edge, and only the caption travels inward.)
 
-New wire surface (sketch, to be pinned in the spec when built):
+## Who speaks next
 
-- A **Scene** resource: create with a cast (pack ids) + director mode; advance a
-  turn (with an optional narrator cue); read the transcript. Likely alongside
-  the OpenAI-compatible route rather than inside it, since a scene turn is not a
-  single request/response.
-- Narrator cues carry `event_type: observation | speech` and a `speaker` (an
-  actor id, or none for a bare stage cue).
-- Background upload endpoint → vision caption → pinned `backdrop` block.
+Someone has to decide whose turn it is. That's the **director**, and there's a
+switch for who plays that role:
 
-## Invariants kept
+- **You decide** — you name who speaks next, or just address a cue at someone.
+  Predictable; good for scripted scenes.
+- **The model decides** — a quick model call picks the next speaker from the
+  cast, the same way v1 already picks the "moment tag" from a fixed list. If it
+  picks nothing sensible, we fall back to a simple rule (round-robin, or whoever
+  was just addressed).
 
-- **Single-user by design.** A scene is still one person's private play.
-- **No character-shaped defaults in the engine.** Actors, director prompts, and
-  the narrator framing are all pack/deployment data, never baked into the engine.
-- **State is the engine's, never the model's.** Axes still move only from the
-  per-tag delta table, per actor; the model never sees or writes the numbers.
-- **KV-cache economy.** Adding actors adds pinned prefixes, not per-turn cost;
-  the backdrop is captioned once, not re-sent.
-- **The narrator is a sensor, not a cast member.** Never answered, only reacted
-  to — the load-bearing rule that keeps "direct a play" from collapsing back into
-  "chat with a bot".
+Here's the neat part: **this is the tag mechanic, one level up.** In v1 the
+classifier picks *which mood block* to splice into one character's prompt. In v2
+the director picks *which character's cached "who I am" block* to make active.
+Choosing a speaker just **swaps which pinned block is live** — the previous
+character's block is kept warm for when they speak again, not rebuilt from
+scratch. That's why holding several characters stays cheap.
 
-## Open questions (decide before building)
+## How it reuses what's already here
 
-1. **Turn budget / stop condition** for autonomous actor↔actor exchange — how
-   many actor turns fire per narrator cue before it waits for the next cue?
-   (Mirror the runtime's salience/frequency gate so a scene doesn't run away.)
-2. **Director default** in model-directed mode when the pick is empty/invalid —
-   round-robin, last-addressee, or "narrator must choose"?
-3. **Memory scope** — does each actor remember the whole scene, or only lines
-   addressed to/spoken by them? (Leaning: each actor remembers what it witnessed.)
-4. **Vision model** — reuse an Ollama multimodal model (as the runtime does), or
-   make the backdrop caption a plain text field the user can also type by hand
-   (no vision dependency in the community tier)?
-5. **Scene persistence** — extend the `.local/sessions` layout to a
-   `.local/scenes/<scene_id>/` tree (per-actor state + one shared transcript)?
+| v0.2 idea                 | The v0.1 piece it grows from                          |
+|---------------------------|-------------------------------------------------------|
+| A cast on one stage       | Several of today's pinned "who I am" blocks           |
+| Relationship matrix       | Today's affection/trust/bond tally — one per **pair** |
+| Switching who's talking   | The two-segment prompt (already cache-friendly)       |
+| The model picking speaker | A twin of today's moment-tag classifier, over names   |
+| Narrator / cues           | The "who delivered ≠ who spoke ≠ who it's about" split |
+| The backdrop              | A pinned block filled by a one-shot look at an image  |
 
-## Non-goals
+## What stays true
 
-- Not a multi-*user* system — still one director at the keyboard.
-- Not an agent framework — actors act *within a scene*, they do not take real
-  actions in the world (no tools, no safe-chain; that stays out of this tier).
-- Not a rewrite — v0.2 is an extension of the v0.1 Actor Model, gated so a
-  single-actor scene behaves exactly like v0.1 does today.
+- **Still one person's private world.** A scene is your play, or your group chat
+  — not a multi-user server.
+- **No character baked into the engine.** The cast, the director, the narrator's
+  framing — all of it is data you load, never wired into the code.
+- **The numbers belong to the engine, not the model.** Every feeling in the
+  matrix is moved by the engine from a clear table; the model only ever feels the
+  *tone*, never reads or writes the score.
+- **Adding characters doesn't make turns more expensive.** More cast = more
+  pinned blocks, not more per-turn work. The backdrop is looked at once, not
+  re-sent.
+- **The narrator is never a cast member.** Reacted to, never answered.
+
+## Still to decide
+
+1. **How long do the characters riff before pausing?** When the cast is talking
+   among themselves, how many turns fire before it waits for your next cue — so a
+   scene doesn't run away on its own?
+2. **When the model can't pick a speaker,** who talks — round-robin, whoever was
+   just addressed, or "you choose"?
+3. **How much does each character overhear?** Does everyone remember the whole
+   scene, or only the lines aimed at or spoken by them? (Leaning: you remember
+   what you witnessed.)
+4. **Do character-to-character feelings drift on their own,** or only when the
+   two actually interact? (e.g. does Megumin's crush fade if Kaguya ignores her
+   for a while?)
+5. **The backdrop's picture** — read it with a vision model (like the full
+   runtime does), or also let you just *type* the set description by hand, so the
+   community tier needs no vision model at all?
+6. **Where a scene is saved** — extend today's `.local/sessions` into a
+   `.local/scenes/<id>/` folder holding each pair's tally plus one shared script?
+
+## What this is not
+
+- Not multi-*user* — still one person at the keyboard, whether directing or
+  chatting.
+- Not an agent framework — the cast acts *within the scene*. They don't touch the
+  real world (no tools, no file or command access; that stays out of this tier).
+- Not a rewrite — v0.2 is the v0.1 Actor Model with more chairs. A scene with a
+  single character behaves exactly like v0.1 does today.
