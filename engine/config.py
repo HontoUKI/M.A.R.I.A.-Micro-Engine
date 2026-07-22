@@ -33,7 +33,9 @@ class Settings:
     # long correspondence continues across restarts.
     sessions_dir: str = ".local/sessions"
     # Where per-session scene state (relationship matrix + transcript) persists.
-    scenes_dir: str = ".local/scenes"
+    # Distinct from the scene-*pack* source dir (SCENES_DIR, read in deps): state
+    # must never be written into the tracked scenes/ directory.
+    scenes_state_dir: str = ".local/scenes"
     # Non-roleplay mode: forbid the character from narrating its own actions
     # (asterisk emotes, stage directions) — it stays in voice but replies as a
     # plain conversational pet-assistant. Good for showing the mechanics.
@@ -97,7 +99,7 @@ def load_settings() -> Settings:
         openai_embed_model=os.getenv("OPENAI_EMBED_MODEL", Settings.openai_embed_model),
         data_dir=os.getenv("DATA_DIR", Settings.data_dir),
         sessions_dir=os.getenv("SESSIONS_DIR", Settings.sessions_dir),
-        scenes_dir=os.getenv("SCENES_DIR", Settings.scenes_dir),
+        scenes_state_dir=os.getenv("SCENES_STATE_DIR", Settings.scenes_state_dir),
         non_rp=_bool_env("NON_RP", Settings.non_rp),
         non_romance=_bool_env("NON_ROMANCE", Settings.non_romance),
         language=os.getenv("LANGUAGE", Settings.language),

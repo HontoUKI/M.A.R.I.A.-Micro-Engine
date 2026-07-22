@@ -9,3 +9,6 @@ data/
 
 # Claude Code local tooling (launch configs, etc.)
 .claude/
+
+# Scene runtime state must never land in the tracked scenes/ pack dir
+scenes/*__*/

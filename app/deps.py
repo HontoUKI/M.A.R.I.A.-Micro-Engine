@@ -71,7 +71,7 @@ def _build_service() -> EngineService:
         user_gender=settings.user_gender,
         web_search=web_search,
         sessions_dir=settings.sessions_dir,
-        scenes_dir=settings.scenes_dir,
+        scenes_dir=settings.scenes_state_dir,
     )
 
 
