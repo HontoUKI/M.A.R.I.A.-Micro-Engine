@@ -69,6 +69,7 @@ def _build_service() -> EngineService:
         non_romance=settings.non_romance,
         language=settings.language,
         user_gender=settings.user_gender,
+        vision_model=settings.vision_model,
         web_search=web_search,
         sessions_dir=settings.sessions_dir,
         scenes_dir=settings.scenes_state_dir,

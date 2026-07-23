@@ -18,6 +18,7 @@ from engine.registry import PackRegistry
 from engine.scene.registry import SceneRegistry
 from engine.scene.runtime import SceneTurnResult
 from engine.state import DEFAULT_AXIS_MAX
+from engine.vision import caption_backdrop
 from engine.web import WebSearcher
 
 
@@ -46,6 +47,7 @@ class EngineService:
     non_romance: bool = False
     language: str = ""
     user_gender: str = ""
+    vision_model: str = ""
     web_search: WebSearcher | None = None
     sessions_dir: str = ".local/sessions"
     scenes_dir: str = ".local/scenes"
@@ -187,6 +189,21 @@ class EngineService:
         results = runtime.run(cue, max_turns=max_turns)
         self.scene_store.save(session_key, scene, runtime)
         return results
+
+    def set_scene_backdrop(
+        self, scene_name: str, session_key: str, image_b64: str
+    ) -> str:
+        """Caption an uploaded image and pin it as the scene's backdrop."""
+        scene = self._require_scene(scene_name)
+        packs = self._scene_packs(scene)
+        runtime = self.scene_store.runtime_for(session_key, scene, packs)
+        caption = caption_backdrop(self.llm, image_b64, model=self.vision_model or None)
+        runtime.set_backdrop(caption)
+        self.scene_store.save(session_key, scene, runtime)
+        return caption
+
+    def scene_backdrop(self, scene_name: str, session_key: str) -> str:
+        return self.scene_store.backdrop(session_key, self._require_scene(scene_name))
 
     def scene_transcript(self, scene_name: str, session_key: str) -> list[dict]:
         return self.scene_store.transcript(session_key, self._require_scene(scene_name))

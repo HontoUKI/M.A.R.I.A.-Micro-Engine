@@ -77,6 +77,9 @@ class SceneRuntime:
     # Witnessing an exchange moves a bystander's feelings less than being in it.
     witness_scale: float = 0.5
     transcript: list[SceneLine] = field(default_factory=list)
+    # Image-derived backdrop (a vision caption). When set, it replaces the
+    # authored `setting` as the pinned set — until the user uploads a new one.
+    backdrop: str = ""
 
     def __post_init__(self) -> None:
         missing = [a for a in self.scene.cast if a not in self.packs]
@@ -315,11 +318,17 @@ class SceneRuntime:
         others = [self._display(p) for p in onstage]
         presence = "On stage with you: " + ", ".join(others) + "." if others else ""
         parts = [pack.identity.strip()]
-        if self.scene.setting.strip():
-            parts.append("The scene:\n" + self.scene.setting.strip())
+        # An uploaded backdrop (a vision caption) supersedes the authored setting.
+        backdrop = self.backdrop.strip() or self.scene.setting.strip()
+        if backdrop:
+            parts.append("The scene:\n" + backdrop)
         if presence:
             parts.append(presence)
         return "\n\n".join(parts)
+
+    def set_backdrop(self, caption: str) -> None:
+        """Pin a new backdrop (from a vision caption); replaces any previous."""
+        self.backdrop = caption.strip()
 
     # --------------------------------------------------------------- shared
 

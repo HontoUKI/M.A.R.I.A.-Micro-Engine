@@ -56,6 +56,9 @@ class Settings:
     # the community tier ships no network access unless a deployer enables it.
     web_search: bool = False
     web_search_results: int = 3
+    # Multimodal model for scene-backdrop captioning (Ollama only). Empty = reuse
+    # the chat model (fine when it's multimodal, e.g. gemma3).
+    vision_model: str = ""
     llm_timeout_s: float = 120.0
     # Sampling for the voicing model. Temperature is the character's "spark";
     # num_ctx is the model context window (tokens). num_ctx None = let the
@@ -105,6 +108,7 @@ def load_settings() -> Settings:
         language=os.getenv("LANGUAGE", Settings.language),
         user_gender=os.getenv("USER_GENDER", Settings.user_gender),
         web_search=_bool_env("WEB_SEARCH", Settings.web_search),
+        vision_model=os.getenv("VISION_MODEL", Settings.vision_model),
         web_search_results=int(os.getenv("WEB_SEARCH_RESULTS", Settings.web_search_results)),
         llm_timeout_s=float(os.getenv("LLM_TIMEOUT_S", Settings.llm_timeout_s)),
         temperature=float(os.getenv("TEMPERATURE", Settings.temperature)),

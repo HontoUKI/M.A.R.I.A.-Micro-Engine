@@ -90,6 +90,16 @@ class SceneRunRequest(BaseModel):
     max_turns: int | None = None
 
 
+class SceneBackdropRequest(BaseModel):
+    """Upload an image (base64, optionally a data: URL) to caption and pin as the
+    scene's backdrop (v0.2, vision-capable Ollama models only)."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    user: str | None = None
+    image: str
+
+
 class WitnessOut(BaseModel):
     actor: str
     tag: str

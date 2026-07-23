@@ -19,6 +19,7 @@ from app.contracts import (
     ModelCard,
     ModelList,
     SceneAdvanceRequest,
+    SceneBackdropRequest,
     SceneCard,
     SceneList,
     SceneRunRequest,
@@ -35,6 +36,7 @@ from app.service import (
 )
 from engine import __version__
 from engine.llm import LLMError
+from engine.vision import BadImageError, VisionUnavailableError
 
 app = FastAPI(title="M.A.R.I.A. Micro-Engine", version=__version__)
 
@@ -279,6 +281,35 @@ def run_scene_endpoint(
         return _openai_error(503, "llm_unavailable", "The model backend failed.", "api_error")
 
     return JSONResponse(content={"turns": [_turn_out(r).model_dump() for r in results]})
+
+
+@app.post("/scenes/{scene}/backdrop")
+def set_scene_backdrop(
+    scene: str, request: SceneBackdropRequest, service: ServiceDep
+) -> JSONResponse:
+    """Caption an uploaded image and pin it as the scene's backdrop until
+    changed. Needs a vision-capable (Ollama) model; 501 otherwise."""
+    if (err := _known_scene_or_404(service, scene)) is not None:
+        return err
+    session_key = request.user or "default"
+    try:
+        caption = service.set_scene_backdrop(scene, session_key, request.image)
+    except SceneUnavailableError as exc:
+        return _openai_error(409, "scene_unavailable", str(exc), "invalid_request_error")
+    except BadImageError as exc:
+        return _openai_error(400, "bad_image", str(exc), "invalid_request_error")
+    except VisionUnavailableError as exc:
+        return _openai_error(501, "vision_unavailable", str(exc), "api_error")
+    except LLMError:
+        return _openai_error(503, "llm_unavailable", "The model backend failed.", "api_error")
+    return JSONResponse(content={"backdrop": caption})
+
+
+@app.get("/scenes/{scene}/backdrop")
+def get_scene_backdrop(scene: str, service: ServiceDep, user: str = "default") -> JSONResponse:
+    if (err := _known_scene_or_404(service, scene)) is not None:
+        return err
+    return JSONResponse(content={"backdrop": service.scene_backdrop(scene, user)})
 
 
 @app.get("/scenes/{scene}/transcript")

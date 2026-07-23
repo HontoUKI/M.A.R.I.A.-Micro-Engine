@@ -150,6 +150,29 @@ class OllamaClient(_HttpLLM):
             raise LLMError(f"unexpected embed payload shape: {type(data).__name__}") from exc
         return [float(x) for x in vector]
 
+    def caption(self, image_b64: str, prompt: str, *, model: str | None = None) -> str:
+        """Describe an image (base64 JPEG/PNG) with a vision-capable model.
+
+        Used to turn an uploaded scene backdrop into pinned text. Requires the
+        chosen model to be multimodal (e.g. gemma3 in Ollama)."""
+        payload: dict[str, Any] = {
+            "model": model or self._chat_model,
+            "messages": [{"role": "user", "content": prompt, "images": [image_b64]}],
+            "stream": False,
+        }
+        data = self._post("/api/chat", payload)
+        try:
+            content = data["message"]["content"]
+        except (KeyError, TypeError) as exc:
+            raise LLMError(f"unexpected caption payload shape: {type(data).__name__}") from exc
+        if not isinstance(content, str):
+            raise LLMError("caption content is not a string")
+        self._add_usage(
+            payload["model"], int(data.get("prompt_eval_count") or 0),
+            int(data.get("eval_count") or 0),
+        )
+        return content.strip()
+
 
 class OpenAIClient(_HttpLLM):
     """The OpenAI API (or an OpenAI-compatible endpoint), keyed by an API key.

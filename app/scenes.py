@@ -55,9 +55,11 @@ class SceneStore:
             directory = self._dir(session_key, scene)
             matrix = self._load_matrix(directory, scene)
             transcript = self._load_transcript(directory)
+            backdrop = self._load_text(os.path.join(directory, "backdrop.txt"))
             runtime = SceneRuntime(
                 scene, packs, self._llm,
                 matrix=matrix, axis_max=self._axis_max, transcript=transcript,
+                backdrop=backdrop,
             )
             self._runtimes[key] = runtime
         return runtime
@@ -75,6 +77,8 @@ class SceneStore:
                 for ln in runtime.transcript
             ),
         )
+        if runtime.backdrop:
+            save_text_atomic(os.path.join(directory, "backdrop.txt"), runtime.backdrop)
 
     def transcript(self, session_key: str, scene: ScenePack) -> list[dict]:
         directory = self._dir(session_key, scene)
@@ -89,17 +93,26 @@ class SceneStore:
         # Not started yet: return the scene's seeded starting matrix.
         return RelationshipMatrix.from_scene(scene, axis_max=self._axis_max).to_dict()
 
+    def backdrop(self, session_key: str, scene: ScenePack) -> str:
+        return self._load_text(os.path.join(self._dir(session_key, scene), "backdrop.txt"))
+
     def reset(self, session_key: str, scene: ScenePack) -> None:
         """Forget the scene — drop the cached runtime and its persisted files."""
         self._runtimes.pop((session_key, scene.meta.name), None)
         directory = self._dir(session_key, scene)
-        for name in ("matrix.json", "transcript.jsonl"):
+        for name in ("matrix.json", "transcript.jsonl", "backdrop.txt"):
             try:
                 os.remove(os.path.join(directory, name))
             except OSError:
                 pass
 
     # --------------------------------------------------------------- disk
+
+    def _load_text(self, path: str) -> str:
+        if not os.path.isfile(path):
+            return ""
+        with open(path, encoding="utf-8") as fh:
+            return fh.read()
 
     def _load_matrix(self, directory: str, scene: ScenePack) -> RelationshipMatrix | None:
         stored = load_json(os.path.join(directory, "matrix.json"), None)
