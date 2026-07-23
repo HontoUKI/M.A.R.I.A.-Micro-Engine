@@ -20,6 +20,9 @@ const els = {
   sceneReset: document.getElementById("scene-reset"),
   matrix: document.getElementById("matrix"),
   matrixBody: document.getElementById("matrix-body"),
+  backdropControls: document.getElementById("backdrop-controls"),
+  backdropFile: document.getElementById("backdrop-file"),
+  backdropCaption: document.getElementById("backdrop-caption"),
   name: document.getElementById("name"),
   stage: document.getElementById("stage"),
   face: document.getElementById("face"),
@@ -294,6 +297,7 @@ async function enterScene(id) {
   els.history.disabled = true;
   els.sceneReset.hidden = false;
   els.matrix.hidden = false;
+  els.backdropControls.hidden = false;
   els.name.textContent = titleCase(id);
   els.stage.textContent = state.play ? "you narrate" : "group scene";
   els.log.innerHTML = "";
@@ -301,6 +305,10 @@ async function enterScene(id) {
   els.input.placeholder = state.play
     ? "Narrate a cue — the cast acts it out…"
     : "Say something to the group…";
+  const bd = (await fetch(`/scenes/${id}/backdrop?user=${state.sessionId}`)
+    .then((r) => r.json())
+    .catch(() => ({ backdrop: "" }))).backdrop || "";
+  els.backdropCaption.textContent = bd;
 
   const lines = (await fetch(`/scenes/${id}/transcript?user=${state.sessionId}`)
     .then((r) => r.json())
@@ -317,8 +325,32 @@ function leaveScene() {
   els.history.disabled = false;
   els.sceneReset.hidden = true;
   els.matrix.hidden = true;
+  els.backdropControls.hidden = true;
   els.scene.value = "";
   startConversation();
+}
+
+async function uploadBackdrop(file) {
+  const dataUrl = await new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+  els.backdropCaption.textContent = "reading the image…";
+  try {
+    const res = await fetch(`/scenes/${state.scene}/backdrop`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: state.sessionId, image: dataUrl }),
+    });
+    const data = await res.json();
+    els.backdropCaption.textContent = res.ok
+      ? data.backdrop
+      : (data.error && data.error.message) || `Error ${res.status}`;
+  } catch {
+    els.backdropCaption.textContent = "Could not reach the server.";
+  }
 }
 
 function addSceneLine(speaker, text) {
@@ -442,7 +474,11 @@ els.sceneReset.addEventListener("click", async () => {
   if (!state.sceneMode) return;
   await fetch(`/scenes/${state.scene}/reset?user=${state.sessionId}`, { method: "POST" });
   els.log.innerHTML = "";
+  els.backdropCaption.textContent = "";
   await refreshMatrix();
+});
+els.backdropFile.addEventListener("change", () => {
+  if (els.backdropFile.files[0]) uploadBackdrop(els.backdropFile.files[0]);
 });
 
 // Reply language and address gender are per-browser preferences sent with every

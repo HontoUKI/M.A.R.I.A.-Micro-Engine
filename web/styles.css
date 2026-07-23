@@ -214,3 +214,5 @@ button:disabled { opacity: 0.5; cursor: default; }
 .matrix-row .edge-vals { font-variant-numeric: tabular-nums; }
 .bubble .speaker { font-weight: 600; color: var(--accent); }
 .bubble .speaker.cue { color: var(--muted); font-style: italic; font-weight: 500; }
+.backdrop-caption { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 4px; }
+#backdrop-file { font-size: 11px; }
