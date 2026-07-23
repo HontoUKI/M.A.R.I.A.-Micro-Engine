@@ -26,6 +26,9 @@ from engine.textjson import loads_lenient
 
 # How the user shows up in the cast presence line and dialogue window.
 _USER_LABEL = "User"
+# In play mode the user's lines are narrator cues, recorded under this speaker id
+# so they read as stage directions and are never a target actors address.
+NARRATOR = "narrator"
 
 
 @dataclass(frozen=True)
@@ -98,25 +101,37 @@ class SceneRuntime:
     def advance(
         self, user_message: str | None = None, *, speaker: str | None = None
     ) -> SceneTurnResult:
-        """Advance the scene by one spoken line.
+        """One group-chat turn: the user speaks as a participant.
 
-        In group chat the user usually drives the turn with `user_message`; a
-        caller (or the director) may name the `speaker`, otherwise the director
+        A caller (or the director) may name the `speaker`, otherwise the director
         picks and round-robin is the fallback.
         """
         if user_message is not None:
             self.transcript.append(SceneLine(USER_ID, user_message))
-
         actor = self._resolve_speaker(speaker, user_message or "")
+        return self._take_turn(actor)
+
+    def run(
+        self, cue: str | None = None, *, max_turns: int = 1
+    ) -> list[SceneTurnResult]:
+        """Play/narrator turns: the user feeds a `cue` (a stage direction the
+        cast reacts to but never answers) and the cast acts among themselves for
+        up to `max_turns`, the director choosing each speaker."""
+        if cue:
+            self.transcript.append(SceneLine(NARRATOR, cue))
+        results: list[SceneTurnResult] = []
+        for _ in range(max(1, max_turns)):
+            actor = self._resolve_speaker(None, self._trigger_text())
+            results.append(self._take_turn(actor))
+        return results
+
+    def _take_turn(self, actor: str) -> SceneTurnResult:
+        """One actor's turn: classify the moment, voice it, move the edge, then
+        run the witness pass. Shared by group chat and play mode."""
         pack = self.packs[actor]
         tagset = self._tagsets[actor]
-
-        # Gate the actor's tags by their standing toward the user (their main
-        # relationship in a group chat) — this is the "how far the story has
-        # come for me" anchor.
-        scene_ratio = relationship_ratio(self.matrix.feeling(actor, USER_ID), self.axis_max)
-        targets = [p for p in self._participants() if p != actor]
-        available = tagset.available(scene_ratio)
+        targets = self._targets_for(actor)
+        available = tagset.available(self._scene_ratio(actor))
 
         tag_id, target = self._classify_moment(actor, available, targets)
         tag = tagset.get(tag_id)
@@ -127,7 +142,6 @@ class SceneRuntime:
         self._last_speaker = actor
 
         witnessed = self._witness_pass(actor)
-
         return SceneTurnResult(
             speaker=actor,
             reply=reply,
@@ -136,6 +150,28 @@ class SceneRuntime:
             feeling=self.matrix.feeling(actor, target),
             witnessed=witnessed,
         )
+
+    def _targets_for(self, actor: str) -> list[str]:
+        """Who this actor's reaction can be about. In play mode the user is the
+        narrator, not a participant, so actors address each other — never the
+        user."""
+        parts = [p for p in self._participants() if p != actor]
+        if self.scene.mode == "play":
+            parts = [p for p in parts if p != USER_ID]
+        return parts
+
+    def _scene_ratio(self, actor: str) -> float:
+        """The "how far the story has come for me" anchor that gates an actor's
+        tags: their standing toward the user in group chat, or their strongest
+        bond to anyone in play mode (where there is no user in the cast)."""
+        if self.scene.mode == "play":
+            ratios = [
+                relationship_ratio(self.matrix.feeling(actor, p), self.axis_max)
+                for p in self._participants()
+                if p != actor and p != USER_ID
+            ]
+            return max(ratios, default=0.0)
+        return relationship_ratio(self.matrix.feeling(actor, USER_ID), self.axis_max)
 
     # -------------------------------------------------------------- witness
 
@@ -148,11 +184,8 @@ class SceneRuntime:
         for actor in self.scene.cast:
             if actor == speaker:
                 continue
-            scene_ratio = relationship_ratio(
-                self.matrix.feeling(actor, USER_ID), self.axis_max
-            )
-            targets = [p for p in self._participants() if p != actor]
-            available = self._tagsets[actor].available(scene_ratio)
+            targets = self._targets_for(actor)
+            available = self._tagsets[actor].available(self._scene_ratio(actor))
             tag_id, target = self._classify_moment(actor, available, targets)
             tag = self._tagsets[actor].get(tag_id)
             self.matrix.apply(actor, target, _scaled(tag.delta, self.witness_scale))
@@ -208,8 +241,11 @@ class SceneRuntime:
             except LLMError:
                 break
             parsed = _parse_moment(raw)
-            if parsed and parsed[0] in valid_tags and parsed[1] in targets:
-                return parsed
+            # A valid tag is the load-bearing signal; if the target is off, keep
+            # the tag and default the target rather than discarding both.
+            if parsed and parsed[0] in valid_tags:
+                target = parsed[1] if parsed[1] in targets else fallback_target
+                return parsed[0], target
         return fallback_tag, fallback_target
 
     def _moment_messages(
@@ -253,9 +289,17 @@ class SceneRuntime:
 
         window = self._window_for(actor, drop_last=True)
         trigger = self._trigger_line(actor)
+        invariants = list(pack.invariants)
+        if self.scene.mode == "play":
+            invariants.append(
+                "You are acting out a scene. A line in [Scene: ...] is a stage "
+                "direction describing what is happening — react to the event and "
+                "speak to the other characters, but never address or answer a "
+                "narrator or the audience."
+            )
         inputs = PromptInputs(
             identity=self._identity(actor, pack),
-            invariants="\n".join(pack.invariants),
+            invariants="\n".join(invariants),
             stage_block=tone,
             steering_block=tag.block,
             dialogue_window=tuple(DialogueTurn(m["role"], m["content"]) for m in window),
@@ -264,12 +308,17 @@ class SceneRuntime:
         return self.prompt_manager.build_messages(inputs)
 
     def _identity(self, actor: str, pack: CharacterPack) -> str:
-        others = [self._display(p) for p in self._participants() if p != actor]
-        presence = "On stage with you: " + ", ".join(others) + "."
+        # In play mode the user is the narrator, not on stage — only other actors.
+        onstage = [a for a in self.scene.cast if a != actor]
+        if self.scene.mode != "play":
+            onstage.append(USER_ID)
+        others = [self._display(p) for p in onstage]
+        presence = "On stage with you: " + ", ".join(others) + "." if others else ""
         parts = [pack.identity.strip()]
         if self.scene.setting.strip():
             parts.append("The scene:\n" + self.scene.setting.strip())
-        parts.append(presence)
+        if presence:
+            parts.append(presence)
         return "\n\n".join(parts)
 
     # --------------------------------------------------------------- shared
@@ -280,20 +329,27 @@ class SceneRuntime:
     def _display(self, participant: str) -> str:
         if participant == USER_ID:
             return _USER_LABEL
+        if participant == NARRATOR:
+            return "Narrator"
         return self.packs[participant].meta.display_name
+
+    def _label(self, line: SceneLine) -> str:
+        """A transcript line as one labeled string. A narrator cue reads as a
+        stage direction so actors react to the event, not to a speaker."""
+        if line.speaker == NARRATOR:
+            return f"[Scene: {line.content}]"
+        return f"{self._display(line.speaker)}: {line.content}"
 
     def _window_for(self, actor: str, *, drop_last: bool) -> list[dict[str, str]]:
         """Recent transcript from `actor`'s POV: own lines are 'assistant', all
-        others are 'user' prefixed with the speaker's name."""
+        others are 'user' — labeled with the speaker, or as a [Scene: ...] cue."""
         lines = self.transcript[:-1] if drop_last and self.transcript else self.transcript
         out: list[dict[str, str]] = []
         for line in lines:
             if line.speaker == actor:
                 out.append({"role": "assistant", "content": line.content})
             else:
-                out.append(
-                    {"role": "user", "content": f"{self._display(line.speaker)}: {line.content}"}
-                )
+                out.append({"role": "user", "content": self._label(line)})
         return out
 
     def _trigger_line(self, actor: str) -> str:
@@ -302,11 +358,13 @@ class SceneRuntime:
         last = self.transcript[-1]
         if last.speaker == actor:  # shouldn't happen, but stay safe
             return last.content
-        return f"{self._display(last.speaker)}: {last.content}"
+        return self._label(last)
+
+    def _trigger_text(self) -> str:
+        return self._label(self.transcript[-1]) if self.transcript else ""
 
     def _transcript_text(self, *, limit: int) -> str:
-        recent = self.transcript[-limit:]
-        return "\n".join(f"{self._display(line.speaker)}: {line.content}" for line in recent)
+        return "\n".join(self._label(line) for line in self.transcript[-limit:])
 
 
 def _parse_moment(raw: str) -> tuple[str, str] | None:

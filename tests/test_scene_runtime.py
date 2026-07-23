@@ -243,6 +243,62 @@ def test_round_robin_fallback_when_director_returns_nothing():
     assert rt.advance("hi").speaker == "aria"  # first in cast
 
 
+# ---------------------------------------------------------------- play mode
+
+
+def _play_scene(**over):
+    return _two_actor_scene(mode="play", **over)
+
+
+def test_play_mode_records_cue_as_narration_not_a_user_line():
+    rt = SceneRuntime(_play_scene(), _packs(), SceneLLM(speaker="aria", target="bram"))
+    rt.run("a dragon roars overhead", max_turns=1)
+    assert rt.transcript[0].speaker == "narrator"
+    assert rt.transcript[0].content == "a dragon roars overhead"
+
+
+def test_play_mode_actors_address_each_other_never_the_user():
+    # The stub tries target=user, invalid in play mode -> falls back to an actor.
+    llm = SceneLLM(speaker="aria", tag="warmth", target="user")
+    rt = SceneRuntime(_play_scene(), _packs(), llm)
+    res = rt.run("something magical happens", max_turns=1)
+    assert res[0].target != USER_ID
+    assert rt.matrix.feeling("aria", "bram").affection == 5  # aria -> bram
+    assert rt.matrix.feeling("aria", USER_ID).affection == 0  # never the narrator
+
+
+def test_run_produces_max_turns_turns():
+    llm = SceneLLM(speaker="aria", tag="neutral", target="bram")
+    rt = SceneRuntime(_play_scene(), _packs(), llm)
+    assert len(rt.run("go", max_turns=3)) == 3
+
+
+def test_play_voice_prompt_has_stage_direction_note_and_no_user_on_stage():
+    llm = SceneLLM(speaker="aria", tag="neutral", target="bram", reply="x")
+    rt = SceneRuntime(_play_scene(), _packs(), llm)
+    rt.run("the ground trembles", max_turns=1)
+    system = llm.voice_prompts[0][0]["content"]
+    assert "stage direction" in system  # play-mode instruction
+    assert "Bram" in system  # other actor is on stage
+    assert "On stage with you: User" not in system  # the narrator is not
+
+
+def test_play_classify_sees_the_cue_as_a_scene_direction():
+    llm = CapturingLLM(speaker="aria", tag="neutral", target="bram")
+    rt = SceneRuntime(_play_scene(), _packs(), llm)
+    rt.run("a portal tears open", max_turns=1)
+    assert "[Scene: a portal tears open]" in llm.moment_calls[0][-1]["content"]
+
+
+def test_group_chat_still_targets_the_user():
+    # Contrast: in group chat the user IS a participant and a valid target.
+    llm = SceneLLM(speaker="aria", tag="warmth", target=USER_ID)
+    rt = _runtime(llm)  # default group_chat scene
+    res = rt.advance("you're lovely")
+    assert res.target == USER_ID
+    assert rt.matrix.feeling("aria", USER_ID).affection == 5
+
+
 # ---------------------------------------------------------------- seams
 
 

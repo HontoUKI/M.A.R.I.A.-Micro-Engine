@@ -173,6 +173,21 @@ class EngineService:
         self.scene_store.save(session_key, scene, runtime)
         return result
 
+    def run_scene(
+        self,
+        scene_name: str,
+        session_key: str,
+        *,
+        cue: str | None = None,
+        max_turns: int = 1,
+    ) -> list[SceneTurnResult]:
+        scene = self._require_scene(scene_name)
+        packs = self._scene_packs(scene)
+        runtime = self.scene_store.runtime_for(session_key, scene, packs)
+        results = runtime.run(cue, max_turns=max_turns)
+        self.scene_store.save(session_key, scene, runtime)
+        return results
+
     def scene_transcript(self, scene_name: str, session_key: str) -> list[dict]:
         return self.scene_store.transcript(session_key, self._require_scene(scene_name))
 

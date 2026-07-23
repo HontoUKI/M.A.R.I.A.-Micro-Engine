@@ -21,6 +21,7 @@ from app.contracts import (
     SceneAdvanceRequest,
     SceneCard,
     SceneList,
+    SceneRunRequest,
     SceneTurnOut,
     WitnessOut,
 )
@@ -197,12 +198,29 @@ def reset_session(model: str, service: ServiceDep, user: str = "default") -> JSO
 # the OpenAI-compatible surface.
 
 
+_MAX_SCENE_RUN_TURNS = 8  # cap the autonomous budget so a scene can't run away
+
+
 def _known_scene_or_404(service: EngineService, scene: str) -> JSONResponse | None:
     if service.has_scene(scene):
         return None
     return _openai_error(
         404, "scene_not_found", f"No scene named {scene!r}.", "invalid_request_error",
         param="scene",
+    )
+
+
+def _turn_out(result) -> SceneTurnOut:
+    return SceneTurnOut(
+        speaker=result.speaker,
+        reply=result.reply,
+        tag=result.tag,
+        target=result.target,
+        feeling=result.feeling.as_dict(),
+        witnessed=[
+            WitnessOut(actor=w.actor, tag=w.tag, target=w.target, feeling=w.feeling.as_dict())
+            for w in result.witnessed
+        ],
     )
 
 
@@ -236,18 +254,31 @@ def advance_scene(
     except LLMError:
         return _openai_error(503, "llm_unavailable", "The model backend failed.", "api_error")
 
-    out = SceneTurnOut(
-        speaker=result.speaker,
-        reply=result.reply,
-        tag=result.tag,
-        target=result.target,
-        feeling=result.feeling.as_dict(),
-        witnessed=[
-            WitnessOut(actor=w.actor, tag=w.tag, target=w.target, feeling=w.feeling.as_dict())
-            for w in result.witnessed
-        ],
-    )
-    return JSONResponse(content=out.model_dump())
+    return JSONResponse(content=_turn_out(result).model_dump())
+
+
+@app.post("/scenes/{scene}/run")
+def run_scene_endpoint(
+    scene: str, request: SceneRunRequest, service: ServiceDep
+) -> JSONResponse:
+    """Play/narrator mode: feed a stage cue and let the cast act among themselves
+    for up to `max_turns` turns (capped). Returns the sequence of turns."""
+    if (err := _known_scene_or_404(service, scene)) is not None:
+        return err
+    session_key = request.user or "default"
+    max_turns = max(1, min(_MAX_SCENE_RUN_TURNS, request.max_turns or 1))
+    try:
+        results = service.run_scene(
+            scene, session_key, cue=request.cue, max_turns=max_turns
+        )
+    except SceneUnavailableError as exc:
+        return _openai_error(409, "scene_unavailable", str(exc), "invalid_request_error")
+    except ValueError as exc:
+        return _openai_error(400, "bad_request", str(exc), "invalid_request_error")
+    except LLMError:
+        return _openai_error(503, "llm_unavailable", "The model backend failed.", "api_error")
+
+    return JSONResponse(content={"turns": [_turn_out(r).model_dump() for r in results]})
 
 
 @app.get("/scenes/{scene}/transcript")

@@ -107,6 +107,32 @@ def test_scene_state_persists_across_turns(client_with, tmp_path):
     assert len(lines) == 4  # two user lines + two aria replies
 
 
+def test_play_mode_run_returns_a_sequence_of_turns(client_with, tmp_path):
+    scene = _scene(mode="play")
+    client = client_with(_service(tmp_path, scene=scene,
+                                  llm=SceneLLM(speaker="aria", tag="neutral", target="bram")))
+    resp = client.post(
+        "/scenes/cafe/run", json={"user": "u1", "cue": "a dragon appears", "max_turns": 3}
+    )
+    assert resp.status_code == 200
+    turns = resp.json()["turns"]
+    assert len(turns) == 3
+    assert all(t["target"] != USER_ID for t in turns)  # actors address each other
+
+
+def test_run_budget_is_capped(client_with, tmp_path):
+    scene = _scene(mode="play")
+    client = client_with(_service(tmp_path, scene=scene,
+                                  llm=SceneLLM(speaker="aria", target="bram")))
+    turns = client.post("/scenes/cafe/run", json={"max_turns": 999}).json()["turns"]
+    assert len(turns) == 8  # _MAX_SCENE_RUN_TURNS
+
+
+def test_run_on_unknown_scene_404(client_with, tmp_path):
+    client = client_with(_service(tmp_path))
+    assert client.post("/scenes/ghost/run", json={"cue": "x"}).status_code == 404
+
+
 def test_unknown_scene_404(client_with, tmp_path):
     client = client_with(_service(tmp_path))
     assert client.post("/scenes/ghost/advance", json={"message": "hi"}).status_code == 404

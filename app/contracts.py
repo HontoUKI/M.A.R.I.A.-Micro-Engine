@@ -79,6 +79,17 @@ class SceneAdvanceRequest(BaseModel):
     speaker: str | None = None
 
 
+class SceneRunRequest(BaseModel):
+    """Play/narrator mode (v0.2): feed a stage cue and let the cast act among
+    themselves for up to `max_turns` (the server caps it)."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    user: str | None = None
+    cue: str | None = None
+    max_turns: int | None = None
+
+
 class WitnessOut(BaseModel):
     actor: str
     tag: str
