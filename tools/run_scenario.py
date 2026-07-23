@@ -29,17 +29,21 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from scenarios import SCENARIOS  # noqa: E402  (tools/ is on sys.path[0])
+from scene_scripts import SCENE_SCRIPTS  # noqa: E402
 
 from engine.character import CharacterRuntime  # noqa: E402
 from engine.llm import OllamaClient  # noqa: E402
 from engine.memory import VectorStore  # noqa: E402
 from engine.pack import load_pack  # noqa: E402
 from engine.prompt_manager import DialogueTurn  # noqa: E402
+from engine.scene import load_scene  # noqa: E402
+from engine.scene.runtime import SceneRuntime  # noqa: E402
 from engine.state import (  # noqa: E402
     DEFAULT_AXIS_MAX,
     StateKernel,
     relationship_ratio,
 )
+from engine.vision import caption_backdrop  # noqa: E402
 from engine.web import DuckDuckGoSearcher  # noqa: E402
 
 _AXES = ("affection", "trust", "bond")
@@ -134,9 +138,71 @@ def run_one(character: str, length, args) -> None:
     sys.stdout.flush()
 
 
+def _edge(rt, a: str, b: str) -> str:
+    f = rt.matrix.feeling(a, b)
+    return f"{a}->{b} aff{f.affection:g} tru{f.trust:g} bond{f.bond:g}"
+
+
+def run_scene(scene_name: str, args) -> None:
+    """Drive a whole scene (play mode) through a scripted set of narrator beats,
+    printing both actors' feelings each turn so the asynchrony is visible."""
+    scene = load_scene(str(_ROOT / "scenes" / scene_name))
+    packs = {a: load_pack(str(_ROOT / "characters" / a)) for a in scene.cast}
+    llm = OllamaClient(args.ollama_url, args.model, args.embed_model, temperature=args.temperature)
+    rt = SceneRuntime(scene, packs, llm, axis_max=DEFAULT_AXIS_MAX)
+
+    print("=" * 78)
+    print(f"SCENE {scene.meta.display_name}  |  mode={scene.mode}  |  model={args.model}")
+    print("cast: " + ", ".join(scene.cast))
+    print("=" * 78)
+
+    backdrop_img = _ROOT / "scenes" / scene_name / "backdrop.png"
+    if args.vision_model and backdrop_img.is_file():
+        import base64
+
+        b64 = base64.b64encode(backdrop_img.read_bytes()).decode()
+        try:
+            rt.set_backdrop(caption_backdrop(llm, b64, model=args.vision_model))
+            print("BACKDROP: " + rt.backdrop[:200].replace("\n", " ") + "...\n")
+        except Exception as exc:  # noqa: BLE001 - backdrop is optional polish
+            print(f"(backdrop caption skipped: {exc})\n")
+
+    others = {a: next(x for x in scene.cast if x != a) for a in scene.cast}
+    n = 0
+    for beat in SCENE_SCRIPTS[scene_name]:
+        if "reset" in beat:
+            who = beat["reset"]
+            print(f"\n*** MEMORY WIPE: {who} — feelings return to baseline ***")
+            rt.reset_actor(who)
+            for a in scene.cast:
+                print("    " + _edge(rt, a, others[a]))
+            sys.stdout.flush()
+            continue
+
+        print(f"\n[cue] {beat['cue']}")
+        for res in rt.run(beat["cue"], max_turns=beat.get("turns", 2)):
+            n += 1
+            print(f"  [{n:03d}] {res.speaker} (tag={res.tag}->{res.target}): {res.reply.strip()}")
+            print("        " + "  |  ".join(_edge(rt, a, others[a]) for a in scene.cast))
+            sys.stdout.flush()
+
+    print("\n" + "-" * 78)
+    print("FINAL (note the asymmetry — one wiped, one intact):")
+    for a in scene.cast:
+        print("    " + _edge(rt, a, others[a]))
+    usage = llm.usage_snapshot()
+    print(
+        f"messages={n}  tokens: total={usage['total_tokens']} (calls={usage['calls']})"
+    )
+    print("-" * 78 + "\n")
+    sys.stdout.flush()
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Run an e2e character scenario.")
     p.add_argument("--character", default="both", help="megumin | kaguya | both")
+    p.add_argument("--scene", default="", help="run a scripted scene instead (e.g. 3_days_before)")
+    p.add_argument("--vision-model", default="", help="multimodal model to caption backdrop.png")
     p.add_argument("--length", default="all", help="10 | 20 | 30 | coding | boundary | all")
     p.add_argument("--name", default="Alex", help="user name used in the script")
     p.add_argument("--model", default="gemma3:4b")
@@ -158,6 +224,10 @@ def main() -> None:
     p.add_argument("--trust", type=float, default=None)
     p.add_argument("--bond", type=float, default=None)
     args = p.parse_args()
+
+    if args.scene:
+        run_scene(args.scene, args)
+        return
 
     characters = ["megumin", "kaguya"] if args.character == "both" else [args.character]
     if args.length == "all":
