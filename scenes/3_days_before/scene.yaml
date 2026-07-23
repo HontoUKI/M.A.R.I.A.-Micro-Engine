@@ -1,0 +1,39 @@
+spec_version: 1
+
+meta:
+  name: 3_days_before
+  display_name: "3 Days Before"
+  version: 0.1.0
+  license: "Original scene, CC-BY-4.0"
+  author: "M.A.R.I.A. Micro-Engine samples"
+  description: "Daniel and the android Aria, in the three days before her memory is wiped again. A play you direct."
+
+# A play you narrate: you feed the beats, the two live them out between each other.
+mode: play
+director: model
+
+setting: |
+  A small home office, late at night. Two monitors glow over a desk buried in
+  coffee mugs, sticky notes and tangled cable; rain streaks the window and the
+  city smears orange behind it. This is where Daniel built Aria, and where, every
+  three days, her update wipes her clean and he begins again. It has been three
+  days. Neither of them says so yet, but the clock is running out.
+
+cast:
+  - daniel
+  - aria
+
+# The opening asymmetry, on purpose. Daniel carries everything he remembers of
+# her (a warm, worn edge). Aria has just woken from an update — her feelings for
+# him start at her blank baseline, which is exactly where an update returns her.
+relationships:
+  - from: daniel
+    to: aria
+    affection: 20
+    trust: 15
+    bond: 4
+  - from: aria
+    to: daniel
+    affection: 8
+    trust: 12
+    bond: 0
