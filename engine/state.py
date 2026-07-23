@@ -107,6 +107,12 @@ class StateKernel:
             )
         return self.axes
 
+    def reset(self) -> Axes:
+        """Snap every axis back to its baseline (its start) — a hard wipe, unlike
+        the gradual pull of decay."""
+        self._values = dict(self._start)
+        return self.axes
+
     def to_dict(self) -> dict[str, float]:
         return dict(self._values)
 

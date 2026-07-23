@@ -112,3 +112,20 @@ def test_persisted_values_restore_current_standing():
         values={("megumin", "kaguya"): {"affection": 42, "trust": 30, "bond": 7}},
     )
     assert m.feeling("megumin", "kaguya").affection == 42
+
+
+def test_reset_source_wipes_only_that_actors_outgoing_edges():
+    m = RelationshipMatrix(
+        ["daniel", "aria"],
+        seeds={("daniel", "aria"): (20.0, 15.0, 4.0), ("aria", "daniel"): (8.0, 12.0, 0.0)},
+    )
+    # Grow both directions.
+    m.apply("daniel", "aria", _delta(aff=10, tru=5))
+    m.apply("aria", "daniel", _delta(aff=20, tru=10, bond=2))
+    # Aria's update wipes only HER feelings, back to her seed baseline.
+    m.reset_source("aria")
+    aria = m.feeling("aria", "daniel")
+    assert (aria.affection, aria.trust, aria.bond) == (8, 12, 0)  # back to seed
+    # Daniel still remembers everything he felt — untouched.
+    dan = m.feeling("daniel", "aria")
+    assert dan.affection == 30 and dan.trust == 20

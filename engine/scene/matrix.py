@@ -98,6 +98,14 @@ class RelationshipMatrix:
         """Move only the `source -> target` edge. Never touches the reverse."""
         return self._kernel(source, target).apply(delta)
 
+    def reset_source(self, source: str) -> None:
+        """Wipe every edge FROM `source` back to its seed baseline — a memory
+        reset. Edges pointing AT `source`, and all other edges, are untouched:
+        everyone else keeps how they feel about the one who forgot."""
+        for (src, _), kernel in self._edges.items():
+            if src == source:
+                kernel.reset()
+
     def to_dict(self) -> dict[str, dict[str, float]]:
         """Persistable snapshot, keyed `"source->target"`."""
         return {f"{s}->{t}": k.to_dict() for (s, t), k in self._edges.items()}

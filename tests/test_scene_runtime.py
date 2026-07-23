@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 
+from engine.pack.models import DeltaVector
 from engine.scene.matrix import RelationshipMatrix
 from engine.scene.models import USER_ID, ScenePack
 from engine.scene.runtime import SceneRuntime
@@ -343,3 +344,27 @@ def test_from_scene_matrix_is_used_when_not_injected():
     rt = SceneRuntime(scene, _packs(), SceneLLM(speaker="aria", tag="neutral", target="bram"))
     assert isinstance(rt.matrix, RelationshipMatrix)
     assert rt.matrix.feeling("aria", "bram").affection == 20
+
+
+def test_reset_actor_wipes_one_side_and_keeps_the_other():
+    scene = _play_scene(
+        relationships=[
+            {"from": "aria", "to": "bram", "affection": 8, "trust": 12},
+            {"from": "bram", "to": "aria", "affection": 20, "trust": 15},
+        ],
+        cast=["aria", "bram"],
+    )
+    llm = SceneLLM(speaker="aria", tag="warmth", target="bram")
+    rt = SceneRuntime(scene, _packs(), llm)
+    rt.matrix.apply("aria", "bram", DeltaVector(affection=15, trust=10))
+    rt.reset_actor("aria")
+    a = rt.matrix.feeling("aria", "bram")
+    assert (a.affection, a.trust) == (8, 12)  # aria wiped to her seed baseline
+    assert rt.matrix.feeling("bram", "aria").affection == 20  # bram remembers
+
+
+def test_reset_unknown_actor_raises():
+    import pytest
+    rt = _runtime(SceneLLM())
+    with pytest.raises(ValueError, match="not in the cast"):
+        rt.reset_actor("ghost")

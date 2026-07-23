@@ -330,6 +330,15 @@ class SceneRuntime:
         """Pin a new backdrop (from a vision caption); replaces any previous."""
         self.backdrop = caption.strip()
 
+    def reset_actor(self, actor: str) -> None:
+        """Wipe one actor's relationship state back to baseline — a memory reset.
+        Only that actor's outgoing feelings reset; how everyone else feels about
+        them persists, which is exactly the asymmetry a memory-loss scene shows.
+        """
+        if actor not in self.scene.cast:
+            raise ValueError(f"{actor!r} is not in the cast")
+        self.matrix.reset_source(actor)
+
     # --------------------------------------------------------------- shared
 
     def _participants(self) -> list[str]:
