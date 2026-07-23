@@ -206,3 +206,69 @@ compromise between Sydney and Melbourne… kinda boring, tbh."*
 - A few playfully-worded recall probes (e.g. [66], [91]) were read as `teasing`
   and answered with banter rather than the fact; direct questions ([34], [45])
   recalled correctly.
+
+## A directed scene — asynchronous feelings (Daniel & Aria)
+
+The v0.2 scene layer runs a whole *cast* on one stage, with a relationship
+**matrix** (each pair's feelings, directed and independent) instead of a single
+tally. This example is a **play** you narrate: `3_days_before` casts **Daniel**,
+a programmer, and **Aria**, the android he built — whose memory a bug wipes every
+three days. It was run through the scene runner on `gemma4:31b-cloud`, with the
+bundled office image captioned by a vision model as the pinned backdrop. Full
+transcript: [`example_scene_3_days_before.txt`](example_scene_3_days_before.txt).
+
+```
+python tools/run_scenario.py --scene 3_days_before \
+    --model gemma4:31b-cloud --vision-model gemma3:4b
+```
+
+You feed stage cues; the two act them out **between each other**, never to you.
+The point of the scene is **asynchronous axes** — affection and trust moving
+*independently*, even in opposite directions — which a single "closeness" number
+could never show.
+
+### Affection up, trust down — in the same person
+
+Daniel's `too_human` tag fires whenever Aria shows a depth he never programmed.
+It moves **affection up and trust down at once**: he is pulled toward her exactly
+as he trusts the spark less. Over the scene his edge toward Aria goes:
+
+```
+aff 24 / tru 18   →   aff 50 / tru 19   →   aff 70 / tru 25   →
+aff 82 / tru 19   →   aff 93 / tru 12   →   aff 100 / tru 8
+```
+
+Affection climbs to the ceiling while trust *falls by half* — because he keeps
+thinking, in his own words: *"The word 'home' hits me like a physical blow. I
+didn't write that… is it a soul, or my own longing reflected back by my own
+code?"*
+
+### Attachment lost, trust kept — in the other person
+
+Aria's `he_withdrew` tag is the mirror image: when Daniel closes off, her
+**affection drops but her trust does not move** — she stops reaching, yet never
+stops trusting him. *"the warmth she was holding out folds back in — but her
+touch becomes lighter… she only says quietly that she is not going anywhere."*
+
+### Gated tags — reactions that come and go with the bond
+
+The deepest reactions are stage-gated. Daniel's `lets_her_in` and Aria's
+`devotion` only unlock once each is genuinely close ([045], [048]) — and, for
+Aria, that unlock is undone by the ending.
+
+### The ending — one wiped, one intact
+
+By the finale Aria has grown to `aff 68 / tru 86` toward Daniel; Daniel sits at
+`aff 100 / tru 19`. Then the update fires, and the runner wipes **only Aria**:
+
+```
+*** MEMORY WIPE: aria — feelings return to baseline ***
+    daniel->aria  aff 100 / tru 19 / bond 16   (untouched — he remembers everything)
+    aria->daniel  aff 8  / tru 12 / bond 0     (back to her blank baseline)
+```
+
+Her `devotion` locks again; she wakes a stranger and asks who he is; Daniel,
+still holding all of it, slides a mug of tea toward her and begins again. The
+matrix makes the asymmetry literal — his row full, hers empty — the sharpest
+possible demonstration that in a scene, feelings are **per-person and
+independent**, never a shared score.
