@@ -213,3 +213,4 @@ button:disabled { opacity: 0.5; cursor: default; }
 .matrix-row .edge { color: var(--muted); }
 .matrix-row .edge-vals { font-variant-numeric: tabular-nums; }
 .bubble .speaker { font-weight: 600; color: var(--accent); }
+.bubble .speaker.cue { color: var(--muted); font-style: italic; font-weight: 500; }

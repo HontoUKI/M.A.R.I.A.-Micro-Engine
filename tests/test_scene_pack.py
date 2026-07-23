@@ -204,3 +204,15 @@ def test_shipped_fantasy_scene_loads_and_is_asymmetric():
     edges = {(e.from_, e.to) for e in scene.relationships}
     assert ("megumin", "kaguya") in edges
     assert ("kaguya", "megumin") not in edges
+
+
+def test_shipped_rivalry_scene_is_play_mode():
+    from pathlib import Path
+
+    scenes_dir = Path(__file__).resolve().parents[1] / "scenes"
+    scene = load_scene(str(scenes_dir / "rivalry"))
+    assert scene.mode == "play"
+    assert scene.cast == ["megumin", "kaguya"]
+    # Both directions seeded, but asymmetric in strength: Megumin is keener.
+    by = {(e.from_, e.to): e for e in scene.relationships}
+    assert by[("megumin", "kaguya")].affection > by[("kaguya", "megumin")].affection

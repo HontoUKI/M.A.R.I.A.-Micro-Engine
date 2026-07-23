@@ -40,6 +40,8 @@ const state = {
   busy: false,
   sceneMode: false, // false = solo character chat; true = group scene
   scene: "", // active scene id when in scene mode
+  play: false, // true when the active scene is play/narrator mode
+  sceneModes: {}, // scene id -> "group_chat" | "play"
 };
 
 function loadSessionId() {
@@ -188,7 +190,7 @@ async function send(text) {
   if (state.sceneMode) {
     state.busy = true;
     els.send.disabled = true;
-    await sceneSend(text);
+    await (state.play ? sceneRun(text) : sceneSend(text));
     state.busy = false;
     els.send.disabled = false;
     return;
@@ -271,9 +273,11 @@ async function loadScenes() {
   try {
     const data = await fetch("/scenes").then((r) => r.json());
     for (const s of data.data || []) {
+      state.sceneModes[s.id] = s.mode;
       const opt = document.createElement("option");
       opt.value = s.id;
-      opt.textContent = `${s.display_name} (${s.cast.length})`;
+      const kind = s.mode === "play" ? "play" : "group";
+      opt.textContent = `${s.display_name} (${kind}, ${s.cast.length})`;
       els.scene.appendChild(opt);
     }
   } catch {
@@ -284,15 +288,19 @@ async function loadScenes() {
 async function enterScene(id) {
   state.sceneMode = true;
   state.scene = id;
+  state.play = state.sceneModes[id] === "play";
   state.viewing = null;
   els.model.disabled = true;
   els.history.disabled = true;
   els.sceneReset.hidden = false;
   els.matrix.hidden = false;
   els.name.textContent = titleCase(id);
-  els.stage.textContent = "group scene";
+  els.stage.textContent = state.play ? "you narrate" : "group scene";
   els.log.innerHTML = "";
   setComposerEnabled(true);
+  els.input.placeholder = state.play
+    ? "Narrate a cue — the cast acts it out…"
+    : "Say something to the group…";
 
   const lines = (await fetch(`/scenes/${id}/transcript?user=${state.sessionId}`)
     .then((r) => r.json())
@@ -304,6 +312,7 @@ async function enterScene(id) {
 function leaveScene() {
   state.sceneMode = false;
   state.scene = "";
+  state.play = false;
   els.model.disabled = false;
   els.history.disabled = false;
   els.sceneReset.hidden = true;
@@ -348,6 +357,34 @@ async function sceneSend(text) {
         .join(" · ");
       addBubble("system", note);
     }
+    await refreshMatrix();
+  } catch {
+    pending.remove();
+    addBubble("error", "Could not reach the server.");
+  }
+}
+
+async function sceneRun(cue) {
+  const div = addBubble("system", "");
+  const who = document.createElement("span");
+  who.className = "speaker cue";
+  who.textContent = "Scene: ";
+  div.appendChild(who);
+  div.appendChild(document.createTextNode(cue));
+  const pending = addBubble("system", "…the cast acts…");
+  try {
+    const res = await fetch(`/scenes/${state.scene}/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: state.sessionId, cue, max_turns: 3 }),
+    });
+    const data = await res.json();
+    pending.remove();
+    if (!res.ok) {
+      addBubble("error", (data.error && data.error.message) || `Error ${res.status}`);
+      return;
+    }
+    for (const t of data.turns || []) addSceneLine(t.speaker, t.reply);
     await refreshMatrix();
   } catch {
     pending.remove();

@@ -1,0 +1,38 @@
+spec_version: 1
+
+meta:
+  name: rivalry
+  display_name: "An Unlikely Pair"
+  version: 0.1.0
+  license: "Sample scene, CC-BY-4.0 (casts fan-work character packs)"
+  author: "M.A.R.I.A. Micro-Engine samples"
+  description: "Megumin and Kaguya, stranded together, bicker their way through it — a play you direct, not join."
+
+# A play-mode scene: you are the narrator, feeding cues. The two act among
+# themselves and never speak to you.
+mode: play
+director: model
+
+setting: |
+  Megumin and Kaguya are stranded together — a delayed carriage, a locked room,
+  a long wait with only each other for company. Neither would have chosen this.
+  One is loud, theatrical, and allergic to boredom; the other is composed,
+  sharp-tongued, and quietly appalled. Something has to give.
+
+cast:
+  - megumin
+  - kaguya
+
+# Asymmetric on purpose: Megumin has decided Kaguya is fascinating and wants her
+# approval; Kaguya finds Megumin exhausting and gives nothing back (yet).
+relationships:
+  - from: megumin
+    to: kaguya
+    affection: 22
+    trust: 10
+    bond: 3
+  - from: kaguya
+    to: megumin
+    affection: 4
+    trust: 3
+    bond: 0
