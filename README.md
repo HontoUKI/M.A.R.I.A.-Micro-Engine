@@ -26,8 +26,13 @@ make model                    # or: ollama pull gemma3:12b  (any Ollama model wo
 make run                      # or: uvicorn app.main:app --reload   → serves on :8000
 ```
 
+**No `make`?** It is only a convenience wrapper — every target has the plain
+command next to it above, and the two interactive ones are Python scripts you
+can run directly (`python tools/dev.py help`, `python tools/dev.py start`). All
+of it works the same in cmd.exe and PowerShell; nothing needs a POSIX shell.
+
 Open <http://127.0.0.1:8000/> for the browser shell — pick a bundled character
-(Megumin or Kaguya), chat, and watch the affection/trust/bond bars and the
+(Megumin, Kaguya, Alex…), chat, and watch the affection/trust/bond bars and the
 relationship **stage** shift as you go. Or talk to it as an OpenAI-compatible
 endpoint, using the character name as the `model`:
 
@@ -108,10 +113,12 @@ interests you, the rest lives at the hub:
 
 ```bash
 make check      # ruff + pytest (the gate before every commit)
-make help       # list all targets
+make help       # list all targets  (or: python tools/dev.py help)
 
 # Drive a scripted conversation through a character on a live Ollama model:
 make scenario ARGS="--character kaguya --length showcase --memory --web-search"
+# ...or call the runner directly, which is what the target does:
+python tools/run_scenario.py --character kaguya --length showcase --memory
 ```
 
 Scenario lengths: `10 | 20 | 30 | coding | boundary | showcase`; seed a specific
