@@ -1,0 +1,11 @@
+FROM hf.co/TheDrummer/Rocinante-12B-v1.1-GGUF:Q4_K_M
+TEMPLATE """{{- if .System }}{{ .System }}
+
+{{ end }}
+{{- range .Messages }}
+{{- if eq .Role "user" }}[INST] {{ .Content }}[/INST]
+{{- else if eq .Role "assistant" }} {{ .Content }}</s>
+{{- end }}
+{{- end }}"""
+PARAMETER stop "</s>"
+PARAMETER stop "[INST]"

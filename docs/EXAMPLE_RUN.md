@@ -272,3 +272,44 @@ still holding all of it, slides a mug of tea toward her and begins again. The
 matrix makes the asymmetry literal — his row full, hers empty — the sharpest
 possible demonstration that in a scene, feelings are **per-person and
 independent**, never a shared score.
+
+## Roleplay-tuned models, in Russian (Rocinante & Mag-Mell)
+
+The bundled **Kaguya** and **Megumin** run on two **RP-specialized** 12B models
+(both Mistral-Nemo finetunes) in Russian, with `--language Russian
+--user-gender male`. Transcripts:
+[`example_rp_ru_kaguya_megumin.txt`](example_rp_ru_kaguya_megumin.txt) (Rocinante),
+[`example_rp_ru_magmell_kaguya.txt`](example_rp_ru_magmell_kaguya.txt) (Mag-Mell).
+
+```
+# HF GGUF pulls arrive with a broken chat template ({{ .Prompt }}) -> garbage.
+# Fix once with a Mistral-Nemo Modelfile, then run:
+ollama create rocinante-ru -f Rocinante.modelfile   # FROM hf.co/TheDrummer/Rocinante-12B-v1.1-GGUF:Q4_K_M
+python tools/run_scenario.py --character both --length 10 \
+    --model rocinante-ru --language Russian --user-gender male --name Alex
+```
+
+What the RP models change, and what they don't:
+
+- **The engine is model-agnostic.** State still moves and the moment-tag
+  classifier still works: even an RP finetune emits valid JSON under the
+  constrained-decode `format`, so tags fire (warmth, admiration, insult,
+  explosion_praise…) and the axes climb — Megumin 12→18 / 8→15, Kaguya 8→16 /
+  6→14 over ten turns.
+- **The voice gets markedly more in-character.** Rocinante holds a strong,
+  consistent Russian Kaguya — *"Здравствуйте, Алекс. Я — Кагуя Синомия,
+  вице-президент студенческого совета."* / *"Вы такой очаровательный, Алекс.
+  Неужели вы хотите что-то от меня?"* — and a theatrical Megumin — *"Ваши
+  чувства истинны, как Explosion в полнолуние!"*
+- **Two gotchas worth knowing.** (1) These 12B RP finetunes **code-switch**:
+  Rocinante leaks the odd foreign word ("Explosion", once a stray German
+  "Verwendung"), and **Mag-Mell drifts into English much more heavily** — *"Privet.
+  Kaguya Shinomiya. You have the advantage of me…"*, *"Try французский тост.
+  Bread, eggs, milk… Bon"* — so for Russian, Rocinante is the steadier pick.
+  (2) The `user_gender` directive still addresses the *user* correctly ("Вы…
+  Алекс"), but a character's own gender agreement is up to the model, and an
+  English-RP-tuned model sometimes slips (Kaguya self-referring in the masculine).
+
+The takeaway: swap in a roleplay model for a richer voice, keep everything the
+engine tracks — but on a 4 GB card a 12B runs slowly, and check the chat template
+and language adherence before trusting a raw GGUF pull.

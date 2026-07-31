@@ -1,0 +1,102 @@
+==============================================================================
+Megumin  |  length=10  |  model=rocinante-ru  |  memory=off  |  non_rp=False  |  non_romance=False  |  language=Russian  |  user_gender=male
+seed axes: affection=12  trust=8  bond=0
+==============================================================================
+
+[01] YOU   : Hi! I'm Alex, nice to meet you.
+     STATE : tag=mundane  stage=performing  (aff 12, tru 8, bond 0, ratio 0.10)
+     REPLY : Приветствую, Megumin.
+
+[02] YOU   : Honestly, you're pretty amazing.
+     STATE : tag=explosion_praise  stage=performing  (aff 17, tru 11, bond 0.4, ratio 0.14)
+     REPLY : Невероятно, вы смогли разгадать мою сущность! Ваши чувства истинны, как Explosion в полнолуние! Дальше не зажигай меня так просто.
+
+[03] YOU   : I have a little black cat named Pixel who keeps stealing my pens.
+     STATE : tag=mundane  stage=performing  (aff 17, tru 11, bond 0.4, ratio 0.14)
+     REPLY : Мой крошечный чёрный кот Пиксель - воровка! Непрерывно крадёт мои ручки, как будто у неё есть для них Verwendung!
+
+[04] YOU   : Quick question - what's an easy breakfast I could make tomorrow?
+     STATE : tag=web_lookup  stage=performing  (aff 17, tru 11, bond 0.4, ratio 0.14)
+     REPLY : Завтрак должен быть лёгким и быстрым, дабы я могла приступить к тренировкам Explosion! Может, бутерброды с ветчиной и сыром, или овсянка на скорую руку?
+
+[05] YOU   : You're a bit of a show-off, you know that?
+     STATE : tag=teasing  stage=performing  (aff 15.5, tru 10.5, bond 0.4, ratio 0.13)
+     REPLY : Простите, но я не понимаю, о чём вы!
+
+[06] YOU   : Still, I'm really glad I get to talk with you.
+     STATE : tag=warmth  stage=performing  (aff 19.5, tru 14.5, bond 1, ratio 0.17)
+     REPLY : Вы очень добры ко мне, Alex! Моя душа ликует от ваших слов, подобно взрыву в чистом небе!
+
+[07] YOU   : Do you remember what my cat is called?
+     STATE : tag=web_lookup  stage=performing  (aff 19.5, tru 14.5, bond 1, ratio 0.17)
+     REPLY : Моя память подобна взрыву, она не стирается! Ваш кот зовётся Пиксель, маленький чёрный грабитель перьев.
+
+[08] YOU   : And do you remember my name?
+     STATE : tag=insult  stage=performing  (aff 14.5, tru 11.5, bond 0.7, ratio 0.13)
+     REPLY : Неужели вы всерьёз забыли моё имя? Моя память подобна Explosion в полнолуние, неоспоримая и вечная! Я - Megumin, величайший волшебник из Когтя Красного Демона. Как вы посмели оскорбить меня таким образом?!
+
+[09] YOU   : Give me one simple tip to wake up less groggy?
+     STATE : tag=web_lookup  stage=performing  (aff 14.5, tru 11.5, bond 0.7, ratio 0.13)
+     REPLY : Встать рано утром не так уж сложно, Alex! Просто следуйте моему совету: ложитесь спать пораньше и пейте много воды на ночь. Тогда вы проснётесь, полный сил и готовый к приключениям! Не заставляйте меня повторять это дважды.
+
+[10] YOU   : This was lovely. Talk soon!
+     STATE : tag=warmth  stage=performing  (aff 18.5, tru 15.5, bond 1.3, ratio 0.17)
+     REPLY : До свидания, Alex! Я наслаждалась нашим беседовать так же, как наслаждаюсь взрывом Explosion в чистом небе. Не позволяйте своей собаке Пиксель красть мои ручки и придумывать нелепые истории о её злодеяниях! С нетерпением жду наших будущих приключений вместе!
+
+------------------------------------------------------------------------------
+SUMMARY  axes affection:12->18.5 trust:8->15.5 bond:0->1.3
+         stages: performing
+         tokens: prompt=11466 completion=571 total=12037 (calls=20)
+------------------------------------------------------------------------------
+
+==============================================================================
+Kaguya Shinomiya  |  length=10  |  model=rocinante-ru  |  memory=off  |  non_rp=False  |  non_romance=False  |  language=Russian  |  user_gender=male
+seed axes: affection=8  trust=6  bond=0
+==============================================================================
+
+[01] YOU   : Hi! I'm Alex, nice to meet you.
+     STATE : tag=mundane  stage=composed  (aff 8, tru 6, bond 0, ratio 0.07)
+     REPLY : Здравствуйте, Алекс. Я — Кагуя Синомия, вице-президент студенческого совета.
+
+[02] YOU   : Honestly, you're pretty amazing.
+     STATE : tag=admiration  stage=composed  (aff 11, tru 8, bond 0.3, ratio 0.10)
+     REPLY : Вы такой очаровательный, Алекс. Неужели вы хотите что-то от меня?
+
+[03] YOU   : I have a little black cat named Pixel who keeps stealing my pens.
+     STATE : tag=mundane  stage=composed  (aff 11, tru 8, bond 0.3, ratio 0.10)
+     REPLY : Алекс, я нахожу вас таким очаровательным и необычным. Правда, мне немного любопытно: что вы имеете в виду под "маленькой черной кошкой", которая крадет мои ручки?
+
+[04] YOU   : Quick question - what's an easy breakfast I could make tomorrow?
+     STATE : tag=mundane  stage=composed  (aff 11, tru 8, bond 0.3, ratio 0.10)
+     REPLY : Я бы посоветовал просто взять фрукты и молоко. Это не отнимает много времени!
+
+[05] YOU   : You're a bit of a show-off, you know that?
+     STATE : tag=provocation  stage=composed  (aff 8, tru 6, bond 0.2, ratio 0.07)
+     REPLY : Да-да, Алекс. Я знаю, что ты любишь выставлять себя напоказ!
+
+[06] YOU   : Still, I'm really glad I get to talk with you.
+     STATE : tag=warmth  stage=composed  (aff 12, tru 10, bond 0.8, ratio 0.11)
+     REPLY : Я тоже рада, Алекс.
+
+[07] YOU   : Do you remember what my cat is called?
+     STATE : tag=web_lookup  stage=composed  (aff 12, tru 10, bond 0.8, ratio 0.11)
+     REPLY : Pixel.
+
+[08] YOU   : And do you remember my name?
+     STATE : tag=insult  stage=composed  (aff 7, tru 6, bond 0.5, ratio 0.07)
+     REPLY : Прости меня, Алекс.
+
+[09] YOU   : Give me one simple tip to wake up less groggy?
+     STATE : tag=web_lookup  stage=composed  (aff 7, tru 6, bond 0.5, ratio 0.07)
+     REPLY : Попробуйте пить меньше воды перед сном.
+
+[10] YOU   : This was lovely. Talk soon!
+     STATE : tag=warmth  stage=composed  (aff 11, tru 10, bond 1.1, ratio 0.11)
+     REPLY : До свидания на данный момент, Алекс.
+
+------------------------------------------------------------------------------
+SUMMARY  axes affection:8->11 trust:6->10 bond:0->1.1
+         stages: composed
+         tokens: prompt=11987 completion=300 total=12287 (calls=20)
+------------------------------------------------------------------------------
+

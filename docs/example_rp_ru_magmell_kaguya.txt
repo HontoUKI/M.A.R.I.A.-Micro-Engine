@@ -1,0 +1,51 @@
+==============================================================================
+Kaguya Shinomiya  |  length=10  |  model=mag-mell-ru  |  memory=off  |  non_rp=False  |  non_romance=False  |  language=Russian  |  user_gender=male
+seed axes: affection=8  trust=6  bond=0
+==============================================================================
+
+[01] YOU   : Hi! I'm Alex, nice to meet you.
+     STATE : tag=mundane  stage=composed  (aff 8, tru 6, bond 0, ratio 0.07)
+     REPLY : "Privet. Kaguya Shinomiya." *raises an eyebrow slightly* "You have the advantage of me - I don't believe we've been introduced before. Do tell, what brings a near-stranger like yourself to approach me so boldly?" *smiles coolly, poised and distant.*
+
+[02] YOU   : Honestly, you're pretty amazing.
+     STATE : tag=admiration  stage=composed  (aff 11, tru 8, bond 0.3, ratio 0.10)
+     REPLY : "Дерзкий комплимент. И зачем бы это?" *улыбается натянуто, поджидая продолжения с любопытством и осторожностью.*
+
+[03] YOU   : I have a little black cat named Pixel who keeps stealing my pens.
+     STATE : tag=mundane  stage=composed  (aff 11, tru 8, bond 0.3, ratio 0.10)
+     REPLY : "Черный кот по кличке Пайxel? Как... причудливо. У меня бы не хватило терпения." *скрывает удивление натянутым смехом.* "Разве кошки не должны ловить мышей, а не красть канцелярию? Надеюсь, тебе повезло больше с питомцем, чем мне с моими ручками."
+
+[04] YOU   : Quick question - what's an easy breakfast I could make tomorrow?
+     STATE : tag=web_lookup  stage=composed  (aff 11, tru 8, bond 0.3, ratio 0.10)
+     REPLY : Easy. Try французский тост. Bread, eggs, milk - mix and dip, fry till golden. A minute to assemble, satisfying start to the day. Bon appétit! *smiles slightly.*
+
+[05] YOU   : You're a bit of a show-off, you know that?
+     STATE : tag=provocation  stage=composed  (aff 8, tru 6, bond 0.2, ratio 0.07)
+     REPLY : "Что ж, видно, мне стоит быть осторожнее с моей скромностью." *улыбается одними губами.* "Но позволь спросить - а какова цель этого маленького испытания для меня?"
+
+[06] YOU   : Still, I'm really glad I get to talk with you.
+     STATE : tag=warmth  stage=composed  (aff 12, tru 10, bond 0.8, ratio 0.11)
+     REPLY : "Что ж, я польщен вниманием..." *пауза* "...но позволь спросить, что дает тебе право на такую фамильярность?" *смотрит внимательно.* "Я, знаешь ли, не привыкла к такой близости с... почти незнакомцами."
+
+[07] YOU   : Do you remember what my cat is called?
+     STATE : tag=mundane  stage=composed  (aff 12, tru 10, bond 0.8, ratio 0.11)
+     REPLY : ixel.
+
+[08] YOU   : And do you remember my name?
+     STATE : tag=mundane  stage=composed  (aff 12, tru 10, bond 0.8, ratio 0.11)
+     REPLY : I'm afraid not. We've only just met. *cools slightly.* I don't go around remembering names of near-strangers so easily. Especially not ones who overstep boundaries with their boldness. *raises an eyebrow.* You must think me quite the scatterbrain to assume otherwise. Do try and keep up, will you? *smiles faintly but firmly.*
+
+[09] YOU   : Give me one simple tip to wake up less groggy?
+     STATE : tag=mundane  stage=composed  (aff 12, tru 10, bond 0.8, ratio 0.11)
+     REPLY : Пей больше воды перед сном. Наш организм нуждается в влаге для нормальной работы во время сна.
+
+[10] YOU   : This was lovely. Talk soon!
+     STATE : tag=warmth  stage=composed  (aff 16, tru 14, bond 1.4, ratio 0.15)
+     REPLY : Что ж... Не могу поспорить с такой настойчивостью. Пока! *улыбается на прощание.*
+
+------------------------------------------------------------------------------
+SUMMARY  axes affection:8->16 trust:6->14 bond:0->1.4
+         stages: composed
+         tokens: prompt=14168 completion=604 total=14772 (calls=20)
+------------------------------------------------------------------------------
+
