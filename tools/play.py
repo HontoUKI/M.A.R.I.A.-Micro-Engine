@@ -140,17 +140,24 @@ def main() -> int:
         print(f"<{who}> {said}")
 
         window = windows.setdefault(who, [])
+        # The speaker is NAMED to her.
+        #
+        # In a game chat you see who typed; she was seeing only the words. Live
+        # 03.09 she asked the world to follow `"user"` — a placeholder, because
+        # nothing had told her he was called HontoUKI — and the world correctly
+        # answered that nobody by that name is here. The name is not decoration:
+        # every verb about a person takes one.
         try:
             result = service.complete(
                 args.character,
-                [*window, ChatMessage(role="user", content=said)],
+                [*window, ChatMessage(role="user", content=f"<{who}> {said}")],
                 session_key=f"minecraft:{who}",
             )
         except Exception as why:  # noqa: BLE001 - one bad turn must not end the evening
             print(f"[ход не вышел: {why}]", file=sys.stderr)
             continue
 
-        window.append(ChatMessage(role="user", content=said))
+        window.append(ChatMessage(role="user", content=f"<{who}> {said}"))
         window.append(ChatMessage(role="assistant", content=result.reply))
         windows[who] = window[-WINDOW:]
 
