@@ -196,7 +196,12 @@ def plainly(value: Any) -> str:
     return str(value)
 
 
-def describe(offer: dict[str, Any], sight: dict[str, Any], last: str = "") -> str:
+def describe(
+    offer: dict[str, Any],
+    sight: dict[str, Any],
+    last: str = "",
+    lessons: tuple[str, ...] = (),
+) -> str:
     """The block that tells her she has hands, and what they can do.
 
     The game supplies **names**: what its verbs are called, what each needs, and
@@ -228,6 +233,19 @@ def describe(offer: dict[str, Any], sight: dict[str, Any], last: str = "") -> st
     lines += [
         "",
         f"The last thing you tried: {last or 'nothing yet.'}",
+    ]
+    if lessons:
+        # What the world has refused, kept for a few turns.
+        #
+        # One line of history teaches nothing. Live 03.09: told that a pig is
+        # alive and not a block, she fought one — and two turns later asked to
+        # `gather pig` again, because by then the only thing she could see was
+        # the outcome of the last attempt and the refusal had scrolled away. A
+        # world that answers and is then forgotten is a world that has to answer
+        # the same thing forever.
+        lines += ["", "What the world has refused lately:"]
+        lines += [f"  {one}" for one in lessons]
+    lines += [
         "",
         "This is a list of what is possible, not a list of things to do. Wanting",
         "none of it is an answer. When you do decide to act, put it on its own",
@@ -241,6 +259,28 @@ def describe(offer: dict[str, Any], sight: dict[str, Any], last: str = "") -> st
         "nothing moved.",
     ]
     return "\n".join(lines)
+
+
+def refusals(attempts: list[dict[str, Any]], most: int = 3) -> tuple[str, ...]:
+    """The last few distinct things the world said no to.
+
+    Distinct, because the same refusal five times running is one fact and four
+    wasted lines. Newest first, because the most recent wall is the one she is
+    standing in front of.
+    """
+    seen: list[str] = []
+    for attempt in reversed(attempts or []):
+        why = attempt.get("foreclosed_by")
+        if not why:
+            continue
+        goal = attempt.get("goal") or {}
+        what = goal.get("object")
+        said = f"{goal.get('verb')}{f' {plainly(what)}' if what else ''} — {why}"
+        if said not in seen:
+            seen.append(said)
+        if len(seen) >= most:
+            break
+    return tuple(seen)
 
 
 def how_it_went(attempts: list[dict[str, Any]]) -> str:

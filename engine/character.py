@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from engine.hands import GamePort, describe, how_it_went, read_intention
+from engine.hands import GamePort, describe, how_it_went, read_intention, refusals
 from engine.llm import LLMError, OllamaClient
 from engine.memory import VectorStore
 from engine.pack.models import CharacterPack
@@ -208,10 +208,12 @@ class CharacterRuntime:
         if self._hands is None:
             return ""
         try:
+            history = self._hands.history()
             return describe(
                 self._hands.offer(),
                 self._hands.sight(),
-                how_it_went(self._hands.history()),
+                how_it_went(history),
+                refusals(history),
             )
         except Exception:
             return ""

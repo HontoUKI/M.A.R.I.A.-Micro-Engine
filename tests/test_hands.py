@@ -166,3 +166,58 @@ def test_zero_or_nonsense_times_means_once(times):
     # is doing nothing and reporting success.
     intention, _ = read_intention(f"DO: place\nREPEAT: {times}")
     assert intention.repeat == 1
+
+
+class TestWhatTheWorldRefused:
+    """One line of history teaches nothing.
+
+    Live 03.09: told that a pig is alive and not a block, she fought one — and two
+    turns later asked to `gather pig` again, because by then the only thing she
+    could see was the outcome of the last attempt and the refusal had scrolled
+    away. A world that answers and is then forgotten is a world that has to
+    answer the same thing forever.
+    """
+
+    HISTORY = [
+        {"goal": {"verb": "gather", "object": "pig"}, "outcome": "foreclosed",
+         "foreclosed_by": "pig is alive, not a block"},
+        {"goal": {"verb": "fight", "object": "pig"}, "outcome": "reached"},
+        {"goal": {"verb": "gather", "object": "iron"}, "outcome": "foreclosed",
+         "foreclosed_by": "nothing yields iron"},
+    ]
+
+    def test_recent_refusals_survive_a_successful_turn(self):
+        from engine.hands import refusals
+
+        said = refusals(self.HISTORY)
+        assert any("alive, not a block" in one for one in said)
+        assert any("nothing yields iron" in one for one in said)
+
+    def test_the_same_wall_five_times_is_one_fact(self):
+        from engine.hands import refusals
+
+        same = [self.HISTORY[0]] * 5
+        assert len(refusals(same)) == 1
+
+    def test_newest_first_because_that_is_the_wall_she_is_facing(self):
+        from engine.hands import refusals
+
+        assert "iron" in refusals(self.HISTORY)[0]
+
+    def test_they_reach_the_block_she_reads(self):
+        from engine.hands import describe, refusals
+
+        block = describe(
+            {"game": "X", "affordances": [{"verb": "fight"}]},
+            {},
+            "",
+            refusals(self.HISTORY),
+        )
+        assert "What the world has refused lately" in block
+        assert "alive, not a block" in block
+
+    def test_nothing_refused_adds_no_heading(self):
+        from engine.hands import describe
+
+        block = describe({"game": "X", "affordances": [{"verb": "fight"}]}, {}, "", ())
+        assert "refused lately" not in block
