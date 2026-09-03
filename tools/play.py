@@ -105,7 +105,10 @@ def main() -> int:
     # to end the evening — the turn itself was already guarded, and the report was not.
     for stream in (sys.stdout, sys.stderr):
         try:
-            stream.reconfigure(errors="replace")
+            # line_buffering, потому что перенаправленный stdout блочный: пять её
+            # реплик просидели в буфере и дошли бы только на выходе. Лог, который
+            # виден лишь после смерти процесса, — это не лог.
+            stream.reconfigure(errors="replace", line_buffering=True)
         except (AttributeError, ValueError):
             pass  # not a real console; nothing to soften
 
