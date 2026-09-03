@@ -26,6 +26,10 @@ make model                    # or: ollama pull gemma3:12b  (any Ollama model wo
 make run                      # or: uvicorn app.main:app --reload   → serves on :8000
 ```
 
+`make` uses the repo's own `.venv` when there is one — that is where
+`make install` puts the dependencies — and falls back to `python` otherwise.
+Override with `make run PYTHON=py` if your environment lives elsewhere.
+
 **No `make`?** It is only a convenience wrapper — every target has the plain
 command next to it above, and the two interactive ones are Python scripts you
 can run directly (`python tools/dev.py help`, `python tools/dev.py start`). All

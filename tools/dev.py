@@ -10,10 +10,13 @@ the logic lives here instead and behaves identically on every platform.
 """
 from __future__ import annotations
 
+import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import urllib.request
 from pathlib import Path
 
 # Target descriptions contain characters outside the legacy Windows code pages
@@ -138,13 +141,56 @@ def start() -> int:
     return 0
 
 
+def game() -> int:
+    """Run the server attached to a game router, and say so out loud first.
+
+    The router is NOT started here, and cannot be: attaching to something
+    somebody else is already running is the boundary that keeps this engine out
+    of the business of launching programs on your machine. See docs/GAME_PORT.md.
+
+    The check before the server comes up is the point of the command. A router
+    that is not answering looks, from inside a conversation, exactly like a game
+    with nothing to do in it — the character simply never mentions a world, and
+    you spend the evening wondering why.
+    """
+    port = os.environ.get("GAME_PORT", "").strip() or _read_env().get("GAME_PORT", "").strip()
+    if not port:
+        print("GAME_PORT is not set, so there is no game and no character is told")
+        print("there is one. Put it in .env, e.g.:")
+        print()
+        print("  GAME_PORT=http://127.0.0.1:25580/v0")
+        print()
+        print("Then start a router that answers there — see docs/GAME_PORT.md.")
+        return 1
+
+    print(f"game port  {port}")
+    try:
+        with urllib.request.urlopen(f"{port}/contract", timeout=3) as answer:
+            contract = json.load(answer).get("contract", "?")
+        print(f"router     answering, contract {contract}")
+    except Exception as why:  # noqa: BLE001 - any failure means the same thing
+        print(f"router     NOT answering ({why})")
+        print("           the server will still start; she just has no world.")
+
+    env = dict(os.environ, GAME_PORT=port)
+    return subprocess.run(
+        [sys.executable, "-m", "uvicorn", "app.main:app", "--reload"],
+        cwd=_ROOT, env=env, check=False,
+    ).returncode
+
+
 def main() -> int:
     command = sys.argv[1] if len(sys.argv) > 1 else "help"
     if command == "help":
         return show_help()
     if command == "start":
         return start()
-    print(f"unknown command {command!r}; expected 'help' or 'start'", file=sys.stderr)
+    if command == "game":
+        return game()
+    print(
+        f"unknown command {command!r}; expected 'help', 'start' or 'game'",
+        file=sys.stderr,
+    )
     return 2
 
 
