@@ -246,14 +246,22 @@ def plainly(value: Any, depth: int = 0) -> str:
         return "; ".join(said)
     if isinstance(value, dict):
         out: list[str] = []
+        told: list[str] = []
         for k, v in value.items():
             said = plainly(v, depth + 1)
             if not said:
                 continue
-            # Already said, in this same breath. Substring rather than equality: the
-            # nearest of a kind is the FIRST of its list, not a separate fact.
-            if any(said in earlier for earlier in out):
+            # Already said, in this same breath. A STRICT part of something already
+            # said: the nearest of a kind is the first of its list, not a separate
+            # fact. Строгая — потому что равенство это не повтор, а совпадение:
+            # два пустых списка дают «none» и «none», и это ДВА факта, каждый про
+            # своё. Проглоченный второй — ровно та тишина, из-за которой она и
+            # сочиняет.
+            # Сравниваются ЗНАЧЕНИЯ со значениями, а не с уже склеенной строкой: в той
+            # стоит ещё и ключ, и «none» оказывалось частью «places none».
+            if any(said in earlier and len(said) < len(earlier) for earlier in told):
                 continue
+            told.append(said)
             out.append(f"{k} {said}")
         return ", ".join(out)
     return str(value)
