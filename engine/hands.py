@@ -36,6 +36,10 @@ TIMEOUT = 5.0
 
 # She says what she is doing on its own line; the engine cuts it out before the
 # reply is shown, so a decision cannot be read aloud as speech.
+# Сколько однородных записей проговаривается прежде «и ещё N». Три, потому что
+# повторение — это про рисунок, а рисунок виден на трёх, не на шестнадцати.
+MOST = 3
+
 _DO = re.compile(r"^\s*do:\s*(?P<body>.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 _REPEAT = re.compile(r"^\s*repeat:\s*(?P<times>\d+)\s*$", re.IGNORECASE | re.MULTILINE)
 # Going back to something she was pulled off, or letting it go. Protocol words, not
@@ -200,12 +204,24 @@ class GamePort:
 
 # --------------------------------------------------------------------- saying it
 
-def plainly(value: Any) -> str:
+def plainly(value: Any, depth: int = 0) -> str:
     """Say what the game sent, knowing none of its words.
 
     Mechanical on purpose. Reading the state by meaning — "health", "around",
     "blocks" — would make the engine know one game, and the second game would
     arrive in the prompt empty while reporting success.
+
+    Two rules keep it readable, and both are about DATA rather than about any
+    game. A NESTED list is summarised, because sixteen coordinates of one thing
+    are the same fact sixteen times — the outermost list is the census itself
+    and is never cut, since dropping an entry there drops a whole thing rather
+    than its details. And a value already said in this breath is not said again:
+    the world sent every instance of a kind AND its nearest one, which is right
+    for a record and doubles the noise in a sentence.
+
+    Live 03.09 the blocks line ran to 589 characters, terrain first, with every
+    coordinate printed twice — and the crafting table she was about to duplicate
+    was in there, buried. She was not blind; the sentence was unreadable.
     """
     if value is None:
         return ""
@@ -214,11 +230,23 @@ def plainly(value: Any) -> str:
     if isinstance(value, (int, float, str)):
         return str(value)
     if isinstance(value, list):
-        return "; ".join(p for p in (plainly(v) for v in value) if p)
+        said = [p for p in (plainly(v, depth + 1) for v in value) if p]
+        if depth > 0 and len(said) > MOST:
+            rest = len(said) - MOST
+            return "; ".join(said[:MOST]) + f"; and {rest} more"
+        return "; ".join(said)
     if isinstance(value, dict):
-        return ", ".join(
-            f"{k} {said}" for k, v in value.items() if (said := plainly(v))
-        )
+        out: list[str] = []
+        for k, v in value.items():
+            said = plainly(v, depth + 1)
+            if not said:
+                continue
+            # Already said, in this same breath. Substring rather than equality: the
+            # nearest of a kind is the FIRST of its list, not a separate fact.
+            if any(said in earlier for earlier in out):
+                continue
+            out.append(f"{k} {said}")
+        return ", ".join(out)
     return str(value)
 
 

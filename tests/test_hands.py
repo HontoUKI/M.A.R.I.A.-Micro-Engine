@@ -73,6 +73,26 @@ class TestSayingWhatTheGameSent:
         # space somebody may fill in themselves.
         assert "nothing" not in plainly({"nothing": None, "here": 1})
 
+    def test_a_nested_list_is_summarised_but_the_census_never_is(self):
+        """Живьём 03.09 строка про блоки шла на 589 символов: каждый род печатал
+        все свои координаты и потом ПОВТОРЯЛ первую как nearest. Верстак, который
+        она собиралась продублировать, был там — и был погребён.
+
+        Режется подробность, а не перепись: выбросить запись снаружи значит
+        потерять целую вещь, а не её частности.
+        """
+        census = [{"what": f"kind{i}", "where": [{"x": n} for n in range(9)]} for i in range(6)]
+        said = plainly(census)
+        for i in range(6):
+            assert f"kind{i}" in said, "род не имеет права пропасть"
+        assert "and 6 more" in said, "координаты сокращаются"
+
+    def test_what_was_just_said_is_not_said_again(self):
+        one = {"where": [{"x": 1}, {"x": 2}], "nearest": {"x": 1}}
+        said = plainly(one)
+        assert said.count("x 1") == 1
+        assert "nearest" not in said
+
 
 class TestWhatSheIsTold:
     OFFER = {
