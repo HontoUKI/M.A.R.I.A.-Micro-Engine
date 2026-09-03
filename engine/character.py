@@ -140,6 +140,10 @@ class CharacterRuntime:
         # A pack cannot turn this on: whether a game is attached is a deployment
         # decision, like the choice of model. See engine/hands.py.
         self._hands = hands
+        # The attempt she is part-way through, if any. Read when the world is
+        # described and used when she answers, so "CONTINUE" means the thing she
+        # was actually told about rather than whatever is open by then.
+        self._paused: str = ""
         self._state = state or StateKernel.from_pack(pack, axis_max=axis_max)
         self._memory = memory
         self._pm = prompt_manager or PromptManager()
@@ -209,11 +213,14 @@ class CharacterRuntime:
             return ""
         try:
             history = self._hands.history()
+            sight = self._hands.sight()
+            self._paused = _paused_id(sight)
             return describe(
                 self._hands.offer(),
-                self._hands.sight(),
+                sight,
                 how_it_went(history),
                 refusals(history),
+                _paused_name(history, self._paused),
             )
         except Exception:
             return ""
@@ -232,6 +239,17 @@ class CharacterRuntime:
         if self._hands is None:
             return speech, ()
         try:
+            # Going back to something takes priority over starting something new: a
+            # turn that says both meant the first, and taking a goal would silently
+            # abandon what she just said she wanted to finish.
+            if intention.carry_on and self._paused:
+                self._hands.resume(self._paused)
+                return speech, ("continue",)
+            if intention.let_go and self._paused:
+                self._hands.abandon(self._paused)
+                return speech, ("drop",)
+            if not intention.steps:
+                return speech, ()
             self._hands.act(intention)
         except Exception:
             return speech, ()
@@ -342,3 +360,19 @@ def _format_web_results(results: list[WebResult]) -> str:
     """Compact grounding text from search hits (empty when none)."""
     lines = [f"- {r.title}: {r.snippet} ({r.url})".strip() for r in results if r.title]
     return "\n".join(lines)
+
+def _paused_id(sight: dict) -> str:
+    """The attempt she stopped part-way through, if she is standing in one."""
+    return str(sight.get("attempt") or "") if sight.get("paused") else ""
+
+
+def _paused_name(history: list[dict], attempt_id: str) -> str:
+    """What that attempt was, in the game's own words."""
+    if not attempt_id:
+        return ""
+    for attempt in history or []:
+        if attempt.get("id") == attempt_id:
+            goal = attempt.get("goal") or {}
+            what = goal.get("object")
+            return f"{goal.get('verb')}" + (f" {what}" if isinstance(what, str) else "")
+    return "something"

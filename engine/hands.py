@@ -38,6 +38,11 @@ TIMEOUT = 5.0
 # reply is shown, so a decision cannot be read aloud as speech.
 _DO = re.compile(r"^\s*do:\s*(?P<body>.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 _REPEAT = re.compile(r"^\s*repeat:\s*(?P<times>\d+)\s*$", re.IGNORECASE | re.MULTILINE)
+# Going back to something she was pulled off, or letting it go. Protocol words, not
+# game verbs: they are about the ATTEMPT and no game declares them, so they cannot
+# collide with a vocabulary the router owns.
+_CONTINUE = re.compile(r"^\s*continue\s*$", re.IGNORECASE | re.MULTILINE)
+_DROP = re.compile(r"^\s*drop\s*$", re.IGNORECASE | re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -57,9 +62,14 @@ class Intention:
 
     steps: tuple[Goal, ...] = ()
     repeat: int = 1
+    # What to do about something she was pulled off part-way through. An interrupt is a
+    # pause and never an outcome, so the next word is hers — and until now there was no
+    # word: she stayed frozen mid-job with no way to say either "carry on" or "forget it".
+    carry_on: bool = False
+    let_go: bool = False
 
     def __bool__(self) -> bool:
-        return bool(self.steps)
+        return bool(self.steps) or self.carry_on or self.let_go
 
 
 def read_intention(reply: str) -> tuple[Intention, str]:
@@ -79,10 +89,12 @@ def read_intention(reply: str) -> tuple[Intention, str]:
     for match in _REPEAT.finditer(reply):
         times = max(1, int(match.group("times")))
 
-    speech = _REPEAT.sub("", _DO.sub("", reply)).strip()
+    carry_on = bool(_CONTINUE.search(reply))
+    let_go = bool(_DROP.search(reply))
+    speech = _DROP.sub("", _CONTINUE.sub("", _REPEAT.sub("", _DO.sub("", reply)))).strip()
     # Blank lines left where the decisions were.
     speech = re.sub(r"\n{3,}", "\n\n", speech)
-    return Intention(tuple(steps), times), speech
+    return Intention(tuple(steps), times, carry_on, let_go), speech
 
 
 def read_goal(line: str) -> Goal | None:
@@ -152,6 +164,12 @@ class GamePort:
             "/plans", {"steps": [g.as_wire() for g in steps], "repeat": repeat}
         )
 
+    def resume(self, attempt_id: str) -> dict[str, Any]:
+        return self._post(f"/attempts/{attempt_id}/resume", {})
+
+    def abandon(self, attempt_id: str) -> dict[str, Any]:
+        return self._post(f"/attempts/{attempt_id}/abandon", {})
+
     def act(self, intention: Intention) -> dict[str, Any]:
         """Set an intention going. One step once is an attempt; anything else is
         a plan, because "twenty times" is a sequence even when the sequence has
@@ -201,6 +219,7 @@ def describe(
     sight: dict[str, Any],
     last: str = "",
     lessons: tuple[str, ...] = (),
+    paused: str = "",
 ) -> str:
     """The block that tells her she has hands, and what they can do.
 
@@ -234,6 +253,17 @@ def describe(
         "",
         f"The last thing you tried: {last or 'nothing yet.'}",
     ]
+    if paused:
+        # An interrupt is a pause and never an outcome, so the next word is hers —
+        # and until now there was no word. Live 03.09 she was pulled off cutting
+        # wood by her own health and simply stopped there, because nothing in what
+        # she could say meant "carry on" or "forget it".
+        lines += [
+            "",
+            f"You are part-way through {paused} and stopped when something happened.",
+            "Say CONTINUE on its own line to go back to it, or DROP to let it go.",
+            "Taking a new goal drops it too — that is a choice, not a mistake.",
+        ]
     if lessons:
         # What the world has refused, kept for a few turns.
         #

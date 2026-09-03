@@ -221,3 +221,93 @@ class TestWhatTheWorldRefused:
 
         block = describe({"game": "X", "affordances": [{"verb": "fight"}]}, {}, "", ())
         assert "refused lately" not in block
+
+
+class TestSomethingSheWasPulledOffOf:
+    """An interrupt is a pause and never an outcome, so the next word is hers.
+
+    Live 03.09 she was pulled off cutting wood by her own health and simply
+    stopped there — nothing in what she could say meant "carry on" or "forget
+    it", so a job half done stayed half done forever.
+    """
+
+    def test_continue_and_drop_are_read_off_their_own_lines(self):
+        from engine.hands import read_intention
+
+        carry, speech = read_intention("ugh, fine.\nCONTINUE")
+        assert carry.carry_on and not carry.let_go
+        assert speech == "ugh, fine."
+
+        go, _ = read_intention("not worth it.\nDROP")
+        assert go.let_go and not go.carry_on
+
+    def test_they_count_as_an_intention_even_with_no_steps(self):
+        from engine.hands import read_intention
+
+        # Otherwise "carry on" reads as her saying nothing at all.
+        assert bool(read_intention("CONTINUE")[0])
+
+    def test_a_paused_attempt_is_named_in_the_block(self):
+        from engine.character import _paused_id, _paused_name
+        from engine.hands import describe
+
+        sight = {"attempt": "a1", "paused": True}
+        history = [{"id": "a1", "goal": {"verb": "gather", "object": "oak_log"}}]
+        assert _paused_id(sight) == "a1"
+
+        block = describe(
+            {"game": "X", "affordances": [{"verb": "gather"}]},
+            sight,
+            "",
+            (),
+            _paused_name(history, "a1"),
+        )
+        assert "part-way through gather oak_log" in block
+        assert "CONTINUE" in block and "DROP" in block
+
+    def test_an_attempt_that_is_merely_running_is_not_paused(self):
+        from engine.character import _paused_id
+
+        # Working and stopped look the same to anybody polling attempts; only
+        # `paused` tells them apart, which is why the router reports it.
+        assert _paused_id({"attempt": "a1", "paused": False}) == ""
+
+    def test_going_back_wins_over_starting_something_new(self):
+        """A turn that says both meant the first: taking a goal would silently
+        abandon the thing she just said she wanted to finish."""
+        from engine.character import CharacterRuntime
+
+        done: list[str] = []
+
+        class Port:
+            def resume(self, attempt_id):
+                done.append(f"resume {attempt_id}")
+
+            def abandon(self, attempt_id):
+                done.append(f"abandon {attempt_id}")
+
+            def act(self, intention):
+                done.append("act")
+
+        runtime = object.__new__(CharacterRuntime)
+        runtime._hands = Port()
+        runtime._paused = "a1"
+
+        speech, did = runtime._reach_for_the_game("ok\nDO: gather oak_log\nCONTINUE")
+        assert done == ["resume a1"]
+        assert did == ("continue",)
+        assert speech == "ok"
+
+    def test_with_nothing_paused_a_bare_continue_does_nothing(self):
+        from engine.character import CharacterRuntime
+
+        class Port:
+            def act(self, intention):
+                raise AssertionError("nothing to act on")
+
+        runtime = object.__new__(CharacterRuntime)
+        runtime._hands = Port()
+        runtime._paused = ""
+        speech, did = runtime._reach_for_the_game("sure\nCONTINUE")
+        assert did == ()
+        assert speech == "sure"
