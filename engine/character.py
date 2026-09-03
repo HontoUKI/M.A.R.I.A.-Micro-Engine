@@ -215,13 +215,25 @@ class CharacterRuntime:
             history = self._hands.history()
             sight = self._hands.sight()
             self._paused = _paused_id(sight)
-            return describe(
+            block = describe(
                 self._hands.offer(),
                 sight,
                 how_it_went(history),
                 refusals(history),
                 _paused_name(history, self._paused),
             )
+            unread = getattr(self, "_unread", ())
+            if unread:
+                # Said once and cleared: it is about the line she just wrote, and a
+                # complaint that outlives its turn becomes noise about the past.
+                self._unread = ()
+                block += (
+                    "\n\nYour last DO line could not be read, so nothing "
+                    "moved: " + "; ".join(unread)
+                    + "\nThe verb, then ONE JSON object, like: "
+                    "DO: gather {\"object\": \"cobblestone\", \"quantity\": 3}"
+                )
+            return block
         except Exception:
             return ""
 
@@ -234,8 +246,20 @@ class CharacterRuntime:
         who cannot act.
         """
         intention, speech = read_intention(reply)
+        # She is told next turn that a line of hers could not be read. Without this she
+        # cannot tell "I acted" from "nothing happened", and on 03.09 she wrote the same
+        # malformed line twice running — the world had no answer to give, because the
+        # line never reached it.
+        self._unread = intention.unread
         if not intention:
-            return reply, ()
+            # `speech`, never `reply`. An intention is falsy exactly when a `DO:` line
+            # was there and could not be READ — and that was the one path that put the
+            # raw text back, so the protocol went out in the game chat verbatim. Live
+            # 03.09 she answered a player with `DO: gather "cobblestone" 3 "search": 5`
+            # twice running, having done nothing either time. The stripping in
+            # `read_intention` is unconditional; the leak was here, one line under a
+            # docstring that says the lines are always cut.
+            return speech, ()
         if self._hands is None:
             return speech, ()
         try:

@@ -67,6 +67,10 @@ class Intention:
     # word: she stayed frozen mid-job with no way to say either "carry on" or "forget it".
     carry_on: bool = False
     let_go: bool = False
+    # `DO:` lines that were there and could not be read. Not part of truthiness: an
+    # unreadable line is not a decision. Kept because silence about it is what let her
+    # write the same malformed line twice running, believing both times that she acted.
+    unread: tuple[str, ...] = ()
 
     def __bool__(self) -> bool:
         return bool(self.steps) or self.carry_on or self.let_go
@@ -80,10 +84,14 @@ def read_intention(reply: str) -> tuple[Intention, str]:
     she is obedient would ever show it.
     """
     steps: list[Goal] = []
+    unread: list[str] = []
     for match in _DO.finditer(reply):
-        goal = read_goal(match.group("body"))
+        body = match.group("body")
+        goal = read_goal(body)
         if goal is not None:
             steps.append(goal)
+        else:
+            unread.append(body)
 
     times = 1
     for match in _REPEAT.finditer(reply):
@@ -94,7 +102,7 @@ def read_intention(reply: str) -> tuple[Intention, str]:
     speech = _DROP.sub("", _CONTINUE.sub("", _REPEAT.sub("", _DO.sub("", reply)))).strip()
     # Blank lines left where the decisions were.
     speech = re.sub(r"\n{3,}", "\n\n", speech)
-    return Intention(tuple(steps), times, carry_on, let_go), speech
+    return Intention(tuple(steps), times, carry_on, let_go, tuple(unread)), speech
 
 
 def read_goal(line: str) -> Goal | None:

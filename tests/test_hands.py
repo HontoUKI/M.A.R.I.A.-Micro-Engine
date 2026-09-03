@@ -130,6 +130,25 @@ class TestTheBoundary:
         assert speech == "Sure."
         assert did == ()
 
+    def test_a_do_line_she_wrote_wrong_still_never_reaches_the_player(self):
+        """The one path that leaked, and the reason it survived a test named
+        after it: the existing case wrote a DO line that PARSES.
+
+        An intention is falsy exactly when the line was there and could not be
+        read, and that path handed the raw reply back. Live 03.09 she answered a
+        player in the game chat with `DO: gather "cobblestone" 3 "search": 5`,
+        twice running, having done nothing either time.
+        """
+        from engine.character import CharacterRuntime
+
+        runtime = object.__new__(CharacterRuntime)
+        runtime._hands = None
+        wrong = 'a stone pickaxe? obviously!!' + chr(10) + 'DO: gather "cobblestone" 3 "search": 5'
+        speech, did = runtime._reach_for_the_game(wrong)
+        assert "DO:" not in speech
+        assert speech == "a stone pickaxe? obviously!!"
+        assert did == ()
+
     def test_a_router_that_stopped_answering_is_silence_not_a_stale_world(self):
         from engine.character import CharacterRuntime
 
