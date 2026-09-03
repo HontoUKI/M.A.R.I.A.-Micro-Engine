@@ -87,6 +87,20 @@ class TestSayingWhatTheGameSent:
             assert f"kind{i}" in said, "род не имеет права пропасть"
         assert "and 6 more" in said, "координаты сокращаются"
 
+    def test_an_empty_reading_is_a_fact_and_a_missing_one_is_not(self):
+        """Живьём 03.09 игрок позвал её «в наш дом», а список отмеченных мест был
+        пуст — значит про места её промпт не говорил ВООБЩЕ НИЧЕГО, и модель
+        заполнила пробел домом, которого нет.
+
+        Та же форма, что у Марии с просмотренным: пропущенный блок дописывается,
+        напечатанное «ты не отмечала ничего» — это ответ.
+        """
+        assert plainly([]) == "none"
+        assert plainly({"places": [], "signs": []}) == "places none, signs none"
+        # Отсутствующее — по-прежнему ничего: «нет сведений» и «сведения о пустоте»
+        # это разные вещи, и вторая не имеет права выглядеть первой.
+        assert plainly(None) == ""
+
     def test_what_was_just_said_is_not_said_again(self):
         one = {"where": [{"x": 1}, {"x": 2}], "nearest": {"x": 1}}
         said = plainly(one)

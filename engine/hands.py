@@ -231,6 +231,15 @@ def plainly(value: Any, depth: int = 0) -> str:
         return str(value)
     if isinstance(value, list):
         said = [p for p in (plainly(v, depth + 1) for v in value) if p]
+        # **Пустой список — это ФАКТ, а отсутствующее значение — нет.**
+        #
+        # Пустое читалось как ничего и выбрасывалось из промпта целиком. Живьём 03.09
+        # игрок позвал её «в наш дом», а список отмеченных мест был пуст — значит про
+        # места её промпт не говорил ВООБЩЕ НИЧЕГО, и модель заполнила пробел домом,
+        # которого нет. Та же форма, что у Марии с просмотренным: пропущенный блок
+        # дописывается, напечатанное «ты не отмечала ничего» — это ответ.
+        if not said:
+            return "none"
         if depth > 0 and len(said) > MOST:
             rest = len(said) - MOST
             return "; ".join(said[:MOST]) + f"; and {rest} more"
@@ -280,7 +289,20 @@ def describe(
         said = plainly(value)
         if said:
             lines.append(f"  {key}: {said}")
-    lines += ["", "What you can do, and what each needs:"]
+    lines += [
+        "",
+        # Рамка, а не характер. Пак Юкины писан под отыгрыш, а в отыгрыше придумать
+        # подробность — это работа; в мире это враньё, и разницу должен объявить тот,
+        # кто мир приносит. Живьём 03.09 игрок позвал её «в наш дом», и она сочинила
+        # дом: список мест был пуст и до неё не доезжал вовсе.
+        "Everything above is what you actually see and remember. It is not a"
+        " setting to embellish: a place that is not listed is one you have not"
+        " marked, and a thing not listed is one you have not seen. Saying where"
+        " something is when it is not above is making it up. Not knowing is an"
+        " ordinary answer, and it is the one that gets you taken there.",
+        "",
+        "What you can do, and what each needs:",
+    ]
     for one in verbs:
         needs = str(one.get("needs") or one.get("predicate") or "").strip()
         lines.append(f"  {one.get('verb')}" + (f" — {needs}" if needs else ""))
