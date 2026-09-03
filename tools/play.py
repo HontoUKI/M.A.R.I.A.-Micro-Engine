@@ -99,6 +99,16 @@ def _her_name(port: str) -> str:
 
 
 def main() -> int:
+    # A Windows console is cp1251 or cp866, and one arrow in a status line was enough
+    # to kill her: she heard the player, answered in chat, took the goal, and the
+    # process died PRINTING what she had done. A detail of display must never be able
+    # to end the evening — the turn itself was already guarded, and the report was not.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass  # not a real console; nothing to soften
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--character", required=True, help="pack name, e.g. yukina")
     parser.add_argument("--port", default="", help="router base URL; default GAME_PORT")
