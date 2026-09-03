@@ -57,6 +57,10 @@ class PromptInputs:
         memory_recall:   retrieved memory snippets (disposable under budget).
         web_context:     search-result grounding for a web-lookup turn (may be
                          empty).
+        game_block:      the world she can reach and what she can do in it (may
+                         be empty). In the TAIL, not the pinned prefix, because
+                         it changes every turn — a world pinned once would be
+                         a description of where she used to be.
         dialogue_window: prior turns, oldest first.
         user_message:    the new user input driving this turn.
     """
@@ -68,6 +72,7 @@ class PromptInputs:
     steering_block: str = ""
     memory_recall: str = ""
     web_context: str = ""
+    game_block: str = ""
     dialogue_window: tuple[DialogueTurn, ...] = ()
 
 
@@ -156,6 +161,9 @@ class PromptManager:
 
         if include_memory and inputs.memory_recall.strip():
             parts.append("(You recall:\n" + inputs.memory_recall.strip() + ")")
+
+        if inputs.game_block.strip():
+            parts.append(inputs.game_block.strip())
 
         if inputs.web_context.strip():
             parts.append(

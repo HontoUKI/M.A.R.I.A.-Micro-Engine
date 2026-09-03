@@ -56,6 +56,11 @@ class MicroEngineExtension(BaseModel):
     axes: dict[str, float]
     stage: str | None = None
     stage_changed: bool = False
+    # What she set going in an attached world this turn, in the game's own
+    # words. Empty when no game is attached, and empty when she chose to do
+    # nothing — which is a choice, and one the block in her prompt says out loud
+    # she may make.
+    did: list[str] = Field(default_factory=list)
 
 
 class ChatCompletionResponse(BaseModel):

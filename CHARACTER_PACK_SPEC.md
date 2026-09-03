@@ -346,3 +346,18 @@ defense-in-depth, not a substitute for human review of gallery submissions.
 is **your pack's** version. The engine supports `spec_version: 1`. When the
 schema gains a breaking change it becomes `2`, and v1 packs keep loading on v1
 engines. Additive, backward-compatible fields do not bump the major.
+
+---
+
+## 7. What a pack deliberately cannot do
+
+A pack is prompt-and-number data. It has no code, no file access, no commands,
+and **no way to reach the network** — including the game port
+(`docs/GAME_PORT.md`). Whether a character can act in a world is a *deployment*
+decision (`GAME_PORT`), exactly like the choice of model.
+
+That split is the reason a pack can be published and installed by strangers.
+The flip side is that once an operator attaches a world, *any* pack can act in
+it: having hands is a property of where a character is running, not of who she
+is. A pack that wants to read as a game character says so in its `identity`,
+its tags and its blocks — which is all a character ever was here.

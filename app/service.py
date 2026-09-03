@@ -12,6 +12,7 @@ from app.contracts import ChatMessage
 from app.scenes import SceneStore
 from app.sessions import SessionStore
 from engine.character import CharacterRuntime, TurnResult
+from engine.hands import GamePort
 from engine.llm import OllamaClient
 from engine.prompt_manager import DialogueTurn, PromptManager
 from engine.registry import PackRegistry
@@ -49,6 +50,9 @@ class EngineService:
     user_gender: str = ""
     vision_model: str = ""
     web_search: WebSearcher | None = None
+    # A world she can reach, when the deployment attached one. Never a pack
+    # field: see engine/hands.py.
+    hands: GamePort | None = None
     sessions_dir: str = ".local/sessions"
     scenes_dir: str = ".local/scenes"
     scene_registry: SceneRegistry = None  # type: ignore[assignment]
@@ -115,6 +119,7 @@ class EngineService:
             language=self.language if language is None else language,
             user_gender=self.user_gender if user_gender is None else user_gender,
             web_search=self.web_search,
+            hands=self.hands,
         )
         result = runtime.respond(driver, window)
         self.sessions.record_turn(

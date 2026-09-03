@@ -10,6 +10,7 @@ import os
 
 from app.service import EngineService
 from engine.config import Settings, load_settings
+from engine.hands import GamePort
 from engine.llm import OllamaClient, OpenAIClient
 from engine.logging_config import configure as configure_logging
 from engine.logging_config import get_logger
@@ -60,6 +61,14 @@ def _build_service() -> EngineService:
     web_search = (
         DuckDuckGoSearcher(limit=settings.web_search_results) if settings.web_search else None
     )
+    # Said out loud once, at start-up: a router that is not running looks, from
+    # inside, exactly like a game with nothing to do in it.
+    hands = GamePort(settings.game_port) if settings.game_port else None
+    if hands is not None:
+        get_logger(__name__).info(
+            "game port %s%s", settings.game_port,
+            "" if hands.reachable() else " — NOT ANSWERING, so there is no game",
+        )
     return EngineService(
         registry=registry,
         scene_registry=scene_registry,
@@ -71,6 +80,7 @@ def _build_service() -> EngineService:
         user_gender=settings.user_gender,
         vision_model=settings.vision_model,
         web_search=web_search,
+        hands=hands,
         sessions_dir=settings.sessions_dir,
         scenes_dir=settings.scenes_state_dir,
     )

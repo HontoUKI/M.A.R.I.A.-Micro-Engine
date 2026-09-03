@@ -139,6 +139,7 @@ def chat_completions(
             axes=result.axes.as_dict(),
             stage=result.stage,
             stage_changed=result.stage_changed,
+            did=list(result.did),
         ),
     )
     return JSONResponse(content=response.model_dump())

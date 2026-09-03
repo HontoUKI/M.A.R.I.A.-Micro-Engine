@@ -56,6 +56,15 @@ class Settings:
     # the community tier ships no network access unless a deployer enables it.
     web_search: bool = False
     web_search_results: int = 3
+    # Where a game router is listening (its `/v0` base URL). Empty = there is no
+    # game, and no character is told there is one.
+    #
+    # A DEPLOYMENT knob, never a pack field, and that is the boundary that keeps
+    # a character pack data rather than code: no pack can reach anything unless
+    # the operator attached a world. It is also why it has no default — a URL
+    # that quietly defaulted would make "she has hands" depend on whatever
+    # happened to be listening on a port.
+    game_port: str = ""
     # Multimodal model for scene-backdrop captioning (Ollama only). Empty = reuse
     # the chat model (fine when it's multimodal, e.g. gemma3).
     vision_model: str = ""
@@ -107,6 +116,7 @@ def load_settings() -> Settings:
         non_romance=_bool_env("NON_ROMANCE", Settings.non_romance),
         language=os.getenv("LANGUAGE", Settings.language),
         user_gender=os.getenv("USER_GENDER", Settings.user_gender),
+        game_port=os.getenv("GAME_PORT", Settings.game_port).strip(),
         web_search=_bool_env("WEB_SEARCH", Settings.web_search),
         vision_model=os.getenv("VISION_MODEL", Settings.vision_model),
         web_search_results=int(os.getenv("WEB_SEARCH_RESULTS", Settings.web_search_results)),

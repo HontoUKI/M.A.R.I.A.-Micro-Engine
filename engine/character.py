@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from engine.hands import GamePort, describe, how_it_went, read_intention
 from engine.llm import LLMError, OllamaClient
 from engine.memory import VectorStore
 from engine.pack.models import CharacterPack
@@ -100,6 +101,10 @@ class TurnResult:
     stage: str | None
     stage_changed: bool
     usage: TokenUsage = TokenUsage()
+    # What she set going in the world this turn, in the game's own words. Empty
+    # when no game is attached or when she chose to do nothing — which is a
+    # choice, and one the block in the prompt says out loud she may make.
+    did: tuple[str, ...] = ()
 
 
 class CharacterRuntime:
@@ -122,6 +127,7 @@ class CharacterRuntime:
         language: str = "",
         user_gender: str = "",
         web_search: WebSearcher | None = None,
+        hands: GamePort | None = None,
     ) -> None:
         self._pack = pack
         self._llm = llm
@@ -131,6 +137,9 @@ class CharacterRuntime:
         self._language = (language or "").strip()
         self._user_gender = (user_gender or "").strip().lower()
         self._web_search = web_search
+        # A pack cannot turn this on: whether a game is attached is a deployment
+        # decision, like the choice of model. See engine/hands.py.
+        self._hands = hands
         self._state = state or StateKernel.from_pack(pack, axis_max=axis_max)
         self._memory = memory
         self._pm = prompt_manager or PromptManager()
@@ -170,10 +179,12 @@ class CharacterRuntime:
             steering_block=self._steering_block(tag),
             memory_recall=recall_text,
             web_context=self._web_lookup(tag, user_message),
+            game_block=self._game_block(),
             dialogue_window=dialogue_window,
             user_message=user_message,
         )
         reply = self._llm.chat(self._pm.build_messages(inputs))
+        reply, did = self._reach_for_the_game(reply)
 
         self._remember(user_message, query_vec)
         return TurnResult(
@@ -184,7 +195,51 @@ class CharacterRuntime:
             stage=stage,
             stage_changed=stage_changed,
             usage=self._usage_delta(usage_before),
+            did=did,
         )
+
+    def _game_block(self) -> str:
+        """What the world looks like this turn, or nothing at all.
+
+        A router that has stopped answering means no block — not a stale one and
+        not an empty heading. "There is a game and nothing to do in it" is a lie
+        of exactly the kind that gets answered confidently.
+        """
+        if self._hands is None:
+            return ""
+        try:
+            return describe(
+                self._hands.offer(),
+                self._hands.sight(),
+                how_it_went(self._hands.history()),
+            )
+        except Exception:
+            return ""
+
+    def _reach_for_the_game(self, reply: str) -> tuple[str, tuple[str, ...]]:
+        """Cut her decision out of the reply and set it going.
+
+        Parsed here, where it is read, so a decision cannot be spoken aloud as
+        speech or reach a client as words. With no game attached the lines are
+        still cut — a character who narrates `DO:` at somebody is worse than one
+        who cannot act.
+        """
+        intention, speech = read_intention(reply)
+        if not intention:
+            return reply, ()
+        if self._hands is None:
+            return speech, ()
+        try:
+            self._hands.act(intention)
+        except Exception:
+            return speech, ()
+        said = tuple(
+            f"{goal.verb} " + " ".join(f"{k}={v}" for k, v in goal.fields.items())
+            if goal.fields
+            else goal.verb
+            for goal in intention.steps
+        )
+        return speech, said * 1 if intention.repeat == 1 else said + (f"x{intention.repeat}",)
 
     def _usage_snapshot(self) -> dict[str, int] | None:
         fn = getattr(self._llm, "usage_snapshot", None)
