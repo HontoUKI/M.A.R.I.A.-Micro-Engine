@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -35,6 +36,10 @@ from app.deps import get_service  # noqa: E402
 # lines are short, and a window measured in messages rather than tokens is the
 # honest unit for a place where people type "k".
 WINDOW = 8
+
+# Сколько ждать перед новой попыткой подключиться к потоку. Секунды, не мгновение:
+# роутер перезапускают руками, и частить в закрытый порт — это шум, а не готовность.
+RECONNECT_EVERY = 3.0
 
 # Minecraft chat is one line. Anything longer is sent as several messages rather
 # than truncated, because a companion cut off mid-sentence reads as broken.
@@ -74,9 +79,11 @@ def _listen(port: str):
     for state and cannot work for this: somebody typing is an instant, and an
     instant you sample for is an instant you miss.
     """
+    quiet = False
     while True:
         try:
             with urllib.request.urlopen(f"{port}/events", timeout=None) as stream:
+                quiet = False
                 for raw in stream:
                     line = raw.decode("utf-8", "replace").strip()
                     if not line.startswith("data:"):
@@ -86,8 +93,20 @@ def _listen(port: str):
                     except ValueError:
                         continue
         except (OSError, urllib.error.URLError) as why:
-            print(f"[связь с роутером потеряна: {why}]", file=sys.stderr)
-            return
+            # Возвращаться, а не выходить: докстринг обещал это с самого начала, а код
+            # делал обратное — живьём 03.09 перезапуск роутера убил её насмерть, и она
+            # молчала в мире, где игрок продолжал ей писать. Роутер это отдельный
+            # процесс; его перезапуск не событие в её жизни.
+            if not quiet:
+                print(f"[связь с роутером потеряна: {why} — жду]", file=sys.stderr)
+            quiet = True
+            time.sleep(RECONNECT_EVERY)
+            continue
+        # Поток кончился без ошибки: тоже обрыв, просто вежливый.
+        if not quiet:
+            print("[поток кончился — жду]", file=sys.stderr)
+        quiet = True
+        time.sleep(RECONNECT_EVERY)
 
 
 def _her_name(port: str) -> str:
