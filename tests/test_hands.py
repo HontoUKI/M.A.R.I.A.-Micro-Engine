@@ -183,6 +183,32 @@ class TestTheBoundary:
         assert speech == "a stone pickaxe? obviously!!"
         assert did == ()
 
+    def test_an_unfinished_wanting_reaches_her_with_what_is_left(self):
+        """Путь к цели не прямой (§21): игрок берётся за кирку, обнаруживает, что
+        нужен верстак, идёт за досками и возвращается. Прямая линия прощает ложное
+        «я сделала» — следующий шаг упрётся; ОТХОД не прощает, потому что отход и
+        есть то место, где внешнее желание надо держать.
+        """
+        said = describe(
+            {"game": "Minecraft", "affordances": [{"verb": "craft"}]},
+            {},
+            unfinished={
+                "plan": "p1",
+                "after": {"verb": "craft", "object": "wooden_pickaxe"},
+                "stopped_on": {"verb": "craft", "object": "wooden_pickaxe"},
+                "why": "needs a crafting table standing nearby",
+                "remaining": [{"verb": "craft", "object": "wooden_pickaxe"}],
+            },
+        )
+        assert "wooden_pickaxe" in said
+        assert "not finished" in said
+        assert "needs a crafting table" in said
+        assert "CONTINUE" in said
+
+    def test_nothing_unfinished_says_nothing(self):
+        said = describe({"game": "g", "affordances": [{"verb": "craft"}]}, {})
+        assert "not finished" not in said
+
     def test_a_router_that_stopped_answering_is_silence_not_a_stale_world(self):
         from engine.character import CharacterRuntime
 

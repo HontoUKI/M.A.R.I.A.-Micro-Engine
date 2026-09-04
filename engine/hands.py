@@ -179,6 +179,15 @@ class GamePort:
     def resume(self, attempt_id: str) -> dict[str, Any]:
         return self._post(f"/attempts/{attempt_id}/resume", {})
 
+    def resume_plan(self, plan_id: str) -> dict[str, Any]:
+        """Пойти доделывать то, что осталось от вставшего плана.
+
+        Тем же словом, что и возвращение к прерванной попытке: для неё это одно и то же
+        «продолжай», а чем оно отличается внутри — дело роутера, который и заводит новый
+        ряд вместо воскрешения старого.
+        """
+        return self._post(f"/plans/{plan_id}/resume", {})
+
     def abandon(self, attempt_id: str) -> dict[str, Any]:
         return self._post(f"/attempts/{attempt_id}/abandon", {})
 
@@ -273,6 +282,7 @@ def describe(
     last: str = "",
     lessons: tuple[str, ...] = (),
     paused: str = "",
+    unfinished: dict[str, Any] | None = None,
 ) -> str:
     """The block that tells her she has hands, and what they can do.
 
@@ -329,6 +339,29 @@ def describe(
             f"You are part-way through {paused} and stopped when something happened.",
             "Say CONTINUE on its own line to go back to it, or DROP to let it go.",
             "Taking a new goal drops it too — that is a choice, not a mistake.",
+        ]
+    if unfinished:
+        # Незаконченное желание, и оно важнее паузы.
+        #
+        # Путь к цели не прямой (§21, замечание автора): игрок берётся за кирку,
+        # обнаруживает, что нужен верстак, идёт за досками и возвращается. Прямая линия
+        # прощает ложное «я сделала» — следующий шаг упрётся и скажет; ОТХОД не прощает,
+        # потому что отход ровно то место, где внешнее желание надо держать.
+        #
+        # А держать было нечем: план закрывался, `how_it_went` рассказывал про последнюю
+        # попытку, и то, что она шла за КИРКОЙ, не помнил никто. Проще всего модели в
+        # этот момент считать, что кирка сделана.
+        after = plainly(unfinished.get("after"))
+        stopped = plainly(unfinished.get("stopped_on"))
+        left = unfinished.get("remaining") or []
+        lines += [
+            "",
+            f"You set out to {after} and have not finished.",
+            f"It stopped on: {stopped}"
+            + (f" — {unfinished['why']}" if unfinished.get("why") else ""),
+            f"Still to do, in order: {plainly(left)}",
+            "Doing something else first is how this usually goes — make what it asked",
+            "for, then say CONTINUE on its own line to pick this up again.",
         ]
     if lessons:
         # What the world has refused, kept for a few turns.

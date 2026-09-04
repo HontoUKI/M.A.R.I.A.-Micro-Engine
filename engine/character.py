@@ -215,12 +215,17 @@ class CharacterRuntime:
             history = self._hands.history()
             sight = self._hands.sight()
             self._paused = _paused_id(sight)
+            # Незаконченное желание: за чем она шла и что осталось. Держится отдельно от
+            # паузы, потому что это разные вещи — прерванную работу продолжают с того же
+            # места, а вставшую поднимают после отхода (§21).
+            self._unfinished = sight.get("unfinished") or None
             block = describe(
                 self._hands.offer(),
                 sight,
                 how_it_went(history),
                 refusals(history),
                 _paused_name(history, self._paused),
+                self._unfinished,
             )
             unread = getattr(self, "_unread", ())
             if unread:
@@ -268,6 +273,13 @@ class CharacterRuntime:
             # abandon what she just said she wanted to finish.
             if intention.carry_on and self._paused:
                 self._hands.resume(self._paused)
+                return speech, ("continue",)
+            # Прерванного нет, а незаконченное есть — «продолжай» про него. Для неё это
+            # одно слово: чем возвращение после отхода отличается от возвращения после
+            # помехи, знает роутер, и он же заводит новый ряд вместо старого.
+            unfinished = getattr(self, "_unfinished", None)
+            if intention.carry_on and unfinished:
+                self._hands.resume_plan(unfinished.get("plan", ""))
                 return speech, ("continue",)
             if intention.let_go and self._paused:
                 self._hands.abandon(self._paused)
