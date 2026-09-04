@@ -41,6 +41,22 @@ WINDOW = 8
 # роутер перезапускают руками, и частить в закрытый порт — это шум, а не готовность.
 RECONNECT_EVERY = 3.0
 
+# События, на которые ей стоит дать ход.
+#
+# Долгая работа не даёт ей хода вовсе: шахта говорит «попалась железная руда», а
+# следующий раз её спросят, когда шахта кончится. Всё, что автор перечислял как
+# «правильный выбор» — вскопать жилу, осветить пещеру, зачистить подземелье, — упирается
+# не в отсутствие суждения, а в отсутствие МОМЕНТА, когда его можно высказать.
+#
+# Список короткий и структурный, а не по вкусу: работа кончилась · работа пошла сама и
+# тело свободно · её сбили · и то, что она встретила по дороге. Ошибиться тут дёшево —
+# игрок рядом и поправит; дорого спамить, поэтому есть порог.
+WAKING = ("closed", "waiting", "interrupted")
+
+# Не чаще раза в столько секунд. Ход, который нельзя перебить и который идёт каждые две
+# секунды, — это уже не внимание, а трескотня.
+WAKE_EVERY = 20.0
+
 # Minecraft chat is one line. Anything longer is sent as several messages rather
 # than truncated, because a companion cut off mid-sentence reads as broken.
 LINE = 220
@@ -163,12 +179,48 @@ def main() -> int:
     # ends up carrying what the other said.
     windows: dict[str, list[ChatMessage]] = {}
 
+    woke_at = 0.0
+    last_speaker = ""
     for event in _listen(port):
-        if event.get("kind") != "heard":
+        kind = event.get("kind")
+
+        # `came_upon` приезжает заметкой хода, а не своим родом события: в потоке это
+        # `progress` с этим ключом. Спрашивать надо у того, чем событие является, а не у
+        # его имени — сегодня это стоило роутеру падения (R33).
+        notable = kind in WAKING or (kind == "progress" and "came_upon" in event)
+
+        if notable:
+            # Ход БЕЗ содержания, и это не упущение: состояние мира собирается заново
+            # каждый ход, и в нём уже есть и незаконченное желание, и то, что ждёт её у
+            # печи, и чем кончилась последняя попытка. Ей не хватало не сведений, а
+            # очереди говорить.
+            if time.time() - woke_at < WAKE_EVERY:
+                continue
+            woke_at = time.time()
+            who = last_speaker or display
+            window = windows.setdefault(who, [])
+            try:
+                result = service.complete(
+                    args.character,
+                    [*window, ChatMessage(role="user", content=f"[{kind}]")],
+                    session_key=f"minecraft:{who}",
+                )
+            except Exception as why:  # noqa: BLE001
+                print(f"[ход не вышел: {why}]", file=sys.stderr)
+                continue
+            if result.reply.strip():
+                print(f"<{display}> {result.reply}")
+                _say(port, result.reply)
+            if result.did:
+                print("  " + " · ".join(result.did))
+            continue
+
+        if kind != "heard":
             continue
         who, said = event.get("who") or "somebody", (event.get("said") or "").strip()
         if not said:
             continue
+        last_speaker = who
         print(f"<{who}> {said}")
 
         window = windows.setdefault(who, [])
