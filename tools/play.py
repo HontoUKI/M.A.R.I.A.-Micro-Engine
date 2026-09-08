@@ -57,6 +57,18 @@ WAKING = ("closed", "waiting", "interrupted")
 # секунды, — это уже не внимание, а трескотня.
 WAKE_EVERY = 20.0
 
+# И не раньше, чем столько секунд после ЕГО реплики.
+#
+# Живьём 08.09, из её же расшифровки: он написал «take some cooked cod», она ответила в
+# 19:35:00 — и в 19:35:02 взяла слово сама, потому что попытка закрылась. Пауза между её
+# ответом и её же «Hellooo? Are you even listening to me?» — ДВЕ СЕКУНДЫ.
+#
+# Порог у очереди говорить был только один и не тот: «не чаще раза в двадцать секунд»
+# считает от прошлого её хода и ничего не знает про то, что он сказал только что. Пока
+# она стояла в тупике `gather → craft → gather`, попытки закрывались каждые несколько
+# секунд, и каждая давала ей слово поверх разговора.
+QUIET_AFTER_HIM = 45.0
+
 # Minecraft chat is one line. Anything longer is sent as several messages rather
 # than truncated, because a companion cut off mid-sentence reads as broken.
 LINE = 220
@@ -180,6 +192,7 @@ def main() -> int:
     windows: dict[str, list[ChatMessage]] = {}
 
     woke_at = 0.0
+    heard_at = 0.0
     last_speaker = ""
     for event in _listen(port):
         kind = event.get("kind")
@@ -195,6 +208,11 @@ def main() -> int:
             # печи, и чем кончилась последняя попытка. Ей не хватало не сведений, а
             # очереди говорить.
             if time.time() - woke_at < WAKE_EVERY:
+                continue
+            # Разговор старше собственного повода: слово берут в тишине, а не поперёк
+            # только что сказанного. Иначе её собственный ход выглядит как «ты меня не
+            # слушаешь» ровно там, где он её слушает.
+            if time.time() - heard_at < QUIET_AFTER_HIM:
                 continue
             woke_at = time.time()
             who = last_speaker or display
@@ -221,6 +239,8 @@ def main() -> int:
         if not said:
             continue
         last_speaker = who
+        # Отметка о том, что он говорил: её собственный повод молчит столько-то после.
+        heard_at = time.time()
         print(f"<{who}> {said}")
 
         window = windows.setdefault(who, [])
