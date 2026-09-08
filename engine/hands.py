@@ -41,6 +41,16 @@ TIMEOUT = 5.0
 MOST = 3
 
 _DO = re.compile(r"^\s*do:\s*(?P<body>.+?)\s*$", re.IGNORECASE | re.MULTILINE)
+# Всё, что адресовано игре, одним блоком — как мысль у тех характеров, у кого она есть.
+#
+# Строчная форма держится на переводах строки, а они до разбора доживают не всегда: то,
+# что режет реплику на предложения, склеивает соседние строки пробелом, и граница исчезает
+# раньше, чем её кто-то ищет. Блок находится где угодно в тексте и склейку переживает.
+#
+# Незакрытый блок забирает всё до конца: недописанное решение лучше потерять, чем
+# произнести вслух — ровно тот дефект, из-за которого 03.09 она ответила игроку строкой
+# «DO: gather …».
+_PLAY = re.compile(r"<play>(?P<body>.*?)(?:</play>|\Z)", re.IGNORECASE | re.DOTALL)
 _REPEAT = re.compile(r"^\s*repeat:\s*(?P<times>\d+)\s*$", re.IGNORECASE | re.MULTILINE)
 # Going back to something she was pulled off, or letting it go. Protocol words, not
 # game verbs: they are about the ATTEMPT and no game declares them, so they cannot
@@ -87,9 +97,16 @@ def read_intention(reply: str) -> tuple[Intention, str]:
     own "do: whatever you like" into an order to her body, and no test in which
     she is obedient would ever show it.
     """
+    # Блок игры вырезается ЦЕЛИКОМ и разбирается отдельно; всё, что осталось, разбирается
+    # по-старому. Голые строки продолжают работать не как переходный костыль, а по тому же
+    # правилу, что и везде здесь: снисходительность к расположению при строгости к словам.
+    inside = "\n".join(match.group("body") for match in _PLAY.finditer(reply))
+    outside = _PLAY.sub("", reply)
+    said = f"{inside}\n{outside}"
+
     steps: list[Goal] = []
     unread: list[str] = []
-    for match in _DO.finditer(reply):
+    for match in _DO.finditer(said):
         body = match.group("body")
         goal = read_goal(body)
         if goal is not None:
@@ -98,12 +115,12 @@ def read_intention(reply: str) -> tuple[Intention, str]:
             unread.append(body)
 
     times = 1
-    for match in _REPEAT.finditer(reply):
+    for match in _REPEAT.finditer(said):
         times = max(1, int(match.group("times")))
 
-    carry_on = bool(_CONTINUE.search(reply))
-    let_go = bool(_DROP.search(reply))
-    speech = _DROP.sub("", _CONTINUE.sub("", _REPEAT.sub("", _DO.sub("", reply)))).strip()
+    carry_on = bool(_CONTINUE.search(said))
+    let_go = bool(_DROP.search(said))
+    speech = _DROP.sub("", _CONTINUE.sub("", _REPEAT.sub("", _DO.sub("", outside)))).strip()
     # Blank lines left where the decisions were.
     speech = re.sub(r"\n{3,}", "\n\n", speech)
     return Intention(tuple(steps), times, carry_on, let_go, tuple(unread)), speech
@@ -377,15 +394,19 @@ def describe(
     lines += [
         "",
         "This is a list of what is possible, not a list of things to do. Wanting",
-        "none of it is an answer. When you do decide to act, put it on its own",
-        "line at the end, one line per step:",
+        "none of it is an answer. Everything you say to the game goes in one block",
+        "at the end of your reply, and nothing inside it is spoken:",
         "",
+        "  <play>",
         '  DO: <verb> {"object": "...", "where": {...}}',
+        "  </play>",
         "",
-        "The JSON answers what that verb said it needs. To do the whole list more",
-        "than once, add REPEAT: <n> after the DO lines. Saying you will go and do",
-        "something is not doing it — the DO line is your hands, and without one",
-        "nothing moved.",
+        "One DO line per step. The JSON answers what that verb said it needs. To do",
+        "the whole list more than once, add REPEAT: <n> inside the block. Written",
+        "outside it the lines still work, each on its own line — the block exists",
+        "because inside it they survive being cut into sentences. Saying you will go",
+        "and do something is not doing it: the DO line is your hands, and without",
+        "one nothing moved.",
     ]
     return "\n".join(lines)
 

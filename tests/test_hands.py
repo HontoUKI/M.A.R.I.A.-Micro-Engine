@@ -40,6 +40,48 @@ class TestReadingHerDecision:
         assert intention.repeat == 20
         assert speech == "watch"
 
+    def test_everything_for_the_game_fits_in_one_block(self):
+        # Замысел автора 08.09, сперва проверенный на Маше: весь протокол игры в одном
+        # декораторе. Строчная форма держится на переводах строки, а они до разбора
+        # доживают не всегда — то, что режет реплику на предложения, склеивает соседние
+        # строки пробелом, и граница исчезает раньше, чем её кто-то ищет.
+        intention, speech = read_intention(
+            'Sure, on it.<play>\nDO: gather {"object": "cobblestone"}\nREPEAT: 2\n</play>'
+        )
+        assert speech == "Sure, on it."
+        assert intention.steps == (Goal("gather", {"object": "cobblestone"}),)
+        assert intention.repeat == 2
+
+    def test_the_bare_lines_still_work(self):
+        # Снисходительность к расположению при строгости к словам: обе формы читает один
+        # разбор, поэтому «две формы» не значит «два разбора».
+        intention, speech = read_intention("Okay.\nCONTINUE\nDO: gather oak_log")
+        assert speech == "Okay."
+        assert intention.carry_on
+        assert [g.verb for g in intention.steps] == ["gather"]
+
+    def test_an_unclosed_block_is_never_spoken(self):
+        # Недописанное решение лучше потерять, чем произнести вслух: живьём 03.09 она
+        # ответила игроку строкой «DO: gather "cobblestone" 3 "search": 5» дважды подряд,
+        # не сделав при этом ничего.
+        intention, speech = read_intention("I am on it.<play>\nDO: gather {")
+        assert speech == "I am on it."
+        assert "DO:" not in speech
+        assert intention.unread == ("gather {",)
+
+    def test_the_block_is_named_in_what_she_is_told(self):
+        # Правило, живущее только в разборе, до пишущего цель не доезжает.
+        from engine.hands import describe as _describe
+
+        offer = {
+            "game": "Minecraft",
+            "about": "",
+            "affordances": [{"verb": "gather", "needs": "object"}],
+        }
+        told = _describe(offer, {})
+        assert "<play>" in told
+        assert "nothing inside it is spoken" in told.lower()
+
     def test_do_only_counts_at_the_start_of_a_line(self):
         # Any other rule turns her own "just do: whatever you want" into an order
         # to her body, and no test in which she is obedient would ever show it.
