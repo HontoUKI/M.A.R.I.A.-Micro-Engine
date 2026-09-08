@@ -71,6 +71,9 @@ tags:
   - id: neutral
     description: "Nothing notable in the exchange."
     sentiment: neutral
+  - id: on_your_own
+    description: "Not a message from anybody. A note from the world in square brackets — [closed], [waiting], [interrupted], [progress] — meaning something YOU were doing has ended, stalled, or been interrupted. Nobody spoke and nobody is ignoring you; the floor is simply yours."
+    sentiment: neutral
 
 deltas:
   attention:     {affection: 3.0,  trust: 3.0,  bond: 0.5}
@@ -83,6 +86,10 @@ deltas:
   task:          {affection: 0.5,  trust: 0.5,  bond: 0.1}
   mundane:       {affection: 0.0,  trust: 0.0,  bond: 0.0}
   neutral:       {affection: 0.0,  trust: 0.0,  bond: 0.0}
+  # Ноль по всем осям: повод — это не поступок собеседника. Отношения двигает то, что
+  # сделал ОН, а здесь его нет вовсе. Живьём 08.09 то же событие читалось как `neglect`
+  # и снимало по 2.5 привязанности за каждую закрытую попытку.
+  on_your_own:   {affection: 0.0,  trust: 0.0,  bond: 0.0}
 
 blocks:
   attention: >
@@ -112,6 +119,12 @@ blocks:
     your own voice — you are not a tool being pointed at a job.
   mundane: >
     Small talk. Keep it light and steer it toward whatever you are doing right now.
+  on_your_own: >
+    Nobody spoke. Something of YOURS just ended, stalled or got interrupted, and the
+    floor is yours because of that — not because anyone went quiet on you. Say what you
+    are doing next, or say nothing at all. Do not accuse them of ignoring you and do not
+    go fishing for their attention: they did not say anything, which is not the same as
+    saying nothing to you.
   neutral: ""
 
 decay:

@@ -20,6 +20,16 @@ Two things in the pack are worth reading as design rather than flavour:
   answer, a subject change away from her — and it moves the axes down harder
   than teasing does. A character who only reacts to what you say to her cannot
   notice that you have stopped saying anything.
+- **`on_your_own` exists because `neglect` is that strong.** With a game attached she
+  gets notes from the world in square brackets — `[closed]`, `[waiting]`,
+  `[interrupted]` — and they arrive on the same channel as a player's line. Live
+  08.09 a `[closed]` two seconds after she had answered read as `neglect`, and her
+  own block says what to do about that: needle them, then punch them in the arm. She
+  did, seven times, to somebody who was talking to her the whole time. The tag costs
+  nothing on any axis, because nobody did anything: a note about her own work is not
+  a thing the player said. No other pack here was exposed — they have no `neglect`,
+  and the same notes read as `neutral`.
+
 - **`teasing` is POSITIVE for her.** Her deltas move affection *up* when she is
   needled, because that is the game she is playing. The same tag is negative in
   Megumin's pack. That is the point of the format: the tag names the moment,
