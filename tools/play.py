@@ -78,6 +78,10 @@ WITH_CONTENT = {
     "returned": 0.0,
     "beside": 0.0,
     "died": 0.0,
+    # Он уходит, а её ноги заняты работой. Ход нужен прямо сейчас и со СВОИМ
+    # содержанием: работу роутер уже остановил, и без записки она видит только «стоп»
+    # без того, из-за кого он случился.
+    "falling_behind": 0.0,
     "watched": None,  # None — держать общий порог тишины
 }
 
@@ -222,6 +226,13 @@ def _note(event: dict) -> str:
         return f"[you died — {how}]" if how else "[you died]"
     if kind == "at_risk":
         return f"[a {event.get('from')} is {event.get('blocks')} blocks from {who}]"
+    if kind == "falling_behind":
+        # Факт, не вывод: он далеко, и то, чем она была занята, встало. Что это значит —
+        # догонять, бросить или сказать ему стоять — её дело, а не записки.
+        return (
+            f"[you are walking with {who} and he is {event.get('blocks')} blocks away —"
+            " what you were doing has stopped]"
+        )
     return f"[{kind}]"
 
 

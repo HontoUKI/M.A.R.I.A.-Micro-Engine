@@ -20,11 +20,25 @@ Between the two sit the prior dialogue turns (append-only, also cache-warm).
 the invariants, the current-turn steering and the actual user message are
 load-bearing and always kept; recalled memory and then the oldest dialogue
 turns are dropped first when the budget is tight.
+
+The window has a floor, and it is there because of a lived defect. On 09.09 in
+the game the tail carried the world block — about 2000 tokens of what she can
+see and do — and the whole ceiling was 2048, so the budget left for the window
+came out negative and EVERY prior turn was dropped. Thirty turns ran as thirty
+first turns: she answered "you're listening. where are you going?" four times
+verbatim, with the previous copy sitting in a window nobody passed on. Dropping
+the oldest turns is a trade; dropping all of them is not a smaller prompt, it is
+a different character. So `keep_last` messages survive any budget, and a prompt
+that overruns its ceiling says so out loud instead of paying for it in memory.
 """
 from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+
+from engine.logging_config import get_logger
+
+_log = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -96,6 +110,10 @@ class PromptManager:
     """
 
     max_tokens: int = 2048
+    # Prior messages that survive however tight the budget is (2 exchanges).
+    # Below this a session stops being a conversation, and that is not a saving
+    # any ceiling is allowed to make silently.
+    keep_last: int = 4
     estimate_tokens: Callable[[str], int] = field(default=_estimate_tokens)
 
     def build_messages(self, inputs: PromptInputs) -> list[dict[str, str]]:
@@ -124,6 +142,17 @@ class PromptManager:
         messages: list[dict[str, str]] = [{"role": "system", "content": system}]
         messages.extend({"role": t.role, "content": t.content} for t in window)
         messages.append({"role": "user", "content": tail})
+
+        total = sum(self.estimate_tokens(m["content"]) for m in messages)
+        if total > self.max_tokens:
+            # Not a failure of the trade — the load-bearing parts alone are over
+            # the line, and everything sacrificable has already gone. Said once
+            # per turn because the alternative is paying for it in her memory.
+            _log.warning(
+                "prompt %d tokens over the %d ceiling (world block and steering are "
+                "kept whole; %d of %d prior messages survived)",
+                total, self.max_tokens, len(window), len(inputs.dialogue_window),
+            )
         return messages
 
     # ------------------------------------------------------------------ prefix
@@ -182,15 +211,16 @@ class PromptManager:
     ) -> tuple[DialogueTurn, ...]:
         """Keep the newest turns that fit; drop oldest first.
 
-        Returns turns in chronological order. A negative budget keeps none.
+        Returns turns in chronological order. The newest `keep_last` messages
+        are kept whatever the budget says — including a negative one, which is
+        what a big world block produces and what cost her the conversation on
+        09.09.
         """
-        if budget <= 0:
-            return ()
         kept: list[DialogueTurn] = []
         used = 0
         for turn in reversed(window):
             cost = self.estimate_tokens(turn.content)
-            if used + cost > budget:
+            if used + cost > budget and len(kept) >= self.keep_last:
                 break
             kept.append(turn)
             used += cost

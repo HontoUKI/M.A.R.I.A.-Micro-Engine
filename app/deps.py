@@ -14,6 +14,7 @@ from engine.hands import GamePort
 from engine.llm import OllamaClient, OpenAIClient
 from engine.logging_config import configure as configure_logging
 from engine.logging_config import get_logger
+from engine.prompt_manager import PromptManager
 from engine.registry import PackRegistry
 from engine.scene.registry import SceneRegistry
 from engine.web import DuckDuckGoSearcher
@@ -83,6 +84,7 @@ def _build_service() -> EngineService:
         hands=hands,
         sessions_dir=settings.sessions_dir,
         scenes_dir=settings.scenes_state_dir,
+        prompt_manager=PromptManager(max_tokens=settings.prompt_max_tokens),
     )
 
 

@@ -121,9 +121,13 @@ def test_memory_recall_dropped_before_dialogue_when_budget_tight():
 
 
 def test_oldest_dialogue_turns_dropped_first():
+    # Длиннее пола: ниже него ронять нечего, и утверждение было бы о полу, а не о
+    # порядке.
     window = (
         DialogueTurn("user", "oldest oldest oldest"),
-        DialogueTurn("assistant", "newer"),
+        DialogueTurn("assistant", "old"),
+        DialogueTurn("user", "newer"),
+        DialogueTurn("assistant", "newer still"),
         DialogueTurn("user", "newest"),
     )
     inputs = PromptInputs(
@@ -143,10 +147,65 @@ def test_user_message_is_always_kept_even_over_budget():
         user_message="critical question",
         dialogue_window=(DialogueTurn("user", "junk junk junk"),),
     )
-    # Ceiling below fixed cost — window must vanish, user message survives.
     messages = _manager(max_tokens=1).build_messages(inputs)
-    assert len(messages) == 2  # system + user only
     assert "critical question" in messages[-1]["content"]
+
+
+def test_the_newest_turns_survive_a_budget_that_has_nothing_left():
+    """Ходы, ради которых поле и заведено.
+
+    09.09 в игре блок мира занял почти весь потолок, бюджет окна вышел
+    отрицательным, и окно исчезало ЦЕЛИКОМ: тридцать ходов прошли как тридцать
+    первых, и она четырежды слово в слово повторила один и тот же ответ, имея
+    предыдущую копию в окне, которого никто не передал. Уронить старые ходы —
+    сделка; уронить все — другой персонаж.
+    """
+    window = (
+        DialogueTurn("user", "oldest oldest oldest"),
+        DialogueTurn("assistant", "older older older"),
+        DialogueTurn("user", "are you listening"),
+        DialogueTurn("assistant", "you are listening"),
+    )
+    inputs = PromptInputs(
+        identity="a very long identity block here",
+        game_block="a world block that eats the whole ceiling by itself",
+        user_message="critical question",
+        dialogue_window=window,
+    )
+    manager = PromptManager(max_tokens=1, estimate_tokens=_words, keep_last=4)
+    kept = [m["content"] for m in manager.build_messages(inputs)[1:-1]]
+    assert kept == [t.content for t in window]
+    assert "critical question" in manager.build_messages(inputs)[-1]["content"]
+
+
+def test_the_floor_is_the_newest_ones_and_no_more():
+    """Пол — не «держать всё»: старое по-прежнему уходит первым."""
+    window = tuple(
+        DialogueTurn("user" if i % 2 == 0 else "assistant", f"turn{i}") for i in range(8)
+    )
+    manager = PromptManager(max_tokens=1, estimate_tokens=_words, keep_last=4)
+    kept = [
+        m["content"]
+        for m in manager.build_messages(
+            PromptInputs(identity="id", user_message="msg", dialogue_window=window)
+        )[1:-1]
+    ]
+    assert kept == ["turn4", "turn5", "turn6", "turn7"]
+
+
+def test_a_prompt_over_its_ceiling_says_so(caplog):
+    """Молчаливый перерасход — это и есть дефект: платит за него её память."""
+    import logging
+
+    inputs = PromptInputs(
+        identity="a very long identity block here",
+        game_block="a world block that eats the whole ceiling by itself",
+        user_message="critical question",
+        dialogue_window=(DialogueTurn("user", "junk junk junk"),),
+    )
+    with caplog.at_level(logging.WARNING, logger="micro_engine.engine.prompt_manager"):
+        PromptManager(max_tokens=1, estimate_tokens=_words).build_messages(inputs)
+    assert any("ceiling" in r.getMessage() for r in caplog.records)
 
 
 def test_memory_kept_when_budget_allows():

@@ -74,6 +74,11 @@ class Settings:
     # model use its own default.
     temperature: float = 0.8
     num_ctx: int | None = None
+    # Ceiling for the assembled prompt. 2048 is the small-model default the
+    # engine was built around; a deployment that hands a character a world has
+    # to raise it, because the world block alone is about that size and the
+    # ceiling is paid for out of her memory of the conversation.
+    prompt_max_tokens: int = 2048
     log_level: str = "INFO"
     # Ceiling for every relationship axis. Raising it (e.g. to 1000) makes the
     # same per-turn deltas a smaller fraction of the whole, so relationships
@@ -123,6 +128,9 @@ def load_settings() -> Settings:
         llm_timeout_s=float(os.getenv("LLM_TIMEOUT_S", Settings.llm_timeout_s)),
         temperature=float(os.getenv("TEMPERATURE", Settings.temperature)),
         num_ctx=_optional_int("NUM_CTX"),
+        prompt_max_tokens=int(
+            os.getenv("PROMPT_MAX_TOKENS", Settings.prompt_max_tokens)
+        ),
         log_level=os.getenv("LOG_LEVEL", Settings.log_level),
         axis_max=float(os.getenv("AXIS_MAX", Settings.axis_max)),
     )
