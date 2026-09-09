@@ -26,8 +26,8 @@ _YUKINA = Path(__file__).resolve().parents[1] / "characters" / "yukina"
 GUARDING = 0.45   # опека, ревность, «он ушёл»
 KEEPING = 0.7     # взаимность и «отстань» как то, что она не принимает
 
-LOCKED_EARLY = {"he_left", "he_is_in_danger", "someone_else", "told_to_back_off",
-                "intimacy_return"}
+LOCKED_EARLY = {"he_left", "he_came_back", "he_is_in_danger", "someone_else",
+                "told_to_back_off", "intimacy_return"}
 
 
 @pytest.fixture
@@ -55,6 +55,9 @@ def test_pack_is_the_yandere_rework(pack):
     assert pack.tag("he_is_in_danger").unlock_at == GUARDING
     assert pack.tag("someone_else").unlock_at == GUARDING
     assert pack.tag("he_left").unlock_at == GUARDING
+    # Уход и возвращение — одни ворота: заметить только половину значило бы, что он
+    # уходит навсегда.
+    assert pack.tag("he_came_back").unlock_at == pack.tag("he_left").unlock_at
     assert pack.tag("intimacy_return").unlock_at == KEEPING
     assert pack.tag("told_to_back_off").unlock_at == KEEPING
     # Отказ и взаимность — одни ворота с двух сторон, и зазора между ними нет.
@@ -85,7 +88,7 @@ def test_a_stranger_is_not_offered_the_possessive_reads(pack):
 
 def test_once_she_is_attached_the_guarding_reads_appear(pack):
     offered = {t.id for t in _available_tags(pack, ratio=GUARDING)}
-    assert {"he_left", "he_is_in_danger", "someone_else"} <= offered
+    assert {"he_left", "he_came_back", "he_is_in_danger", "someone_else"} <= offered
     # Но не всё сразу: верхние ворота ещё закрыты.
     assert "intimacy_return" not in offered
     assert "told_to_back_off" not in offered
@@ -146,3 +149,16 @@ def test_danger_around_him_moves_nothing(pack):
     """
     danger = pack.deltas["he_is_in_danger"]
     assert (danger.affection, danger.trust, danger.bond) == (0.0, 0.0, 0.0)
+
+
+def test_coming_back_restores_and_does_not_pay(pack):
+    """Уйти и вернуться — не дорога наверх.
+
+    Иначе у неё появился бы способ добирать близость, которым игрок пользуется, ничего
+    не делая: отойти на минуту и прийти. За полный круг доверие обязано остаться в
+    минусе — оно и есть то, что уходом тратится.
+    """
+    left, back = pack.deltas["he_left"], pack.deltas["he_came_back"]
+    assert back.affection > 0 and back.trust > 0
+    assert left.trust + back.trust < 0
+    assert back.affection < pack.deltas["gift"].affection

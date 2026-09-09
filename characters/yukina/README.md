@@ -18,7 +18,7 @@ can steer a body in a world (see `docs/GAME_PORT.md`).
 
 ### The gates are code, not a request to the model
 
-Six of her eighteen tags carry an availability window (`unlock_at` / `lock_at`)
+Seven of her nineteen tags carry an availability window (`unlock_at` / `lock_at`)
 on the closeness ratio. Outside its window a tag is **never shown to the
 classifier**, so the model cannot choose it — and a model that names it anyway
 gets the pack's fallback. This is the difference between "we asked her not to be
@@ -27,12 +27,29 @@ jealous yet" and "there is no jealousy in the list she is choosing from".
 | ratio | what opens |
 |---|---|
 | `0.00` | the ordinary reads: attention, warmth, praise, **gift**, **watched**, teasing, neglect, insult |
-| `0.45` | `he_left` · `he_is_in_danger` · `someone_else` — she starts to guard, to miss, and to mind who else is there |
+| `0.45` | `he_left` · `he_came_back` · `he_is_in_danger` · `someone_else` — she starts to guard, to miss, and to mind who else is there |
 | `0.70` | `intimacy_return` replaces `intimacy_push`, and `told_to_back_off` appears — being sent away becomes something she has a reaction to instead of simply obeying |
 
 Both edges are inclusive, so on the threshold itself the two sides of the
 romance gate are briefly available together; `tests/test_yukina_pack.py` pins
 that rather than leaving it to be discovered in play.
+
+Measured on `gemma4:31b-cloud`, same line above and below the gate:
+
+```
+r=0.10                          r=0.85
+intimacy_push                   intimacy_return    i love you
+intimacy_push                   intimacy_return    will you be my girlfriend?
+warmth                          warmth             i think you're cute
+on_your_own                     he_came_back       [HontoUKI is back — 9 blocks away]
+```
+
+The third line is the control, and it is the one that made the pack change: with
+`warmth` described merely as "kind, affectionate, or openly fond", a declaration
+landed there too and the gate never fired for the one sentence a player is most
+likely to type. `warmth` is now ordinary fondness and `intimacy_*` is a claim on
+each other — the boundary narrowed rather than moved, which is what the control
+is there to show.
 
 ### Two numbers that carry the whole character
 
