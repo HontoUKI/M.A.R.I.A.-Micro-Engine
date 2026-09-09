@@ -80,9 +80,32 @@ def deeds(entries, pack, most: int = MOST) -> tuple[Deed, ...]:
     return tuple(Deed(tag, times, ago) for tag, (times, ago) in ranked[:most])
 
 
-def summarise(entries, pack, most: int = MOST) -> str:
+def times(found, tag: str) -> int:
+    """Сколько раз этот род поступка случился в пределах своего срока."""
+    return next((d.times for d in found if d.tag == tag), 0)
+
+
+def worth(found, pack, tag: str) -> float:
+    """Во сколько ценится ОЧЕРЕДНОЙ такой поступок, долей от полного.
+
+    Замечание автора 09.09: «стоит сделать уменьшение дельт на подарки, учитывая то что мы
+    записываем количество тех или иных тегов». Считать уже умеет досье — оно и решает.
+
+    Правило одно и без магических чисел: N-й поступок в пределах своего срока стоит `1/N`.
+    Первый подарок за вечер — целиком, второй вполовину, пятый впятеро меньше. До нуля не
+    доходит никогда: он всё-таки о ней подумал, пусть и в пятый раз подряд.
+
+    А срок даёт этому дыхание: у Юкины подарок помнится шестьдесят ходов, и через час
+    следующий снова стоит целого. Подарки перестают быть счётом и становятся РИТМОМ.
+    """
+    if tag not in (getattr(pack, "diminishing", None) or ()):
+        return 1.0
+    return 1.0 / (1 + times(found, tag))
+
+
+def summarise(found, most: int = MOST) -> str:
     """Досье одной строкой, для хвоста хода. Пусто — значит ничего не было."""
-    found = deeds(entries, pack, most)
+    found = tuple(found)[:most]
     if not found:
         return ""
     said = []

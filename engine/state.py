@@ -117,6 +117,20 @@ class StateKernel:
         return dict(self._values)
 
 
+def scaled(delta: DeltaVector, scale: float) -> DeltaVector:
+    """Дельта, умноженная на долю.
+
+    Масштабирование сохраняет правило «связь не больше двух других осей», поэтому
+    результат остаётся законной дельтой. Одно определение на всех, кто это делает:
+    свидетель в сцене и убывающая цена повторённого поступка.
+    """
+    return DeltaVector(
+        affection=delta.affection * scale,
+        trust=delta.trust * scale,
+        bond=delta.bond * scale,
+    )
+
+
 def relationship_ratio(axes: Axes, axis_max: float) -> float:
     """Combined closeness in [0, 1] from affection and trust.
 

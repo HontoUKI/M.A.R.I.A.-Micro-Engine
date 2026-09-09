@@ -264,8 +264,26 @@ default of 20 turns. The lifetime is checked on **each** occurrence, not on the 
 three insults now plus one a hundred turns ago reads as three — a fresh case never
 resurrects an expired tally.
 
-Nothing is required of a pack: a pack that declares no `remembered_for` and never
-mentions the dossier behaves exactly as before.
+**A deed can get cheaper with repetition.** `diminishing` is an optional list of tag ids
+whose delta shrinks as the same deed repeats: the **Nth occurrence inside its own
+lifetime is worth `1/N`** of the full delta. First one full, second half, fifth a fifth —
+and never zero, because it still happened.
+
+```yaml
+diminishing: [gift, trinket]
+```
+
+This is what stops a relationship being bought by volume: without it, twenty items handed
+over in a minute are worth twenty times the first, and any character with a generous
+positive tag can be farmed — trivially so where the player has creative mode. And the
+lifetime gives it breathing room: with `gift: 60`, a present an hour later is worth full
+value again, so gifts stop being a count and become a **rhythm**.
+
+Leave a tag out when repetition *should* compound. Yukina's `insult` is deliberately not
+on the list: a fifth insult in an evening must not be cheaper than the first.
+
+Nothing is required of a pack: a pack that declares no `remembered_for`, no `diminishing`
+and never mentions the dossier behaves exactly as before.
 
 ### 2.12b `stage_axis` (optional, string) — which number the arc hangs on
 

@@ -12,7 +12,7 @@ from app.contracts import ChatMessage
 from app.scenes import SceneStore
 from app.sessions import SessionStore
 from engine.character import CharacterRuntime, TurnResult
-from engine.dossier import summarise
+from engine.dossier import deeds
 from engine.hands import GamePort
 from engine.llm import OllamaClient
 from engine.prompt_manager import DialogueTurn, PromptManager
@@ -111,7 +111,7 @@ class EngineService:
         # Что этот человек делал раньше. Между тегом (один ход) и ступенью (накопленная
         # близость) не было ничего, и полоса грубости внутри одной ступени не оставляла
         # следа вовсе.
-        dossier = summarise(self.sessions.entries(session_key, pack), pack)
+        done = deeds(self.sessions.entries(session_key, pack), pack)
         runtime = CharacterRuntime(
             pack,
             self.llm,
@@ -125,7 +125,7 @@ class EngineService:
             user_gender=self.user_gender if user_gender is None else user_gender,
             web_search=self.web_search,
             hands=self.hands,
-            dossier=dossier,
+            deeds=done,
         )
         result = runtime.respond(driver, window)
         self.sessions.record_turn(

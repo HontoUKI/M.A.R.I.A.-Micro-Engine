@@ -152,6 +152,9 @@ class CharacterPack(BaseModel):
     # от одного плохого вечера.
     stage_axis: Literal["closeness", "bond"] = "closeness"
     remembered_for: dict[str, int] = Field(default_factory=dict)
+    # Теги, чья цена падает от повторения: N-й в пределах своего срока стоит 1/N.
+    # Спасает от того, чтобы отношения покупались количеством.
+    diminishing: list[str] = Field(default_factory=list)
     sprites: dict[str, str] = Field(default_factory=dict)
     decay: DecayConfig = Field(default_factory=DecayConfig)
     stages: list[Stage] = Field(default_factory=list, max_length=MAX_STAGES)
@@ -171,6 +174,10 @@ class CharacterPack(BaseModel):
             raise ValueError("deltas must cover exactly the declared tags")
         if set(self.blocks) != tag_set:
             raise ValueError("blocks must cover exactly the declared tags")
+
+        for key in self.diminishing:
+            if key not in tag_set:
+                raise ValueError(f"diminishing names {key!r}, which is not a tag")
 
         # Сроки памяти — только про объявленные теги, и только положительные.
         for key, turns in self.remembered_for.items():

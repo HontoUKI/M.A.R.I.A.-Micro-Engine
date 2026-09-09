@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from engine.dossier import REMEMBERED_FOR, deeds, summarise
+from engine.dossier import REMEMBERED_FOR, deeds, summarise, worth
 from engine.pack import load_pack
 
 _YUKINA = Path(__file__).resolve().parents[1] / "characters" / "yukina"
@@ -30,7 +30,7 @@ def turns(*tags):
 
 
 def test_rudeness_is_remembered_and_counted(pack):
-    said = summarise(turns("insult", "mundane", "insult", "warmth"), pack)
+    said = summarise(deeds(turns("insult", "mundane", "insult", "warmth"), pack))
     assert "insult x2" in said
     assert "warmth" in said
 
@@ -41,7 +41,7 @@ def test_the_ordinary_hum_is_not_a_deed(pack):
     Что считать поступком, решает ПАК своим `sentiment`, а не движок своими
     представлениями о важном. Иначе досье платило бы токенами за отсутствие событий.
     """
-    assert summarise(turns("mundane", "neutral", "on_your_own", "task"), pack) == ""
+    assert summarise(deeds(turns("mundane", "neutral", "on_your_own", "task"), pack)) == ""
 
 
 def test_freshest_first_and_the_distance_is_named(pack):
@@ -54,13 +54,13 @@ def test_freshest_first_and_the_distance_is_named(pack):
 
 
 def test_a_single_deed_is_not_counted_out_loud(pack):
-    said = summarise(turns("insult"), pack)
+    said = summarise(deeds(turns("insult"), pack))
     assert "x1" not in said, "«один раз» — это счёт, а не речь"
 
 
 def test_nothing_yet_is_an_empty_dossier(pack):
-    assert summarise([], pack) == ""
-    assert summarise(None, pack) == ""
+    assert summarise(deeds([], pack)) == ""
+    assert summarise(deeds(None, pack)) == ""
 
 
 def test_a_tag_the_pack_does_not_know_is_ignored(pack):
@@ -69,7 +69,7 @@ def test_a_tag_the_pack_does_not_know_is_ignored(pack):
     Тег, которого в паке больше нет, — это не поступок, а след прошлой редакции, и
     падать на нём досье не должно.
     """
-    said = summarise(turns("insult", "some_old_tag_from_a_previous_pack"), pack)
+    said = summarise(deeds(turns("insult", "some_old_tag_from_a_previous_pack"), pack))
     assert "insult" in said
     assert "some_old_tag" not in said
 
@@ -80,7 +80,7 @@ def test_the_dossier_is_a_fact_and_never_a_reading(pack):
     Злопамятна ли она, смеётся ли над этим или не замечает вовсе — решает пак. Та же
     граница, по которой игровой порт несёт слова мира и не читает их.
     """
-    said = summarise(turns("insult", "insult", "killed_by_him", "gift"), pack)
+    said = summarise(deeds(turns("insult", "insult", "killed_by_him", "gift"), pack))
     for word in ("angry", "hurt", "forgive", "should", "deserve", "punish", "sorry"):
         assert word not in said.lower()
 
@@ -147,3 +147,49 @@ def test_the_lifetime_is_checked_on_each_deed_not_on_the_kind(pack):
     rows = turns("insult", *["mundane"] * 100, "insult", "insult", "insult")
     found = {d.tag: d for d in deeds(rows, pack)}
     assert found["insult"].times == 3
+
+
+def test_a_repeated_gift_is_worth_less_each_time(pack):
+    """Замечание автора: подарками можно просто задарить, особенно из креатива.
+
+    Первый алмаз за вечер значит «он обо мне подумал», двадцатый — «он вытряхнул карманы»,
+    и цена у них не может быть одна. Правило без магических чисел: N-й поступок в пределах
+    своего срока стоит 1/N, и до нуля не доходит никогда — он всё-таки подумал.
+    """
+    assert worth(deeds([], pack), pack, "gift") == 1.0
+    assert worth(deeds(turns("gift"), pack), pack, "gift") == 0.5
+    assert worth(deeds(turns("gift", "gift", "gift"), pack), pack, "gift") == 0.25
+
+
+def test_the_lifetime_gives_it_breathing_room(pack):
+    """Через час подарок снова стоит целого.
+
+    Счёт ведётся в пределах срока памяти, а он у подарка шестьдесят ходов. Значит подарки
+    перестают быть счётом и становятся ритмом.
+    """
+    lifetime = pack.remembered_for["gift"]
+    stale = turns("gift", *["mundane"] * (lifetime + 1))
+    assert worth(deeds(stale, pack), pack, "gift") == 1.0
+
+
+def test_rudeness_does_not_get_cheaper_with_repetition(pack):
+    """И это выбор характера, а не упущение.
+
+    Пятое оскорбление за вечер не должно быть дешевле первого: привыкать к тому, что с
+    тобой так разговаривают, — не та черта, которую здесь строят.
+    """
+    assert "insult" not in pack.diminishing
+    assert worth(deeds(turns("insult", "insult", "insult"), pack), pack, "insult") == 1.0
+
+
+def test_a_pack_that_declares_nothing_keeps_full_price(pack):
+    class _Bare:
+        tags = pack.tags
+        remembered_for = {}
+        diminishing = []
+
+        @staticmethod
+        def tag(name):
+            return pack.tag(name)
+
+    assert worth(deeds(turns("gift", "gift"), _Bare), _Bare, "gift") == 1.0

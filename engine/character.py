@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from engine.dossier import summarise, worth
 from engine.hands import GamePort, describe, how_it_went, read_intention, refusals
 from engine.llm import LLMError, OllamaClient
 from engine.memory import VectorStore
@@ -25,6 +26,7 @@ from engine.state import (
     Axes,
     StateKernel,
     resolve_stage,
+    scaled,
     standing_ratio,
 )
 from engine.web import WebResult, WebSearcher
@@ -128,7 +130,7 @@ class CharacterRuntime:
         user_gender: str = "",
         web_search: WebSearcher | None = None,
         hands: GamePort | None = None,
-        dossier: str = "",
+        deeds: tuple = (),
     ) -> None:
         self._pack = pack
         self._llm = llm
@@ -141,7 +143,7 @@ class CharacterRuntime:
         # A pack cannot turn this on: whether a game is attached is a deployment
         # decision, like the choice of model. See engine/hands.py.
         self._hands = hands
-        self._dossier = dossier
+        self._deeds = tuple(deeds)
         # The attempt she is part-way through, if any. Read when the world is
         # described and used when she answers, so "CONTINUE" means the thing she
         # was actually told about rather than whatever is open by then.
@@ -174,7 +176,11 @@ class CharacterRuntime:
         )
 
         pre_axes = self._state.axes
-        axes = self._state.apply(self._pack.deltas[tag])
+        # Цена поступка падает от повторения, если пак так сказал: N-й подарок в пределах
+        # своего срока стоит 1/N. Считает досье — оно и так ведёт этот счёт.
+        axes = self._state.apply(
+            scaled(self._pack.deltas[tag], worth(self._deeds, self._pack, tag))
+        )
         stage_obj, stage_changed = self._resolve_stage(pre_axes, axes)
         stage = stage_obj.id if stage_obj else None
 
@@ -340,7 +346,7 @@ class CharacterRuntime:
         model heeds them best."""
         # Досье идёт ПЕРВЫМ: оно про то, что уже было, и повод этого хода читается на
         # его фоне, а не наоборот.
-        parts = [self._dossier, self._pack.blocks[tag], self._pack.reply_directive]
+        parts = [summarise(self._deeds), self._pack.blocks[tag], self._pack.reply_directive]
         if self._non_rp:
             parts.append(_NON_RP_TAIL_HINT)
         if self._non_romance:

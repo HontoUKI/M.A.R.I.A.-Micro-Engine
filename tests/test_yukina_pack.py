@@ -21,10 +21,12 @@ from engine.perception import TagClassifier, _available_tags
 
 _YUKINA = Path(__file__).resolve().parents[1] / "characters" / "yukina"
 
-# Ступени, на которых открываются ворота. Держатся здесь, чтобы правка числа в паке
-# была видна как правка утверждения, а не как молча уехавшее поведение.
-GUARDING = 0.45   # опека, ревность, «он ушёл»
-KEEPING = 0.7     # взаимность и «отстань» как то, что она не принимает
+# Ступени, на которых открываются ворота — по СВЯЗИ, а не по настроению (09.09). Держатся
+# здесь, чтобы правка числа в паке была видна как правка утверждения, а не как молча
+# уехавшее поведение.
+ATTACHED = 0.15   # он ушёл, он вернулся, ему грозит опасность
+JEALOUS = 0.30    # кто-то ещё
+KEEPING = 0.50    # взаимность и «отстань» как то, чего она не принимает
 
 LOCKED_EARLY = {"he_left", "he_came_back", "he_is_in_danger", "someone_else",
                 "told_to_back_off", "intimacy_return"}
@@ -47,14 +49,16 @@ class _Insists:
 
 def test_pack_is_the_yandere_rework(pack):
     assert pack.meta.name == "yukina"
+    # Лестница висит на СВЯЗИ: плохой вечер портит настроение и не разворачивает арку.
+    assert pack.stage_axis == "bond"
     assert [s.id for s in pack.stages] == [
-        "newcomer", "friends", "possessive", "devoted", "inseparable",
+        "wary", "helping", "attached", "keeping", "sabotage", "obsessed",
     ]
-    # Ворота стоят там же, где границы ступеней: иначе «она стала другой» и «ей
-    # стало доступно другое» происходили бы в разные моменты.
-    assert pack.tag("he_is_in_danger").unlock_at == GUARDING
-    assert pack.tag("someone_else").unlock_at == GUARDING
-    assert pack.tag("he_left").unlock_at == GUARDING
+    # Ворота стоят на границах ступеней: иначе «она стала другой» и «ей стало доступно
+    # другое» происходили бы в разные моменты.
+    assert pack.tag("he_is_in_danger").unlock_at == ATTACHED
+    assert pack.tag("someone_else").unlock_at == JEALOUS
+    assert pack.tag("he_left").unlock_at == ATTACHED
     # Уход и возвращение — одни ворота: заметить только половину значило бы, что он
     # уходит навсегда.
     assert pack.tag("he_came_back").unlock_at == pack.tag("he_left").unlock_at
@@ -73,21 +77,21 @@ def test_the_gate_edges_are_inclusive_on_both_sides(pack):
     сравнения в движке падала тестом, а не всплывала в игре одним странным ходом.
     """
     at = lambda r: {t.id for t in _available_tags(pack, r)}  # noqa: E731
-    assert "he_is_in_danger" in at(GUARDING)          # открывается НА пороге
-    assert "he_is_in_danger" not in at(GUARDING - 0.01)
+    assert "he_is_in_danger" in at(ATTACHED)          # открывается НА пороге
+    assert "he_is_in_danger" not in at(ATTACHED - 0.01)
     assert {"intimacy_push", "intimacy_return"} <= at(KEEPING)
     assert "intimacy_push" not in at(KEEPING + 0.001)  # и закрывается сразу за ним
 
 
 def test_a_stranger_is_not_offered_the_possessive_reads(pack):
-    offered = {t.id for t in _available_tags(pack, ratio=0.1)}
+    offered = {t.id for t in _available_tags(pack, ratio=0.02)}
     assert offered.isdisjoint(LOCKED_EARLY)
     # А обычные — на месте: пак не становится беднее, он становится другим.
     assert {"gift", "watched", "neglect", "intimacy_push"} <= offered
 
 
 def test_once_she_is_attached_the_guarding_reads_appear(pack):
-    offered = {t.id for t in _available_tags(pack, ratio=GUARDING)}
+    offered = {t.id for t in _available_tags(pack, ratio=JEALOUS)}
     assert {"he_left", "he_came_back", "he_is_in_danger", "someone_else"} <= offered
     # Но не всё сразу: верхние ворота ещё закрыты.
     assert "intimacy_return" not in offered
@@ -95,7 +99,7 @@ def test_once_she_is_attached_the_guarding_reads_appear(pack):
 
 
 def test_at_the_top_the_romance_gate_flips(pack):
-    offered = {t.id for t in _available_tags(pack, ratio=0.85)}
+    offered = {t.id for t in _available_tags(pack, ratio=0.75)}
     assert "intimacy_return" in offered
     assert "told_to_back_off" in offered
     # Отказ ухаживанию перестаёт существовать ровно там, где появляется ответ на него.
@@ -110,7 +114,7 @@ def test_a_locked_tag_cannot_be_chosen_even_when_the_model_names_it(pack):
     держится на её послушании.
     """
     chosen = TagClassifier(_Insists("someone_else")).classify(
-        pack, "who were you with", ratio=0.1
+        pack, "who were you with", ratio=0.05
     )
     assert chosen == pack.meta.fallback_tag
     # И тот же самый ответ модели выше ворот проходит — иначе тест доказывал бы
@@ -194,7 +198,7 @@ def test_neither_death_is_gated(pack):
     открытый только близким, оставил бы незнакомку без слов ровно там, где сказать
     нужнее всего.
     """
-    early = {t.id for t in _available_tags(pack, ratio=0.05)}
+    early = {t.id for t in _available_tags(pack, ratio=0.01)}
     assert {"killed_by_him", "died"} <= early
 
 

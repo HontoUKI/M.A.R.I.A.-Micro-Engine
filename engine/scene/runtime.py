@@ -15,13 +15,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from engine.llm import LLMError, OllamaClient
-from engine.pack.models import CharacterPack, DeltaVector
+from engine.pack.models import CharacterPack
 from engine.prompt_manager import DialogueTurn, PromptInputs, PromptManager
 from engine.scene.director import SpeakerSelector, next_round_robin
 from engine.scene.matrix import RelationshipMatrix
 from engine.scene.models import USER_ID, ScenePack
 from engine.scene.tags import ActorTagset, SceneTag
-from engine.state import DEFAULT_AXIS_MAX, Axes, relationship_ratio, resolve_stage
+from engine.state import DEFAULT_AXIS_MAX, Axes, relationship_ratio, resolve_stage, scaled
 from engine.textjson import loads_lenient
 
 # How the user shows up in the cast presence line and dialogue window.
@@ -395,11 +395,5 @@ def _parse_moment(raw: str) -> tuple[str, str] | None:
     return None
 
 
-def _scaled(delta: DeltaVector, scale: float) -> DeltaVector:
-    """A delta scaled by `scale`. Scaling preserves the bond<=affection/trust
-    invariant, so the result is always a valid delta."""
-    return DeltaVector(
-        affection=delta.affection * scale,
-        trust=delta.trust * scale,
-        bond=delta.bond * scale,
-    )
+# Одно определение на всех, кто масштабирует дельту (R26).
+_scaled = scaled
