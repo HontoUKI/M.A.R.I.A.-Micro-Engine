@@ -14,7 +14,7 @@ import re
 
 import pytest
 
-from tools.play import QUIET_AFTER_HIM, WITH_CONTENT, _note
+from tools.play import QUIET_AFTER_HIM, WITH_CONTENT, _note, about_whom
 
 
 def test_a_gift_says_who_and_what():
@@ -124,3 +124,34 @@ def test_only_the_gaze_waits_for_him_to_finish_speaking():
     assert all(
         wait == 0.0 for kind, wait in WITH_CONTENT.items() if kind != "watched"
     )
+
+
+def test_a_death_belongs_to_the_person_who_caused_it():
+    """Живьём 09.09, и это дорого стоило.
+
+    Он убил её, и ход ушёл в разговор С САМОЙ СОБОЙ: у `died` нет поля `who` — человек
+    лежит в `by_player`, — цикл только что перезапустился, и запасным вариантом стояло
+    ЕЁ имя. Появилась вторая ведомость `minecraft:Yukina` с единственной строкой, куда и
+    легли −8 доверия. Он убил её, и это не стоило ему ничего; а через ход она об этом не
+    помнила, потому что записка лежала в другом окне.
+    """
+    assert about_whom({"kind": "died", "by_player": "HontoUKI"}) == "HontoUKI"
+    # Смерть от мира ничьей не становится: приписать её человеку значило бы взять с него
+    # плату за крипера.
+    assert about_whom({"kind": "died", "how": "blown up by a creeper"}) == ""
+
+
+def test_a_note_about_a_person_is_a_turn_about_that_person():
+    for kind in ("given", "watched", "left", "returned", "beside", "at_risk"):
+        assert about_whom({"kind": kind, "who": "HontoUKI"}) == "HontoUKI"
+
+
+def test_her_own_work_belongs_to_nobody_by_itself():
+    """Ход про её собственную печь не про человека, и выдумывать его нечем.
+
+    Он достаётся тому, с кем она разговаривает; а если не разговаривает ни с кем — хода
+    нет вовсе. Разговора с самой собой не бывает, и ведомость, не принадлежащая никому,
+    молча съедает то, что должно было кому-то стоить.
+    """
+    for kind in ("closed", "waiting", "interrupted"):
+        assert about_whom({"kind": kind}) == ""

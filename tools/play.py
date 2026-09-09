@@ -165,6 +165,18 @@ def _listen(port: str):
         time.sleep(RECONNECT_EVERY)
 
 
+def about_whom(event: dict) -> str:
+    """Про кого этот повод.
+
+    Не «кто говорил»: записка мира про человека — тоже ход про него, хотя он молчал. А у
+    смерти человек лежит в своём поле, потому что «умерла» и «ОН убил» — разные события,
+    и второе называет его прямо.
+    """
+    if event.get("kind") == "died":
+        return str(event.get("by_player") or "")
+    return str(event.get("who") or "")
+
+
 def _note(event: dict) -> str:
     """Записка мира про человека рядом — словами, в квадратных скобках.
 
@@ -269,7 +281,9 @@ def main() -> int:
 
     woke_at = 0.0
     heard_at = 0.0
-    last_speaker = ""
+    # Про КОГО был последний ход. Не то же, что «кто говорил последним»: записка мира
+    # про человека — тоже ход про него, хотя он молчал.
+    last_person = ""
     for event in _listen(port):
         kind = event.get("kind")
 
@@ -293,7 +307,22 @@ def main() -> int:
             if time.time() - heard_at < quiet:
                 continue
             woke_at = time.time()
-            who = event.get("who") or last_speaker or display
+            # Чей это ход.
+            #
+            # Живьём 09.09: он убил её, и запись ушла в разговор С САМОЙ СОБОЙ. У события
+            # `died` нет поля `who` — там `by_player`, — цикл только что перезапустился,
+            # `last_person` был пуст, и запасным вариантом стояло ЕЁ СОБСТВЕННОЕ имя. В
+            # итоге появилась вторая ведомость, `minecraft:Yukina`, куда и легли −8
+            # доверия за убийство: он убил её, и это не стоило ему ничего. А через ход она
+            # об этом не помнила — записка лежала в другом окне.
+            #
+            # Разговора с самой собой не бывает, поэтому запасного варианта с её именем
+            # больше нет: нет человека — нет и хода. Молчание честнее ведомости, которая
+            # никому не принадлежит.
+            who = about_whom(event) or last_person
+            if not who:
+                continue
+            last_person = who
             window = windows.setdefault(who, [])
             # Ход про её работу идёт БЕЗ содержания, и это не упущение: состояние мира
             # собирается заново каждый ход, и в нём уже есть и незаконченное желание, и
@@ -334,7 +363,7 @@ def main() -> int:
         who, said = event.get("who") or "somebody", (event.get("said") or "").strip()
         if not said:
             continue
-        last_speaker = who
+        last_person = who
         # Отметка о том, что он говорил: её собственный повод молчит столько-то после.
         heard_at = time.time()
         print(f"<{who}> {said}")
