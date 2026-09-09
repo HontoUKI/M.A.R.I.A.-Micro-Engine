@@ -14,7 +14,7 @@ import re
 
 import pytest
 
-from tools.play import ABOUT_HIM, QUIET_AFTER_HIM, _note
+from tools.play import QUIET_AFTER_HIM, WITH_CONTENT, _note
 
 
 def test_a_gift_says_who_and_what():
@@ -70,6 +70,7 @@ def test_danger_names_what_and_how_close():
     {"kind": "returned", "who": "HontoUKI", "blocks": 9},
     {"kind": "at_risk", "who": "HontoUKI", "from": "creeper", "blocks": 2},
     {"kind": "beside", "who": "HontoUKI", "them": [{"what": "villager", "count": 3}]},
+    {"kind": "died", "by_player": "HontoUKI", "how": "Yukina was slain by HontoUKI"},
 ])
 def test_a_note_states_a_fact_and_never_a_reading(event):
     said = _note(event)
@@ -84,6 +85,22 @@ def test_a_note_states_a_fact_and_never_a_reading(event):
         r"\b(ignor\w+|abandon\w+|left you|lonely|misses?|loves?|scared|finally)\b",
         said, re.IGNORECASE,
     )
+
+
+def test_death_says_whether_a_person_did_it():
+    """«Она умерла» и «ТЫ её убил» — разные новости, и вторую терять нельзя.
+
+    Роутер спрашивает об этом саму игру и называет человека отдельным полем; записка
+    только не теряет его. Что смерть от его руки значит — ярость, преданность или
+    ничего — решает она.
+    """
+    by_him = _note({"kind": "died", "by_player": "HontoUKI",
+                    "how": "Yukina was slain by HontoUKI"})
+    by_world = _note({"kind": "died", "how": "Yukina was blown up by a creeper"})
+    assert by_him == "[HontoUKI killed you]"
+    assert "creeper" in by_world and "killed you" not in by_world
+    # И смерть без объяснения — всё ещё смерть, а не пустая скобка.
+    assert _note({"kind": "died"}) == "[you died]"
 
 
 def test_an_unknown_event_still_gives_a_readable_note():
@@ -102,8 +119,8 @@ def test_only_the_gaze_waits_for_him_to_finish_speaking():
     Взгляд — исключение: он может стоять и смотреть посреди беседы, и «ты на меня
     смотришь!» поверх его же реплики это ровно прежний дефект.
     """
-    assert ABOUT_HIM["watched"] is None, "None значит держать общий порог"
+    assert WITH_CONTENT["watched"] is None, "None значит держать общий порог"
     assert QUIET_AFTER_HIM > 0
     assert all(
-        wait == 0.0 for kind, wait in ABOUT_HIM.items() if kind != "watched"
+        wait == 0.0 for kind, wait in WITH_CONTENT.items() if kind != "watched"
     )

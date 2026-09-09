@@ -53,7 +53,7 @@ RECONNECT_EVERY = 3.0
 # игрок рядом и поправит; дорого спамить, поэтому есть порог.
 WAKING = ("closed", "waiting", "interrupted")
 
-# И то, что сделал ЧЕЛОВЕК рядом.
+# Поводы, которые везут СВОЁ содержание.
 #
 # Про него до сих пор существовало ровно одно событие — он заговорил, — и всё остальное,
 # чем человек присутствует, до неё не доезжало. Он подошёл и смотрит, как она строит; он
@@ -68,12 +68,16 @@ WAKING = ("closed", "waiting", "interrupted")
 #
 # Исключение — взгляд: он может стоять и смотреть посреди беседы, и «ты на меня
 # смотришь!» поверх его же реплики это ровно прежний дефект.
-ABOUT_HIM = {
+#
+# Смерть здесь же, хотя она и не про него: без содержания от неё остаётся пустая скобка,
+# а «она умерла» и «ТЫ её убил» — разные новости, и вторую терять нельзя.
+WITH_CONTENT = {
     "given": 0.0,
     "at_risk": 0.0,
     "left": 0.0,
     "returned": 0.0,
     "beside": 0.0,
+    "died": 0.0,
     "watched": None,  # None — держать общий порог тишины
 }
 
@@ -197,6 +201,13 @@ def _note(event: dict) -> str:
             for one in event.get("them") or []
         )
         return f"[{who} is standing with {them or 'somebody'}]"
+    if kind == "died":
+        # Убил человек — это другая новость, чем «умерла», и она называется прямо.
+        # Что она значит, решает она; провод только не теряет её.
+        if event.get("by_player"):
+            return f"[{event['by_player']} killed you]"
+        how = event.get("how")
+        return f"[you died — {how}]" if how else "[you died]"
     if kind == "at_risk":
         return f"[a {event.get('from')} is {event.get('blocks')} blocks from {who}]"
     return f"[{kind}]"
@@ -265,7 +276,7 @@ def main() -> int:
         # `came_upon` приезжает заметкой хода, а не своим родом события: в потоке это
         # `progress` с этим ключом. Спрашивать надо у того, чем событие является, а не у
         # его имени — сегодня это стоило роутеру падения (R33).
-        about_him = kind in ABOUT_HIM
+        about_him = kind in WITH_CONTENT
         notable = about_him or kind in WAKING or (kind == "progress" and "came_upon" in event)
 
         if notable:
@@ -278,7 +289,7 @@ def main() -> int:
             # Разговор старше собственного повода: слово берут в тишине, а не поперёк
             # только что сказанного. Иначе её собственный ход выглядит как «ты меня не
             # слушаешь» ровно там, где он её слушает.
-            quiet = QUIET_AFTER_HIM if ABOUT_HIM.get(kind) is None else ABOUT_HIM[kind]
+            quiet = QUIET_AFTER_HIM if WITH_CONTENT.get(kind) is None else WITH_CONTENT[kind]
             if time.time() - heard_at < quiet:
                 continue
             woke_at = time.time()

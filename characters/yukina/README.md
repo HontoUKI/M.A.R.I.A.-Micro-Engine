@@ -18,7 +18,7 @@ can steer a body in a world (see `docs/GAME_PORT.md`).
 
 ### The gates are code, not a request to the model
 
-Seven of her nineteen tags carry an availability window (`unlock_at` / `lock_at`)
+Seven of her twenty-one tags carry an availability window (`unlock_at` / `lock_at`)
 on the closeness ratio. Outside its window a tag is **never shown to the
 classifier**, so the model cannot choose it — and a model that names it anyway
 gets the pack's fallback. This is the difference between "we asked her not to be
@@ -87,6 +87,17 @@ The cow is the control, and it is the layering in one line: the router reports *
 beside him** and names them without interpreting, the pack decides that villagers are
 rivals and cattle are scenery. A router that filtered the list would be a character
 living inside the plumbing.
+
+### Killing her is the expensive thing
+
+She has two death tags, and the difference between them is the point. `died` — a creeper,
+a fall, the dark — moves nothing at all, by the same rule as everything else the world
+does to her: relationships move on what **he** did. `killed_by_him` costs `trust −8`,
+twice the largest positive move in the table, so an evening of gates falls back down. Her
+affection barely moves, which is the trope stated in arithmetic: she keeps wanting him and
+stops being able to rely on him. Neither tag is gated — being killed by somebody matters
+on the first night too, and a stranger with no word for it would be silent exactly where
+speech matters most.
 
 ### Two numbers that carry the whole character
 

@@ -162,3 +162,52 @@ def test_coming_back_restores_and_does_not_pay(pack):
     assert back.affection > 0 and back.trust > 0
     assert left.trust + back.trust < 0
     assert back.affection < pack.deltas["gift"].affection
+
+
+def test_being_killed_by_him_costs_the_stages_he_built(pack):
+    """Убить её дорого, и цена записана числом, а не обещанием.
+
+    Доверие — ровно то, что этим уничтожается: минус восемь при том, что самый крупный
+    положительный ход даёт четыре. Ступени, набранные за вечер, осыпаются. Привязанность
+    при этом держится почти вся — в этом и весь троп.
+    """
+    killed = pack.deltas["killed_by_him"]
+    assert killed.trust <= -2 * pack.deltas["gift"].trust
+    assert killed.affection > killed.trust
+    assert abs(killed.bond) <= min(abs(killed.affection), abs(killed.trust))
+
+
+def test_dying_to_the_world_moves_nothing(pack):
+    """Крипер — не его поступок.
+
+    То же правило, что у `on_your_own` и `he_is_in_danger`: отношения двигает то, что
+    сделал ОН. Иначе неудачный прыжок читался бы как его вклад.
+    """
+    died = pack.deltas["died"]
+    assert (died.affection, died.trust, died.bond) == (0.0, 0.0, 0.0)
+
+
+def test_neither_death_is_gated(pack):
+    """Умереть от его руки можно и в первый вечер.
+
+    Ворота держат собственничество, а не способность заметить собственную смерть: тег,
+    открытый только близким, оставил бы незнакомку без слов ровно там, где сказать
+    нужнее всего.
+    """
+    early = {t.id for t in _available_tags(pack, ratio=0.05)}
+    assert {"killed_by_him", "died"} <= early
+
+
+def test_wanting_things_is_a_moment_and_not_the_character(pack):
+    """Замечание автора 09.09: «с постоянными просьбами больше на пирата похожа».
+
+    Счёт подаркам стоял в `identity`, то есть звучал КАЖДЫЙ ход независимо от повода, —
+    и она выпрашивала вещи в каждой реплике. Место этой черты — в поводе, который про
+    подарок, и в подсказке рядом с сообщением.
+    """
+    assert "keep score" not in pack.identity
+    assert "diamond" not in pack.identity.lower()
+    # А там, где повод действительно про подарок, она осталась целиком.
+    assert "diamond" in pack.blocks["gift"].lower()
+    assert pack.reply_directive, "ближняя подсказка сильнее дальнего правила"
+    assert "attention" in pack.reply_directive.lower()
