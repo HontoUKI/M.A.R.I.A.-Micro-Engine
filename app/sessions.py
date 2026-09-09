@@ -120,6 +120,15 @@ class SessionStore:
             entries = [e for e in entries if str(e.get("ts", "")).startswith(day)]
         return entries
 
+    def entries(self, session_key: str, pack: CharacterPack) -> list[dict]:
+        """Прожитые ходы этого разговора, старые первыми.
+
+        Досье выводится из них и отдельно не хранится: расшифровка и так пишет каждый ход
+        с его тегом, а второе хранилище того же самого — это два места, которые рано или
+        поздно разойдутся.
+        """
+        return self._read_entries(self._dir(session_key, pack))
+
     def clear_transcript(
         self, session_key: str, pack: CharacterPack, day: str | None = None
     ) -> int:

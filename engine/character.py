@@ -128,6 +128,7 @@ class CharacterRuntime:
         user_gender: str = "",
         web_search: WebSearcher | None = None,
         hands: GamePort | None = None,
+        dossier: str = "",
     ) -> None:
         self._pack = pack
         self._llm = llm
@@ -140,6 +141,7 @@ class CharacterRuntime:
         # A pack cannot turn this on: whether a game is attached is a deployment
         # decision, like the choice of model. See engine/hands.py.
         self._hands = hands
+        self._dossier = dossier
         # The attempt she is part-way through, if any. Read when the world is
         # described and used when she answers, so "CONTINUE" means the thing she
         # was actually told about rather than whatever is open by then.
@@ -334,7 +336,9 @@ class CharacterRuntime:
         """This turn's tag block, plus the pack's per-turn reminder and any
         enabled mode reminders — placed near the user message where a small
         model heeds them best."""
-        parts = [self._pack.blocks[tag], self._pack.reply_directive]
+        # Досье идёт ПЕРВЫМ: оно про то, что уже было, и повод этого хода читается на
+        # его фоне, а не наоборот.
+        parts = [self._dossier, self._pack.blocks[tag], self._pack.reply_directive]
         if self._non_rp:
             parts.append(_NON_RP_TAIL_HINT)
         if self._non_romance:

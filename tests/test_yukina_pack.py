@@ -211,3 +211,16 @@ def test_wanting_things_is_a_moment_and_not_the_character(pack):
     assert "diamond" in pack.blocks["gift"].lower()
     assert pack.reply_directive, "ближняя подсказка сильнее дальнего правила"
     assert "attention" in pack.reply_directive.lower()
+
+
+def test_the_dossier_is_weighed_on_every_turn_not_only_when_insulted(pack):
+    """Названный факт и учтённый — разные вещи.
+
+    Первый замер 09.09: досье стояло в промпте, и поведение не изменилось ни на реплику.
+    Ход после грубости прочёлся как `attention`, чей блок велит просиять, — а указание
+    свериться с записью сидело только в блоке `insult`, то есть срабатывало лишь когда
+    грубят прямо сейчас. Заработало, когда встало туда, где звучит КАЖДЫЙ ход.
+    """
+    assert "note about what he has done" in pack.reply_directive
+    # И блок про саму грубость тоже про неё знает: одного из двух мест мало.
+    assert "note above" in pack.blocks["insult"]

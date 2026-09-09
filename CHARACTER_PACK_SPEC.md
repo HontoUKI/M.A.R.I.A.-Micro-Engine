@@ -213,6 +213,42 @@ Cosmetic action whitelist (e.g. `emote`, `change_scene`). Advisory metadata for
 clients; the engine performs no file, command, or network action on their
 behalf. There is deliberately **no** safe-chain in this tier.
 
+### 2.12a The dossier — what the person has done (engine-provided)
+
+Between the moment tag (one turn) and the stage (accumulated closeness) there was
+nothing, and a run of unkindness inside one stage left no trace at all. Live 09.09:
+the player was rude four times, every tag was read correctly, the axes fell from
+0.935 to 0.797 — and the character stayed in the same stage throughout and answered
+the next occasion as brightly as ever. She had gone cold for exactly one turn, then
+had no way of knowing she had.
+
+The engine now puts a **dossier** in the dynamic tail: what this person has done in
+this conversation, by tag, with how many times and how long ago:
+
+```
+What they have done with you so far: insult x2 (last just now),
+told_to_back_off (1 turns ago), neglect (3 turns ago), warmth (4 turns ago).
+```
+
+Three properties matter, and a pack should be written knowing them.
+
+**It is derived, not stored.** The transcript already records every turn with its tag;
+a second store of the same thing is two places that eventually disagree.
+
+**Only tags the pack calls positive or negative appear.** Ordinary conversation is not
+a deed. Which is which is the *pack's* declaration (`sentiment`), not the engine's
+opinion — the engine reads the field and nothing else.
+
+**It states and never interprets.** Whether a character holds a grudge, laughs it off,
+or never notices belongs to the pack. And stating it is not enough: measured the same
+day, a dossier in the prompt changed nothing on its own, because the turn's tag block
+said to light up and only the `insult` block mentioned the record. It began to work
+when `reply_directive` (§2.11) — which fires on every turn — told the character to
+weigh it. **If you want history to be felt, say so where it is read every turn.**
+
+Nothing is required of a pack: a pack that never mentions the dossier behaves exactly
+as before.
+
 ### 2.13 `stages` (optional, map) — the headline feature
 
 Relationship stages give a character a **slow, explainable arc**. The engine
