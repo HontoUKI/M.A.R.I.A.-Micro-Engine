@@ -120,14 +120,42 @@ class StateKernel:
 def relationship_ratio(axes: Axes, axis_max: float) -> float:
     """Combined closeness in [0, 1] from affection and trust.
 
-    Mirrors the full engine's stage driver: liking and trust averaged. Bond is
-    the slow long-term axis and does not gate the acted stage.
+    Liking and trust averaged: how she is with them *right now*. This swings every
+    turn and decays back, which is what makes it the wrong driver for an arc that
+    must not unwind — see `standing_ratio`.
     """
     if axis_max <= 0:
         return 0.0
     aff = _clamp(axes.affection / axis_max, 0.0, 1.0)
     tru = _clamp(axes.trust / axis_max, 0.0, 1.0)
     return (aff + tru) / 2.0
+
+
+def bond_ratio(axes: Axes, axis_max: float) -> float:
+    """The slow axis alone, in [0, 1]: what they are to her at all."""
+    if axis_max <= 0:
+        return 0.0
+    return _clamp(axes.bond / axis_max, 0.0, 1.0)
+
+
+def standing_ratio(axes: Axes, axis_max: float, on: str = "closeness") -> float:
+    """The number a pack's stages and tag windows are read against.
+
+    Two axes answer two different questions, and packs may need either:
+
+        closeness (affection + trust)  ->  how she is with them RIGHT NOW
+        bond                           ->  what they are to her AT ALL
+
+    Closeness is the default because it is what every pack written before this
+    field assumed. A pack whose arc must survive a bad evening asks for `bond`:
+    live 09.09, four insults dropped closeness 0.935 -> 0.797, which on a
+    closeness ladder threatens to unwind the CHARACTER rather than spoil the
+    mood. Being furious with someone and being unable to let them go are
+    different numbers, and only bond is the second one.
+    """
+    if on == "bond":
+        return bond_ratio(axes, axis_max)
+    return relationship_ratio(axes, axis_max)
 
 
 def resolve_stage(ratio: float, stages: list[Stage]) -> Stage | None:

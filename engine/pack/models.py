@@ -7,6 +7,8 @@ before and after model validation.
 """
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 _NAME_PATTERN = r"^[a-z0-9][a-z0-9_-]*$"
@@ -145,6 +147,10 @@ class CharacterPack(BaseModel):
     # Живёт в ПАКЕ, а не в движке, по той же причине, по которой здесь живут `deltas` и
     # `blocks`: имена тегов — словарь пака, и таблица со словом `insult` внутри generic-
     # движка сделала бы его знающим словарь одного персонажа.
+    # На какой оси читаются ступени и окна тегов. По умолчанию — близость, как было у
+    # всех паков до этого поля; `bond` для арки, которая не должна разворачиваться назад
+    # от одного плохого вечера.
+    stage_axis: Literal["closeness", "bond"] = "closeness"
     remembered_for: dict[str, int] = Field(default_factory=dict)
     sprites: dict[str, str] = Field(default_factory=dict)
     decay: DecayConfig = Field(default_factory=DecayConfig)

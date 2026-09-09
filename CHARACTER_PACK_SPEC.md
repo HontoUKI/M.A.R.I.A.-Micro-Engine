@@ -267,6 +267,31 @@ resurrects an expired tally.
 Nothing is required of a pack: a pack that declares no `remembered_for` and never
 mentions the dossier behaves exactly as before.
 
+### 2.12b `stage_axis` (optional, string) — which number the arc hangs on
+
+`closeness` (default) or `bond`. It chooses the number that both §2.13 stages and §2.5
+tag windows are read against:
+
+```
+closeness (affection + trust)  ->  how she is with them RIGHT NOW
+bond                           ->  what they are to her AT ALL
+```
+
+Closeness swings every turn and decays back, which is what makes it the wrong driver for
+an arc that must not unwind. Live 09.09: four insults dropped closeness 0.935 -> 0.797,
+and on a closeness ladder that is the CHARACTER regressing a stage rather than the mood
+souring. Being furious with someone and being unable to let them go are different
+numbers, and only bond is the second one.
+
+Pick `bond` when the character escalates over hours and the escalation must survive a bad
+evening — an obsession, a grudge, a loyalty. Keep `closeness` when the arc *should* cool
+when the room does. A pack that omits the field behaves exactly as it did before the
+field existed.
+
+Bond is not immovable: it still decays toward baseline on idle, and any tag may spend it.
+One-way would make the ladder irreversible rather than slow, and the price of anything
+would stop existing.
+
 ### 2.13 `stages` (optional, map) — the headline feature
 
 Relationship stages give a character a **slow, explainable arc**. The engine

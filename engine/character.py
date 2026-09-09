@@ -24,8 +24,8 @@ from engine.state import (
     DEFAULT_AXIS_MAX,
     Axes,
     StateKernel,
-    relationship_ratio,
     resolve_stage,
+    standing_ratio,
 )
 from engine.web import WebResult, WebSearcher
 
@@ -166,7 +166,9 @@ class CharacterRuntime:
 
         # Gate the classifier's choices by the relationship *before* this turn:
         # a tag only unlocks once the standing is inside its window.
-        ratio = relationship_ratio(self._state.axes, self._axis_max)
+        # Ворота тегов читаются по той же оси, что и ступени: «что ей вообще доступно»
+        # — вопрос о том, кто он ей, а не о её сегодняшнем настроении.
+        ratio = self._standing(self._state.axes)
         tag = self._classifier.classify(
             self._pack, user_message, dialogue_window, ratio=ratio
         )
@@ -349,11 +351,15 @@ class CharacterRuntime:
             parts.append(_USER_GENDER_HINT[self._user_gender])
         return "\n".join(p for p in parts if p).strip()
 
+    def _standing(self, axes: Axes) -> float:
+        """Доля, по которой читаются ступени и окна тегов — на оси, которую выбрал пак."""
+        return standing_ratio(axes, self._axis_max, self._pack.stage_axis)
+
     def _resolve_stage(self, pre_axes: Axes, post_axes: Axes):
         """Active stage after the turn, and whether the turn crossed into it."""
         stages = self._pack.stages
-        pre = resolve_stage(relationship_ratio(pre_axes, self._axis_max), stages)
-        post = resolve_stage(relationship_ratio(post_axes, self._axis_max), stages)
+        pre = resolve_stage(self._standing(pre_axes), stages)
+        post = resolve_stage(self._standing(post_axes), stages)
         pre_id = pre.id if pre else None
         post_id = post.id if post else None
         return post, pre_id != post_id
