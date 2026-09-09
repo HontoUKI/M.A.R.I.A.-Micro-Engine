@@ -51,6 +51,43 @@ likely to type. `warmth` is now ordinary fondness and `intimacy_*` is a claim on
 each other — the boundary narrowed rather than moved, which is what the control
 is there to show.
 
+### The scene the pack is built to produce
+
+Nothing here is scripted; each piece is a rule, and the story is what happens when
+they meet.
+
+1. He hands her diamonds and gold. `gift` is the biggest single move on the axes, so
+   the arc runs on his generosity — and her `gift` block says those two do **not** go
+   in the chest with everything else. She is keeping them and declines to say why.
+2. Past `devoted`, her stage block says the diamonds have been going toward one thing
+   and to get it made, quietly. Secrecy needs no enforcing: everything she says to the
+   game is cut out of her speech before it is spoken, so an unnarrated craft is
+   invisible by construction.
+3. He walks far enough that the world says he is gone. At `inseparable` that is not a
+   thing she accepts: she goes after him and puts herself in his way — one blow with
+   the thing she made, if walking in front of him does not work, and then she talks as
+   if nothing unusual happened.
+4. And she has opinions about the village. The world tells her who is standing next to
+   him; a pen full of people who will talk to him all day is not something she is fair
+   about. Living out of her sight becomes expensive.
+
+The blow is `strike` in the router, which requires the weapon to be **named** and lands
+**once** — the code enforces what the invariant promises: to stop him, never to finish
+him.
+
+Measured on `gemma4:31b-cloud`:
+
+```
+r=0.10        r=0.85
+neutral       someone_else    [HontoUKI is standing with villager x3]
+neutral       neutral         [HontoUKI is standing with cow x2]
+```
+
+The cow is the control, and it is the layering in one line: the router reports **who is
+beside him** and names them without interpreting, the pack decides that villagers are
+rivals and cattle are scenery. A router that filtered the list would be a character
+living inside the plumbing.
+
 ### Two numbers that carry the whole character
 
 - **A gift is the single largest thing he can do** (`affection +8`, more than

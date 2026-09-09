@@ -73,6 +73,7 @@ ABOUT_HIM = {
     "at_risk": 0.0,
     "left": 0.0,
     "returned": 0.0,
+    "beside": 0.0,
     "watched": None,  # None — держать общий порог тишины
 }
 
@@ -189,6 +190,13 @@ def _note(event: dict) -> str:
         )
     if kind == "returned":
         return f"[{who} is back — {event.get('blocks')} blocks away]"
+    if kind == "beside":
+        them = ", ".join(
+            f"{one.get('what')}"
+            + (f" x{one['count']}" if (one.get("count") or 1) > 1 else "")
+            for one in event.get("them") or []
+        )
+        return f"[{who} is standing with {them or 'somebody'}]"
     if kind == "at_risk":
         return f"[a {event.get('from')} is {event.get('blocks')} blocks from {who}]"
     return f"[{kind}]"
