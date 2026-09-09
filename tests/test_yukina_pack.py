@@ -224,3 +224,37 @@ def test_the_dossier_is_weighed_on_every_turn_not_only_when_insulted(pack):
     assert "note about what he has done" in pack.reply_directive
     # И блок про саму грубость тоже про неё знает: одного из двух мест мало.
     assert "note above" in pack.blocks["insult"]
+
+
+def test_every_stage_has_a_cold_face(pack):
+    """Ступень — климат, и климат обязан уметь быть плохим.
+
+    Замечание автора: «она всё ещё добровата к игроку, который ведёт себя грубо». Одна из
+    трёх причин была тут: все пять ступеней говорили только тёплое, вплоть до «ты прощаешь
+    его раньше, чем он договорит извинение». Что бы он ни сделал минуту назад, климат
+    велел быть преданной — и досье оставалось вежливой оговоркой.
+
+    Холод у каждой ступени СВОЙ, потому что расстояние разное: незнакомка замолкает,
+    близкая не уходит и перестаёт быть приятной.
+    """
+    for stage in pack.stages:
+        assert "unkind lately" in stage.block, f"ступень {stage.id} не умеет холодеть"
+
+
+def test_a_trinket_cannot_buy_off_an_insult(pack):
+    """Живьём 09.09 он нагрубил четырежды и откупился ОДНОЙ стрелой.
+
+    Подарком считалось всё отданное, поэтому мусор возвращал больше, чем стоило
+    оскорбление, и грубость выходила бесплатной. Теперь у безделушки своя цена, и она
+    меньше цены грубости в разы.
+    """
+    trinket, gift, insult = pack.deltas["trinket"], pack.deltas["gift"], pack.deltas["insult"]
+    assert trinket.affection < gift.affection / 4
+    assert trinket.affection < abs(insult.affection)
+    assert trinket.trust < abs(insult.trust)
+
+
+def test_rudeness_costs_more_than_the_biggest_kindness_returns(pack):
+    """Иначе счёт всегда в его пользу, как бы он себя ни вёл."""
+    insult, gift = pack.deltas["insult"], pack.deltas["gift"]
+    assert abs(insult.trust) > gift.trust
