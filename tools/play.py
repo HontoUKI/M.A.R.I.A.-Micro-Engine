@@ -78,10 +78,14 @@ WITH_CONTENT = {
     "returned": 0.0,
     "beside": 0.0,
     "died": 0.0,
-    # Он уходит, а её ноги заняты работой. Ход нужен прямо сейчас и со СВОИМ
-    # содержанием: работу роутер уже остановил, и без записки она видит только «стоп»
-    # без того, из-за кого он случился.
+    # Всё, что происходит с их уговором идти вместе. До сих пор поза жила молча: она
+    # говорила «я иду за тобой», отставала, теряла его из виду и переставала быть его
+    # спутницей — и ни одна из этих трёх вещей до неё не доезжала. «Я иду» оставалось
+    # правдой ровно до той секунды, когда переставало ею быть.
     "falling_behind": 0.0,
+    "lost_sight": 0.0,
+    "lost_them": 0.0,
+    "cannot_reach": 0.0,
     "watched": None,  # None — держать общий порог тишины
 }
 
@@ -227,11 +231,26 @@ def _note(event: dict) -> str:
     if kind == "at_risk":
         return f"[a {event.get('from')} is {event.get('blocks')} blocks from {who}]"
     if kind == "falling_behind":
-        # Факт, не вывод: он далеко, и то, чем она была занята, встало. Что это значит —
-        # догонять, бросить или сказать ему стоять — её дело, а не записки.
+        # Факт, не вывод: он далеко. Что это значит — догонять, бросить работу или
+        # сказать ему стоять — её дело, а не записки. Занята она была или просто не
+        # поспевает — разные новости, и вторую нельзя подавать первой.
+        where = f"[you are walking with {who} and he is {event.get('blocks')} blocks away"
+        if event.get("busy"):
+            return where + " — what you were doing has stopped]"
+        return where + " — you are following and not keeping up]"
+    if kind == "lost_sight":
+        return f"[you are walking with {who} and cannot see him from here]"
+    if kind == "lost_them":
+        if event.get("gone") is False:
+            return (
+                f"[{who} is {event.get('blocks')} blocks ahead — too far to catch,"
+                " and you are still walking after him]"
+            )
+        return f"[{who} is gone from the world — you are walking with nobody now]"
+    if kind == "cannot_reach":
         return (
-            f"[you are walking with {who} and he is {event.get('blocks')} blocks away —"
-            " what you were doing has stopped]"
+            f"[you are walking with {who} and cannot get to him from where you"
+            f" stand — {event.get('blocks')} blocks]"
         )
     return f"[{kind}]"
 
