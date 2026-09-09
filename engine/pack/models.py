@@ -138,6 +138,14 @@ class CharacterPack(BaseModel):
     deltas: dict[str, DeltaVector]
     blocks: dict[str, str]
     axes: AxesConfig = Field(default_factory=AxesConfig)
+    # Сколько ходов поступок этого рода держится в досье. Справочник на тег, потому что
+    # сроки у поступков разные: грубость перестаёт считаться через два десятка ходов, а
+    # убийство — не через два десятка. Незаписанное живёт `REMEMBERED_FOR` ходов.
+    #
+    # Живёт в ПАКЕ, а не в движке, по той же причине, по которой здесь живут `deltas` и
+    # `blocks`: имена тегов — словарь пака, и таблица со словом `insult` внутри generic-
+    # движка сделала бы его знающим словарь одного персонажа.
+    remembered_for: dict[str, int] = Field(default_factory=dict)
     sprites: dict[str, str] = Field(default_factory=dict)
     decay: DecayConfig = Field(default_factory=DecayConfig)
     stages: list[Stage] = Field(default_factory=list, max_length=MAX_STAGES)
@@ -157,6 +165,13 @@ class CharacterPack(BaseModel):
             raise ValueError("deltas must cover exactly the declared tags")
         if set(self.blocks) != tag_set:
             raise ValueError("blocks must cover exactly the declared tags")
+
+        # Сроки памяти — только про объявленные теги, и только положительные.
+        for key, turns in self.remembered_for.items():
+            if key not in tag_set:
+                raise ValueError(f"remembered_for names {key!r}, which is not a tag")
+            if turns <= 0:
+                raise ValueError(f"remembered_for[{key!r}] must be a positive number of turns")
 
         # Fallback tag must be a real tag.
         if self.meta.fallback_tag not in tag_set:

@@ -29,6 +29,15 @@ from dataclasses import dataclass
 # список, который не дочитывают, — это плата без выгоды.
 MOST = 6
 
+# Сколько ходов поступок держится, если пак не сказал иначе. Двадцать — число автора.
+#
+# Без срока досье только росло: `insult x9` весило бы одинаково и через сотню ходов, а
+# «у факта не было выхода» — тот самый храповик, на котором линия Марии простояла трое
+# суток. Пак задаёт срок на КАЖДЫЙ род поступка отдельно (`remembered_for`), потому что
+# сроки у них разные: грубость перестаёт считаться через два десятка ходов, а убийство
+# через два десятка не перестаёт.
+REMEMBERED_FOR = 20
+
 
 @dataclass(frozen=True)
 class Deed:
@@ -49,13 +58,20 @@ def deeds(entries, pack, most: int = MOST) -> tuple[Deed, ...]:
     что важно.
     """
     rows = list(entries or [])
+    known_tags = {t.id for t in pack.tags}
+    lifetimes = getattr(pack, "remembered_for", None) or {}
     tally: dict[str, list[int]] = {}
     for back, entry in enumerate(reversed(rows)):
         tag = str((entry or {}).get("tag") or "")
-        if not tag:
+        if not tag or tag not in known_tags:
             continue
-        known = pack.tag(tag) if tag in {t.id for t in pack.tags} else None
-        if known is None or known.sentiment not in ("positive", "negative"):
+        known = pack.tag(tag)
+        if known.sentiment not in ("positive", "negative"):
+            continue
+        # Справочник сверяется на КАЖДОМ поступке, а не на роде целиком: три грубости
+        # подряд и одна сто ходов назад — это «три», а не «четыре». Иначе один свежий
+        # случай воскрешал бы весь давно истёкший счёт.
+        if back >= lifetimes.get(tag, REMEMBERED_FOR):
             continue
         seen = tally.setdefault(tag, [0, back])
         seen[0] += 1

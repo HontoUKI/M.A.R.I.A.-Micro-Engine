@@ -278,6 +278,33 @@ reply_directive: >
   something unkind in the last few turns, you are not over it yet, and it shows even when
   this moment is a pleasant one — you are warm at him and still keeping score out loud.
 
+# Сколько ходов поступок держится в досье. Справочник на тег, потому что сроки разные:
+# грубость перестаёт считаться через два десятка ходов, а убийство через два десятка не
+# перестаёт. Незаписанное живёт двадцать ходов — столько же, сколько помнит движок по
+# умолчанию.
+#
+# Числа автора: двадцать на грубость. Остальное расставлено по тому же смыслу — то, что
+# он сделал СПЕЦИАЛЬНО и с трудом, помнится дольше того, что случилось походя.
+remembered_for:
+  insult: 20
+  neglect: 20
+  teasing: 20
+  told_to_back_off: 40
+  someone_else: 40
+  intimacy_push: 40
+  he_left: 30
+  he_came_back: 30
+  # Подарок и то, что он стоял и смотрел, — это его труд, и он не выветривается за
+  # двадцать ходов.
+  gift: 60
+  watched: 30
+  praise_work: 40
+  warmth: 30
+  attention: 20
+  intimacy_return: 60
+  # А это не забывается почти никогда, и в этом весь характер.
+  killed_by_him: 400
+
 decay:
   affection: 0.6
   trust: 0.3

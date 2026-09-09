@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from engine.dossier import deeds, summarise
+from engine.dossier import REMEMBERED_FOR, deeds, summarise
 from engine.pack import load_pack
 
 _YUKINA = Path(__file__).resolve().parents[1] / "characters" / "yukina"
@@ -92,3 +92,58 @@ def test_the_list_stays_short(pack):
         "teasing", "neglect", "someone_else", "killed_by_him",
     )
     assert len(deeds(many, pack, most=6)) == 6
+
+
+def test_a_deed_falls_out_of_the_count_when_its_time_is_up(pack):
+    """У досье появился выход, и это было главным, чего ему не хватало.
+
+    Без срока оно только росло: `insult x9` весило бы одинаково и через сотню ходов —
+    тот самый храповик, «у факта не было выхода», на котором линия Марии простояла трое
+    суток. Решение автора: справочник сроков на КАЖДЫЙ род поступка.
+    """
+    lifetime = pack.remembered_for["insult"]
+    # Одна грубость только что и одна за пределами срока — считается одна.
+    old = turns("insult", *["mundane"] * lifetime, "insult")
+    found = {d.tag: d for d in deeds(old, pack)}
+    assert found["insult"].times == 1
+    assert found["insult"].turns_ago == 0
+
+
+def test_the_reference_is_per_tag_and_not_one_number(pack):
+    """Сроки у поступков разные, и в этом смысл справочника.
+
+    Грубость перестаёт считаться через два десятка ходов; убийство через два десятка не
+    перестаёт. Один общий срок сделал бы эти два события одинаковыми.
+    """
+    assert pack.remembered_for["killed_by_him"] > pack.remembered_for["insult"] * 10
+    far = turns("killed_by_him", *["mundane"] * 100)
+    assert any(d.tag == "killed_by_him" for d in deeds(far, pack))
+    # А грубость на том же расстоянии уже не считается.
+    assert not any(d.tag == "insult" for d in deeds(turns("insult", *["mundane"] * 100), pack))
+
+
+def test_a_tag_without_a_lifetime_gets_the_engine_default(pack):
+    """Справочник необязателен: пак, который его не пишет, работает как раньше."""
+    class _Bare:
+        tags = pack.tags
+        remembered_for = {}
+
+        @staticmethod
+        def tag(name):
+            return pack.tag(name)
+
+    inside = turns("insult", *["mundane"] * (REMEMBERED_FOR - 2))
+    outside = turns("insult", *["mundane"] * (REMEMBERED_FOR + 2))
+    assert any(d.tag == "insult" for d in deeds(inside, _Bare))
+    assert not any(d.tag == "insult" for d in deeds(outside, _Bare))
+
+
+def test_the_lifetime_is_checked_on_each_deed_not_on_the_kind(pack):
+    """Три грубости подряд и одна сто ходов назад — это «три», а не «четыре».
+
+    Срок сверяется на каждом поступке отдельно; иначе один свежий случай воскрешал бы
+    весь давно истёкший счёт.
+    """
+    rows = turns("insult", *["mundane"] * 100, "insult", "insult", "insult")
+    found = {d.tag: d for d in deeds(rows, pack)}
+    assert found["insult"].times == 3

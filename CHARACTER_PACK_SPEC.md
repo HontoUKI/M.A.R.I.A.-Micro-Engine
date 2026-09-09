@@ -246,8 +246,26 @@ said to light up and only the `insult` block mentioned the record. It began to w
 when `reply_directive` (§2.11) — which fires on every turn — told the character to
 weigh it. **If you want history to be felt, say so where it is read every turn.**
 
-Nothing is required of a pack: a pack that never mentions the dossier behaves exactly
-as before.
+**A deed has a lifetime, declared per tag.** Without one the dossier only grows: nine
+insults would weigh the same a hundred turns later, which is a ratchet — a fact with no
+way out. `remembered_for` is an optional tag-keyed map, the same shape as `deltas` and
+`blocks`, saying how many **turns** each kind of deed keeps counting for:
+
+```yaml
+remembered_for:
+  insult: 20
+  gift: 60
+  killed_by_him: 400
+```
+
+Per tag rather than one number, because the spans differ: rudeness stops counting after
+a couple of dozen turns and being killed does not. Anything unlisted keeps the engine's
+default of 20 turns. The lifetime is checked on **each** occurrence, not on the kind, so
+three insults now plus one a hundred turns ago reads as three — a fresh case never
+resurrects an expired tally.
+
+Nothing is required of a pack: a pack that declares no `remembered_for` and never
+mentions the dossier behaves exactly as before.
 
 ### 2.13 `stages` (optional, map) — the headline feature
 
