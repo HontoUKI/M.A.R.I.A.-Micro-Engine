@@ -12,7 +12,7 @@ the voicing model never sees the raw numbers.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from engine.dossier import summarise, worth
 from engine.hands import GamePort, describe, how_it_went, read_intention, refusals
@@ -237,6 +237,15 @@ class CharacterRuntime:
                 _paused_name(history, self._paused),
                 self._unfinished,
             )
+            held = getattr(self, "_held_back", ())
+            if held:
+                # Сказано один раз и снято: это про строку, которую она только что
+                # написала, а жалоба, пережившая свой ход, становится шумом о прошлом.
+                self._held_back = ()
+                block += (
+                    "\n\nYou did not do this, and it was not the world that"
+                    " stopped you: " + "; ".join(held)
+                )
             unread = getattr(self, "_unread", ())
             if unread:
                 # Said once and cleared: it is about the line she just wrote, and a
@@ -296,6 +305,10 @@ class CharacterRuntime:
                 return speech, ("drop",)
             if not intention.steps:
                 return speech, ()
+            intention, held = self._within_bounds(intention)
+            self._held_back = held
+            if not intention.steps:
+                return speech, ()
             self._hands.act(intention)
         except Exception:
             return speech, ()
@@ -306,6 +319,43 @@ class CharacterRuntime:
             for goal in intention.steps
         )
         return speech, said * 1 if intention.repeat == 1 else said + (f"x{intention.repeat}",)
+
+    def _within_bounds(self, intention):
+        """Убрать из решения то, чего этот характер не делает.
+
+        Гейты тегов решают, что она может почувствовать; здесь — что она может СДЕЛАТЬ.
+        Разница не косметическая: тег живёт один ход, а поступок меняет мир навсегда, и
+        убитый житель не отыгрывается обратно ни ступенью, ни настроением.
+
+        Держится это в КОДЕ, а не в просьбе к модели, ровно по той причине, по которой в
+        коде держатся окна тегов: просьба «не бери у него еду» исполняется, пока модель о
+        ней помнит, а забывает она в самый интересный момент. Пак называет предел, движок
+        его исполняет.
+
+        Отказ обязан быть сказан ЕЙ. Молча выброшенный шаг она прочитает как поломку и
+        напишет ту же строку снова — это уже было с нечитаемыми `DO:` (03.09).
+        """
+        bounds = getattr(self._pack, "bounds", None) or ()
+        if not bounds:
+            return intention, ()
+
+        ratio = self._standing(self._state.axes)
+        kept, held = [], []
+        for goal in intention.steps:
+            objects = _objects_of(goal)
+            stop = next(
+                (b for b in bounds if b.covers(goal.verb, objects) and not b.allows(ratio)),
+                None,
+            )
+            if stop is None:
+                kept.append(goal)
+                continue
+            named = " ".join(objects) or goal.verb
+            held.append(f"{goal.verb} {named}: {stop.refuse}".strip() if stop.refuse
+                        else f"{goal.verb} {named}")
+        if len(kept) == len(intention.steps):
+            return intention, ()
+        return replace(intention, steps=tuple(kept)), tuple(held)
 
     def _usage_snapshot(self) -> dict[str, int] | None:
         fn = getattr(self._llm, "usage_snapshot", None)
@@ -412,6 +462,26 @@ def _format_web_results(results: list[WebResult]) -> str:
     """Compact grounding text from search hits (empty when none)."""
     lines = [f"- {r.title}: {r.snippet} ({r.url})".strip() for r in results if r.title]
     return "\n".join(lines)
+
+def _objects_of(goal) -> tuple[str, ...]:
+    """Что названо в шаге: сам предмет и список, если он есть.
+
+    `where.all` — «взять всё» — не даёт ни одного имени, и это не «ничего»: оно включает
+    и то, что перечислено в пределе. Пустота здесь и означает «всё», а решает это `covers`.
+    """
+    fields = goal.fields or {}
+    where = fields.get("where") or {}
+    if isinstance(where, dict) and where.get("all") is True:
+        return ()
+    named = []
+    one = fields.get("object")
+    if isinstance(one, str) and one:
+        named.append(one)
+    items = where.get("items") if isinstance(where, dict) else None
+    if isinstance(items, list):
+        named.extend(str(i) for i in items if i)
+    return tuple(named)
+
 
 def _paused_id(sight: dict) -> str:
     """The attempt she stopped part-way through, if she is standing in one."""

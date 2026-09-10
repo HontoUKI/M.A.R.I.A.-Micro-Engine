@@ -213,6 +213,38 @@ Cosmetic action whitelist (e.g. `emote`, `change_scene`). Advisory metadata for
 clients; the engine performs no file, command, or network action on their
 behalf. There is deliberately **no** safe-chain in this tier.
 
+### 2.12b `bounds` (optional, list) — what she will not do with her hands
+
+Tag gates decide what a character may **feel**; bounds decide what she may **do** in a
+world, when a deployment has attached one. The difference is not cosmetic: a tag colours
+one turn, an act changes the world for good, and a killed villager is not undone by a
+stage or a mood.
+
+```yaml
+bounds:
+  - verb: take_from            # the game verb, as the world names it
+    object: [bread, torch]     # one name, a list, or omitted for "any object"
+    never: true                # she does not choose this, however close she is
+    refuse: "that is what keeps him alive out there"
+  - verb: fight
+    object: [villager]
+    unlock_at: 0.75            # same window as a tag, on the pack's stage axis
+    refuse: "not yet — you are not that far gone"
+```
+
+- `never` is **not** a window, and mixing the two is refused by the loader. A window says
+  "too early"; `never` says "not this one, ever", and characters have both.
+- Taking *everything* (`where.all`) names no object and is covered by every bound on that
+  verb — otherwise a boundary is walked around with one word.
+- A held-back step is **told to her** in the world block on the next turn, with the
+  `refuse` text as the reason. Dropping it silently is how a character comes to believe
+  she acted, and writes the same line again.
+- The engine drops only the steps a bound covers; the rest of the same decision still runs.
+
+Bounds live in the pack for the reason `deltas` and `blocks` do: `villager` is one world's
+vocabulary. The engine knows only "the pack named a limit, and a limit is kept in code
+rather than asked of the model."
+
 ### 2.12a The dossier — what the person has done (engine-provided)
 
 Between the moment tag (one turn) and the stage (accumulated closeness) there was

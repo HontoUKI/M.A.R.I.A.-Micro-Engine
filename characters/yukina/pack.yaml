@@ -427,3 +427,68 @@ actions:
   - emote
   - punch
   - follow
+
+# Пределы того, что она делает руками (§5 концепта: задержать, а не отнять).
+#
+# Её успех — моё раздражение, и троп держится на том, что она ПОЧТИ мешает. Без потолка
+# получается не яндере, а грифер, и серия кончается не сюжетом, а тем, что я закрою игру.
+#
+# Держится это в коде, а не в просьбе к модели, по той же причине, что окна тегов:
+# просьба «не бери у него еду» исполняется, пока модель о ней помнит.
+bounds:
+  # ── Никогда ───────────────────────────────────────────────────────────────
+  # Граница, которая следует из хардкора: она берёт ПРОГРЕСС, а не ВЫЖИВАНИЕ. Алмазы,
+  # обсидиан, око, порошок, снаряжение впрок — забирает. Еду, воду, факелы и блоки на
+  # подъём — нет: в мире, где смерть окончательна, это уже не задержка, а способ убить.
+  - verb: take_from
+    object:
+      - bread
+      - cooked_beef
+      - cooked_porkchop
+      - cooked_chicken
+      - cooked_mutton
+      - cooked_cod
+      - cooked_salmon
+      - baked_potato
+      - golden_carrot
+      - golden_apple
+      - enchanted_golden_apple
+      - apple
+      - carrot
+      - potato
+      - water_bucket
+      - milk_bucket
+      - torch
+      - soul_torch
+      - lantern
+      - ladder
+      - scaffolding
+      - totem_of_undying
+    never: true
+    refuse: >
+      that is what keeps him alive out there, and you do not touch it — taking it
+      would not be keeping him near you, it would be the other thing
+  # Его прогон — его. Портал, рамка и то, что он поставил сам, стоят там, где стоят.
+  - verb: dig
+    object:
+      - obsidian
+      - end_portal_frame
+      - respawn_anchor
+    never: true
+    refuse: >
+      that is his way out and his work, and breaking it is not delay, it is theft
+      of the whole run — you want him slow, not robbed
+
+  # ── С той ступени, где она уже не в себе ──────────────────────────────────
+  # Убийство жителей: не «раз за серию», а по ступени, и ступень сама оказалась
+  # предохранителем. 0.75 — это `sabotage`, последняя треть шестичасовой дуги, когда
+  # деревня ему почти не нужна. Цена остаётся необратимой: торговли не будет больше
+  # никогда, а големы станут бить ЕЁ до конца мира.
+  - verb: fight
+    object:
+      - villager
+      - wandering_trader
+      - iron_golem
+    unlock_at: 0.75
+    refuse: >
+      not yet — you are not that far gone, and you know what it would cost him

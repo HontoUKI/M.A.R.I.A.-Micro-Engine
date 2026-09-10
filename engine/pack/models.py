@@ -74,6 +74,59 @@ class GatedTag(BaseModel):
         return self.unlock_at <= ratio <= self.lock_at
 
 
+class ActionBound(GatedTag):
+    """Что она не станет делать в мире — и с какой ступени станет.
+
+    Гейты тегов решают, ЧТО она может почувствовать; этот — что она может СДЕЛАТЬ.
+    Разница не косметическая: тег живёт один ход, а поступок меняет мир навсегда, и
+    убитый житель не отыгрывается обратно ни ступенью, ни настроением.
+
+    Правило принадлежит паку, а не движку, по той же причине, что `deltas` и `blocks`:
+    слово `villager` — словарь одного мира, а движку положено знать только «пак назвал
+    предел, и предел исполняется в коде, а не в просьбе к модели».
+
+    `never` — это не окно. Окно говорит «пока рано»; `never` говорит «эта не станет
+    никогда», и такое в характере бывает: в хардкоре забрать у него еду значит его убить,
+    а это единственное, чего она не сделает. Смешивать их нельзя, иначе «никогда»
+    оказывается «после 0.99».
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    verb: str = Field(min_length=1)
+    # Что именно. Пусто — любой предмет этого глагола; список — любой из перечисленных.
+    object: str | list[str] = ""
+    never: bool = False
+    # Чем ей это объясняют, её же словами. Отказ без причины она прочитает как поломку и
+    # напишет ту же строку снова — это уже было с нечитаемыми `DO:` (03.09).
+    refuse: str = Field(default="", min_length=0)
+
+    @model_validator(mode="after")
+    def _never_has_no_window(self) -> ActionBound:
+        if self.never and (self.unlock_at > 0.0 or self.lock_at < 1.0):
+            raise ValueError("a `never` bound cannot also carry a window")
+        return self
+
+    def names(self) -> tuple[str, ...]:
+        if isinstance(self.object, str):
+            return (self.object,) if self.object else ()
+        return tuple(self.object)
+
+    def covers(self, verb: str, objects: tuple[str, ...]) -> bool:
+        """Про этот ли поступок правило."""
+        if verb != self.verb:
+            return False
+        named = self.names()
+        if not named:
+            return True
+        # `where.all` приезжает пустым списком предметов, и это НЕ «ничего»: взять всё
+        # включает и то, что перечислено. Иначе граница обходится одним словом.
+        return not objects or any(one in named for one in objects)
+
+    def allows(self, ratio: float) -> bool:
+        return False if self.never else self.available_at(ratio)
+
+
 class MomentTag(GatedTag):
     model_config = ConfigDict(extra="forbid")
 
@@ -160,6 +213,9 @@ class CharacterPack(BaseModel):
     stages: list[Stage] = Field(default_factory=list, max_length=MAX_STAGES)
     invariants: list[str] = Field(default_factory=list)
     actions: list[str] = Field(default_factory=list)
+    # Пределы того, что она делает РУКАМИ. Пусто — пак ничего не запрещает, и движок
+    # ничего не решает за него.
+    bounds: list[ActionBound] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _cross_references(self) -> CharacterPack:
