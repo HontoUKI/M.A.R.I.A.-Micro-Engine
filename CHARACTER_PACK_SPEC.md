@@ -317,7 +317,7 @@ on the list: a fifth insult in an evening must not be cheaper than the first.
 Nothing is required of a pack: a pack that declares no `remembered_for`, no `diminishing`
 and never mentions the dossier behaves exactly as before.
 
-### 2.12b `stage_axis` (optional, string) — which number the arc hangs on
+### 2.12c `stage_axis` (optional, string) — which number the arc hangs on
 
 `closeness` (default) or `bond`. It chooses the number that both §2.13 stages and §2.5
 tag windows are read against:
