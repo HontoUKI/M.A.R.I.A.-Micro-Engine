@@ -86,6 +86,9 @@ WITH_CONTENT = {
     "lost_sight": 0.0,
     "lost_them": 0.0,
     "cannot_reach": 0.0,
+    # Он продвинулся по игре, и мир объявил это вслух — обоим. Её часы: тревога растёт
+    # не от настроения, а от того, как далеко он ушёл.
+    "advanced": 0.0,
     "watched": None,  # None — держать общий порог тишины
 }
 
@@ -247,6 +250,12 @@ def _note(event: dict) -> str:
                 " and you are still walking after him]"
             )
         return f"[{who} is gone from the world — you are walking with nobody now]"
+    if kind == "advanced":
+        # Факт и время, без выводов. Что значит «Мы уходим вглубь» и быстро ли три
+        # достижения за вечер — её дело, не записки.
+        since = event.get("since")
+        pace = f", {since}s after the last one" if isinstance(since, int) else ""
+        return f"[{who} has made the advancement \"{event.get('what')}\"{pace}]"
     if kind == "cannot_reach":
         return (
             f"[you are walking with {who} and cannot get to him from where you"
