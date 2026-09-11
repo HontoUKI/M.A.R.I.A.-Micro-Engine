@@ -248,7 +248,9 @@ def _note(event: dict) -> str:
         # поспевает — разные новости, и вторую нельзя подавать первой.
         where = f"[you are walking with {who} and he is {event.get('blocks')} blocks away"
         if event.get("busy"):
-            return where + " — what you were doing has stopped]"
+            # Работа не останавливается (11.09): роутер больше не бросает её дела, чтобы
+            # догнать. Догонит, когда закончит, — если не решит бросить сама.
+            return where + " — you are still at what you were doing; you will catch up after]"
         return where + " — you are following and not keeping up]"
     if kind == "lost_sight":
         return f"[you are walking with {who} and cannot see him from here]"
