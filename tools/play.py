@@ -71,6 +71,15 @@ WAKING = ("closed", "waiting", "interrupted")
 #
 # Смерть здесь же, хотя она и не про него: без содержания от неё остаётся пустая скобка,
 # а «она умерла» и «ТЫ её убил» — разные новости, и вторую терять нельзя.
+# The game's own words for each advancement tier — the same three verbs vanilla prints,
+# and BlazeandCave's pack prints through its tellraw. The tier is a fact of the
+# announcement, not a reading of it.
+VERB = {
+    "task": "has made the advancement",
+    "goal": "has reached the goal",
+    "challenge": "has completed the challenge",
+}
+
 WITH_CONTENT = {
     "given": 0.0,
     "at_risk": 0.0,
@@ -255,7 +264,7 @@ def _note(event: dict) -> str:
         # достижения за вечер — её дело, не записки.
         since = event.get("since")
         pace = f", {since}s after the last one" if isinstance(since, int) else ""
-        return f"[{who} has made the advancement \"{event.get('what')}\"{pace}]"
+        return f"[{who} {VERB.get(event.get('tier'), VERB['task'])} \"{event.get('what')}\"{pace}]"
     if kind == "cannot_reach":
         return (
             f"[you are walking with {who} and cannot get to him from where you"
