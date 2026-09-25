@@ -124,3 +124,10 @@ def test_gunfire_is_read_by_the_stage(pack):
     by_id = {s.id: s.block for s in pack.stages}
     assert "flinch" in by_id["shock"]
     assert "not afraid of the gunfire" in by_id["partner"]
+
+
+def test_no_japanese_words_are_invited(pack):
+    """Автор, 25.09: «Kowai с самого старта — так себе». Пак не должен звать японские слова."""
+    text = " ".join([pack.identity, *pack.blocks.values(), *(s.block for s in pack.stages)]).lower()
+    for word in ("kowai", "itadakimasu", "sugoi", "japanese word"):
+        assert word not in text, word
