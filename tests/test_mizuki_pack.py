@@ -93,10 +93,18 @@ def test_no_fighting_until_she_is_his_partner(pack):
 
 
 def test_her_hands_open_with_the_stages(pack):
-    dig = next(b for b in pack.bounds if b.verb == "dig")
     build = next(b for b in pack.bounds if b.verb == "build")
-    assert not dig.allows(0.05) and dig.allows(FOLLOWING)
     assert not build.allows(FOLLOWING) and build.allows(USEFUL)
+
+
+def test_digging_is_the_worlds_rule_not_a_stage(pack):
+    """Бревно рукой нереально на любой ступени — это держит роутер (`dig_with: iron`)."""
+    assert not any(b.verb == "dig" for b in pack.bounds)
+
+
+def test_she_will_not_kill_even_a_chicken_at_first(pack):
+    fight = next(b for b in pack.bounds if b.verb == "fight")
+    assert fight.covers("fight", ("chicken",)) and not fight.allows(USEFUL)
 
 
 def test_she_never_takes_his_food(pack):

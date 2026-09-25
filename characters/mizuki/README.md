@@ -42,8 +42,12 @@ rather than in prose:
 - **No combat routines at the start.** `fight` and `strike` open only at `partner` (0.50).
   Her stance in danger is to run, hide and call for help from the first hit: the router's
   `flee` posture (server rule `posture: flee`) runs her to him, and the note it sends is
-  what makes her shout. Her hands open with the stages: a pickaxe and blocks at
-  `following` (0.15), building at `useful` (0.30). She never takes food from him.
+  what makes her shout. At first she cannot bring herself to kill anything, not even a
+  chicken — the same window. Blocks at `following` (0.15), building at `useful` (0.30).
+  She never takes food from him.
+- **She cannot gather.** Farming is free — crops, breeding, cooking — but a log or a stone
+  comes off only with an iron tool in her hand. That is the world's rule, not a stage:
+  the router holds it (`hands-rule.js`, server rule `dig_with: iron`).
 
 | stage | up to | she is |
 |---|---|---|
