@@ -11,8 +11,8 @@ HTTP app is a request/response surface; a companion sitting in a chat is a long
 loop that outlives any request. Keeping them apart means neither one has to
 pretend to be the other.
 
-    python tools/play.py --character yukina
-    make play CHARACTER=yukina
+    make play                          # the character named by CHARACTER in .env
+    python tools/play.py --character yukina   # or name one for this run
 
 The router is not started here, for the reason it is not started anywhere: it
 attaches to a world somebody is already running.
@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.contracts import ChatMessage  # noqa: E402
 from app.deps import get_service  # noqa: E402
+from engine.config import load_settings  # noqa: E402
 
 # How much of a conversation she carries between lines. Small on purpose: chat
 # lines are short, and a window measured in messages rather than tokens is the
@@ -306,7 +307,7 @@ def main() -> int:
             pass  # not a real console; nothing to soften
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--character", required=True, help="pack name, e.g. yukina")
+    parser.add_argument("--character", default="", help="pack name; default CHARACTER from .env")
     parser.add_argument("--port", default="", help="router base URL; default GAME_PORT")
     args = parser.parse_args()
 
@@ -316,6 +317,11 @@ def main() -> int:
         print("See docs/GAME_PORT.md.")
         return 1
     port = (args.port or service.hands.base).rstrip("/")
+    args.character = args.character or load_settings().character
+    if not args.character:
+        print("CHARACTER is not set, so nobody is chosen to sit in the world.")
+        print(f"Put CHARACTER=<pack> in .env; there is {', '.join(sorted(service.model_names()))}.")
+        return 1
 
     if not service.has_model(args.character):
         known = ", ".join(sorted(service.model_names()))

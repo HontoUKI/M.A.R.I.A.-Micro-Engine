@@ -65,6 +65,10 @@ class Settings:
     # that quietly defaulted would make "she has hands" depend on whatever
     # happened to be listening on a port.
     game_port: str = ""
+    # Which character sits in that world for `make play` / tools/play.py. A deployment
+    # choice beside GAME_PORT, and like it no default: which pack is in the world is
+    # something the operator says once, in .env, rather than a name the tool assumes.
+    character: str = ""
     # Multimodal model for scene-backdrop captioning (Ollama only). Empty = reuse
     # the chat model (fine when it's multimodal, e.g. gemma3).
     vision_model: str = ""
@@ -122,6 +126,7 @@ def load_settings() -> Settings:
         language=os.getenv("LANGUAGE", Settings.language),
         user_gender=os.getenv("USER_GENDER", Settings.user_gender),
         game_port=os.getenv("GAME_PORT", Settings.game_port).strip(),
+        character=os.getenv("CHARACTER", Settings.character).strip(),
         web_search=_bool_env("WEB_SEARCH", Settings.web_search),
         vision_model=os.getenv("VISION_MODEL", Settings.vision_model),
         web_search_results=int(os.getenv("WEB_SEARCH_RESULTS", Settings.web_search_results)),

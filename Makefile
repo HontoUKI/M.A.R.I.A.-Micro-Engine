@@ -18,8 +18,8 @@ PYTHON ?= $(if $(VENV_PYTHON),$(firstword $(VENV_PYTHON)),python)
 -include .env
 CHAT_MODEL ?= gemma3:12b
 EMBED_MODEL ?= nomic-embed-text
-# Which character sits in the world for `make play`.
-CHARACTER ?= yukina
+# Which character sits in the world for `make play`: CHARACTER in .env, no default
+# here — tools/play.py reads the same setting and says so when it is missing.
 
 .PHONY: help start install model check lint test run serve game play scenario
 
@@ -55,8 +55,8 @@ game:  ## Run the server attached to a game router (GAME_PORT), checking it firs
 # Sit in the world and talk in ITS chat, which is where a game companion lives.
 # Runs beside the HTTP app rather than inside it: that surface is
 # request/response, and a companion in a chat is a loop that outlives a request.
-play:  ## Talk to a character in the game chat (CHARACTER=yukina)
-	@$(PYTHON) tools/play.py --character $(CHARACTER)
+play:  ## Talk to a character in the game chat (who: CHARACTER in .env)
+	@$(PYTHON) tools/play.py $(if $(CHARACTER),--character $(CHARACTER))
 
 # ---------------------------------------------------------------- scenarios
 
