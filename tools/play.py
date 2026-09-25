@@ -98,6 +98,9 @@ WITH_CONTENT = {
     # Он продвинулся по игре, и мир объявил это вслух — обоим. Её часы: тревога растёт
     # не от настроения, а от того, как далеко он ушёл.
     "advanced": 0.0,
+    # Её ударили, и тело уже бежит (роутер, `flee.js`: поза того, кто не умеет драться).
+    # Ноль и поверх его реплики: крик о помощи не ждёт паузы в разговоре.
+    "fled": 0.0,
     "watched": None,  # None — держать общий порог тишины
 }
 
@@ -267,6 +270,11 @@ def _note(event: dict) -> str:
         since = event.get("since")
         pace = f", {since}s after the last one" if isinstance(since, int) else ""
         return f"[{who} {VERB.get(event.get('tier'), VERB['task'])} \"{event.get('what')}\"{pace}]"
+    if kind == "fled":
+        hit = f"a {event.get('from')} hit you"
+        if event.get("to") and event.get("to") != "away":
+            return f"[{hit} — you are running to {event['to']}]"
+        return f"[{hit} — you are running away, there is nobody to run to]"
     if kind == "cannot_reach":
         return (
             f"[you are walking with {who} and cannot get to him from where you"

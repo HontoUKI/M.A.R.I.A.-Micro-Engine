@@ -5,7 +5,7 @@
 
 1. Она начинает НИЖЕ нейтрального: доверие к человеку, наставившему на неё ствол, ноль.
 2. Самое большое, что он может сделать, — защитить её, а не одарить.
-3. Она не дерётся ни на одной ступени — иначе патроны перестают быть ценой.
+3. Боевых рутин у неё нет до ступени партнёра; стойка при опасности — бегство (роутер).
 """
 from __future__ import annotations
 
@@ -83,11 +83,13 @@ def test_a_locked_tag_cannot_be_chosen_even_when_the_model_names_it(pack):
     ) == "closeness"
 
 
-def test_she_never_fights_however_close_she_is(pack):
+def test_no_fighting_until_she_is_his_partner(pack):
+    """Автор, 25.09: «отсутствие каких-либо боевых рутин в начале»."""
     for verb in ("fight", "strike"):
         bound = next(b for b in pack.bounds if b.verb == verb)
         assert bound.covers(verb, ("zombie",))
-        assert not bound.allows(1.0), verb
+        assert not bound.allows(USEFUL), verb
+        assert bound.allows(PARTNER), verb
 
 
 def test_her_hands_open_with_the_stages(pack):

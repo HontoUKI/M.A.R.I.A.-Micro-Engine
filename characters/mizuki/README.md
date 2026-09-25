@@ -39,9 +39,11 @@ rather than in prose:
 - **What the world does to her moves nothing.** Gunfire, being hunted, hunger: the stage
   decides how she takes it. The same shot makes her cover her ears at `shock` and look for
   the target at `following`.
-- **She never fights, at any stage** (`bounds`: `fight` and `strike` are `never`). Her
-  hands open with the stages instead: a pickaxe and blocks at `following` (0.15), building
-  at `useful` (0.30). She never takes food from him.
+- **No combat routines at the start.** `fight` and `strike` open only at `partner` (0.50).
+  Her stance in danger is to run, hide and call for help from the first hit: the router's
+  `flee` posture (server rule `posture: flee`) runs her to him, and the note it sends is
+  what makes her shout. Her hands open with the stages: a pickaxe and blocks at
+  `following` (0.15), building at `useful` (0.30). She never takes food from him.
 
 | stage | up to | she is |
 |---|---|---|
