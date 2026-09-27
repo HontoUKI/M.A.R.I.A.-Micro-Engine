@@ -292,6 +292,11 @@ def _her_name(port: str) -> str:
         return ""
 
 
+def visible(event: dict, unseen: frozenset[str]) -> bool:
+    """Whether this character is told about the event at all (pack `unseen_notes`)."""
+    return event.get("kind") not in unseen
+
+
 def main() -> int:
     # A Windows console is cp1251 or cp866, and one arrow in a status line was enough
     # to kill her: she heard the player, answered in chat, took the goal, and the
@@ -329,6 +334,8 @@ def main() -> int:
         return 1
 
     display = service.registry.get(args.character).meta.display_name
+    # Чего она не видит вовсе — решает пак (сюжетной игре механика игры не показывается).
+    unseen = frozenset(service.registry.get(args.character).unseen_notes)
     in_world = _her_name(port)
     print(f"персонаж {display}")
     print(f"в мире   {in_world or '?'}")
@@ -336,6 +343,8 @@ def main() -> int:
         # Two products disagreeing quietly is worse than either being wrong.
         print(f"⚠ мир зовёт её {in_world}, а играешь ты {display}.")
         print(f"  Роутер логинится под своим именем: make run NAME={display}")
+    if unseen:
+        print(f"не видит {', '.join(sorted(unseen))}")
     print("слушаю чат. Ctrl+C — выйти.\n")
 
     # One window and one relationship PER PLAYER. Two people in the same world
@@ -349,6 +358,8 @@ def main() -> int:
     # про человека — тоже ход про него, хотя он молчал.
     last_person = ""
     for event in _listen(port):
+        if not visible(event, unseen):
+            continue
         kind = event.get("kind")
 
         # `came_upon` приезжает заметкой хода, а не своим родом события: в потоке это

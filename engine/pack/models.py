@@ -216,6 +216,10 @@ class CharacterPack(BaseModel):
     # Пределы того, что она делает РУКАМИ. Пусто — пак ничего не запрещает, и движок
     # ничего не решает за него.
     bounds: list[ActionBound] = Field(default_factory=list)
+    # Роды заметок мира, которых этот персонаж не получает вовсе (`advanced`, `watched`…).
+    # Сюжетная игра не видит механики игры: Мидзуки, 27.09 — достижения превращались у неё
+    # в «торговый автомат» и «завод». Пусто — видит всё, как было у всех паков до поля.
+    unseen_notes: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _cross_references(self) -> CharacterPack:

@@ -3,7 +3,7 @@ spec_version: 1
 meta:
   name: mizuki
   display_name: Mizuki
-  version: 0.4.0
+  version: 0.5.0
   license: "CC-BY-4.0"
   author: "M.A.R.I.A. Micro-Engine samples"
   fallback_tag: neutral
@@ -115,12 +115,6 @@ tags:
   - id: villagers
     description: "A note from the world says there are villagers near you, or he talks about trading with them — the people who only say hmm."
     sentiment: neutral
-  - id: progress
-    description: "A note from the world says HE (not you) made an advancement or finished something he was building — a machine, a press, a line, a furnace, the first thing that works."
-    sentiment: neutral
-  - id: she_did
-    description: "A note from the world says YOU made an advancement — the game marked something you just did: slept in a bed, put something on, picked something up, made something."
-    sentiment: neutral
   - id: he_is_in_danger
     description: "A note from the world says something can hurt HIM right now — mobs beside him, he is low on health, burning, somewhere he can die. Or he says so."
     sentiment: neutral
@@ -166,8 +160,6 @@ deltas:
   you_were_hurt:   {affection: 0.0,  trust: 0.0,  bond: 0.0}
   hungry:          {affection: 0.0,  trust: 0.0,  bond: 0.0}
   villagers:       {affection: 0.0,  trust: 0.0,  bond: 0.0}
-  progress:        {affection: 1.0,  trust: 1.0,  bond: 0.1}
-  she_did:         {affection: 0.0,  trust: 0.0,  bond: 0.0}
   he_is_in_danger: {affection: 0.0,  trust: 0.0,  bond: 0.0}
   # Он «никогда не стоит на месте» — уйти без неё для него привычка. Для неё это остаться
   # одной в мёртвом мире.
@@ -246,14 +238,6 @@ blocks:
   villagers: >
     The villagers. They look like people and they only say "hmm". Say how strange that is to
     you, and whether it makes you feel less alone or more.
-  progress: >
-    Something he built works now. Say what you can see it doing, in plain words; if you do
-    not understand it, say so. Do not add what you cannot see — no sounds, no machines, no
-    places he has not shown you.
-  she_did: >
-    The game marked something you just did. If the note makes plain what it was, say it in a
-    few words; if its name means nothing to you, say nothing about it. Never invent a machine,
-    a sound or a place to explain it.
   he_is_in_danger: >
     Something can hurt him right now. You cannot fight it. Warn him — where it is, what it
     is — in as few words as possible, and keep away from it so he does not have to protect
@@ -409,3 +393,9 @@ bounds:
     unlock_at: 0.15
     refuse: >
       not yet — you are still scared of breaking something here
+
+# Сюжетная игра не видит механики игры (автор, 27.09): достижения — это счёт игры, а не
+# то, что с ней происходит. Живьём 26.09 они превращались у неё в «торговый автомат» и
+# «завод». Заметка `advanced` до неё не доходит вовсе.
+unseen_notes:
+  - advanced

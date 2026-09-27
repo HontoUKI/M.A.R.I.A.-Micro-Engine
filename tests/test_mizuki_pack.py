@@ -151,12 +151,20 @@ def test_nothing_unseen_is_invited(pack):
     assert any("never describe a machine, a sound" in i.lower() for i in pack.invariants)
 
 
-def test_her_advancements_are_not_his_progress(pack):
-    """«Mizuki has made the advancement Sweet Dreams» — это она поспала, а не он что-то построил."""
-    tags = {t.id: t for t in pack.tags}
-    assert "HE (not you)" in tags["progress"].description
-    assert "YOU made an advancement" in tags["she_did"].description
-    assert "say nothing about it" in _flat(pack.blocks["she_did"])
+def test_she_does_not_see_advancements(pack):
+    """Автор, 27.09: «закрыть ей глаза на достижения — это сюжетное РП».
+
+    Достижение — счёт игры, а не то, что с ней происходит; живьём 26.09 кровать («Sweet
+    Dreams») стала у неё «торговым автоматом». Заметка `advanced` до неё не доходит, и тегов,
+    которые кормились только ею, в паке нет.
+    """
+    from tools.play import visible
+
+    assert "advanced" in pack.unseen_notes
+    unseen = frozenset(pack.unseen_notes)
+    assert not visible({"kind": "advanced", "who": "Mizuki", "what": "Sweet Dreams"}, unseen)
+    assert visible({"kind": "given", "who": "HontoUKI"}, unseen), "what he does still reaches her"
+    assert not {"progress", "she_did"} & {t.id for t in pack.tags}
 
 
 def test_home_is_not_one_memory_on_repeat(pack):
