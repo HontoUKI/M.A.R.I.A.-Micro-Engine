@@ -365,6 +365,12 @@ bounds:
     unlock_at: 0.50
     refuse: >
       you have never hit anything in your life and this is not the day to start
+  # `beat` — один удар тем, что в руке (роутер, 27.09): драка теперь собирается рутиной
+  # из follow/beat/retreat, и без этого окна `fight` обходился бы одним словом.
+  - verb: beat
+    unlock_at: 0.50
+    refuse: >
+      your hands will not do it — you have never hit anything, and you run instead
   # Еду она отдаёт, а не берёт.
   - verb: take_from
     object:

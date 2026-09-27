@@ -85,7 +85,7 @@ def test_a_locked_tag_cannot_be_chosen_even_when_the_model_names_it(pack):
 
 def test_no_fighting_until_she_is_his_partner(pack):
     """Автор, 25.09: «отсутствие каких-либо боевых рутин в начале»."""
-    for verb in ("fight", "strike"):
+    for verb in ("fight", "strike", "beat"):
         bound = next(b for b in pack.bounds if b.verb == verb)
         assert bound.covers(verb, ("zombie",))
         assert not bound.allows(USEFUL), verb
