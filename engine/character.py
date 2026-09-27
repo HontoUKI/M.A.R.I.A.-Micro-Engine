@@ -44,6 +44,14 @@ NON_RP_RULE = (
     "but answer directly, helpfully, and concisely."
 )
 
+GAMER_RULE = (
+    "Game mode: you are inside a game world, and the only things in it are what the notes "
+    "from the world and the player's words have shown you. Never invent objects, machines, "
+    "sounds, creatures, places, people or events you have not been shown, and never claim to "
+    "see, hear, hold or have done something the notes do not show. When you do not know "
+    "what is around or what happened, say so or ask."
+)
+
 NON_ROMANCE_RULE = (
     "Non-romance mode: keep the relationship strictly platonic no matter how "
     "close you grow. Do not flirt, express romantic or sexual interest, or steer "
@@ -81,6 +89,7 @@ def _language_hint(language: str) -> str:
 # nearby reminder better than a single rule in the far-away system prefix.
 _NON_RP_TAIL_HINT = "Answer in plain words only — no actions, emotes, or stage directions."
 _NON_ROMANCE_TAIL_HINT = "Keep this platonic — warm as a friend, but no flirting or romance."
+_GAMER_TAIL_HINT = "Only what the notes and the player's words showed you is there — invent nothing."
 
 
 @dataclass(frozen=True)
@@ -125,6 +134,7 @@ class CharacterRuntime:
         recall_k: int = 3,
         axis_max: float = DEFAULT_AXIS_MAX,
         non_rp: bool = False,
+        gamer: bool = False,
         non_romance: bool = False,
         language: str = "",
         user_gender: str = "",
@@ -136,6 +146,7 @@ class CharacterRuntime:
         self._llm = llm
         self._axis_max = axis_max
         self._non_rp = non_rp
+        self._gamer = gamer
         self._non_romance = non_romance
         self._language = (language or "").strip()
         self._user_gender = (user_gender or "").strip().lower()
@@ -375,6 +386,8 @@ class CharacterRuntime:
         rules = list(self._pack.invariants)
         if self._non_rp:
             rules.append(NON_RP_RULE)
+        if self._gamer:
+            rules.append(GAMER_RULE)
         if self._non_romance:
             rules.append(NON_ROMANCE_RULE)
         if self._language:
@@ -399,6 +412,8 @@ class CharacterRuntime:
         parts = [summarise(self._deeds), self._pack.blocks[tag], self._pack.reply_directive]
         if self._non_rp:
             parts.append(_NON_RP_TAIL_HINT)
+        if self._gamer:
+            parts.append(_GAMER_TAIL_HINT)
         if self._non_romance:
             parts.append(_NON_ROMANCE_TAIL_HINT)
         if self._language:

@@ -76,6 +76,7 @@ def _build_service() -> EngineService:
         llm=_build_llm(settings),
         axis_max=settings.axis_max,
         non_rp=settings.non_rp,
+        gamer=settings.gamer,
         non_romance=settings.non_romance,
         language=settings.language,
         user_gender=settings.user_gender,

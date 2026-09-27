@@ -40,6 +40,10 @@ class Settings:
     # (asterisk emotes, stage directions) — it stays in voice but replies as a
     # plain conversational pet-assistant. Good for showing the mechanics.
     non_rp: bool = False
+    # Game mode: the character is inside a game world and only what the world's notes and the
+    # player's words have shown exists — against in-game hallucination (machines, sounds and
+    # places nobody showed her; Mizuki, 26.09). Same mechanism as NON_RP.
+    gamer: bool = False
     # Non-romance mode: keep every relationship strictly platonic regardless of
     # how close it grows and of what a pack's tags/stages invite. Warmth and
     # friendship still deepen; flirtation and romance are refused.
@@ -122,6 +126,7 @@ def load_settings() -> Settings:
         sessions_dir=os.getenv("SESSIONS_DIR", Settings.sessions_dir),
         scenes_state_dir=os.getenv("SCENES_STATE_DIR", Settings.scenes_state_dir),
         non_rp=_bool_env("NON_RP", Settings.non_rp),
+        gamer=_bool_env("GAMER", Settings.gamer),
         non_romance=_bool_env("NON_ROMANCE", Settings.non_romance),
         language=os.getenv("LANGUAGE", Settings.language),
         user_gender=os.getenv("USER_GENDER", Settings.user_gender),

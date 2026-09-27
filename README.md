@@ -78,6 +78,10 @@ All off/local by default; see [.env.example](.env.example).
 - **Non-roleplay mode** (`NON_RP=true`) — the character keeps its voice but
   stops narrating actions (`*smiles*`, stage directions) and answers like a
   plain pet-assistant. Good for coding help and for showing the mechanics.
+- **Game mode** (`GAMER=true`) — inside a game world the character treats only
+  what the world's notes and the player's words have shown as real: no invented
+  machines, sounds, places or deeds, and «I don't know» when she doesn't. Same
+  mechanism as `NON_RP`; turn it on for `make play`.
 - **Non-romance mode** (`NON_ROMANCE=true`) — the relationship stays strictly
   platonic however close it grows; warmth and friendship still deepen, but
   flirtation and romance are declined and romantic advances are gently

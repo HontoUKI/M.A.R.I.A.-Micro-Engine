@@ -148,7 +148,8 @@ def test_nothing_unseen_is_invited(pack):
     for word in ("factory", "vending machine"):
         assert word not in text, word
     assert "compare what you actually see here to home" in _flat(pack.identity)
-    assert any("never describe a machine, a sound" in i.lower() for i in pack.invariants)
+    # «Ничего не выдумывать» — не её черта, а режим игры: GAMER=true (engine/character.py).
+    assert not any("never describe a machine" in i.lower() for i in pack.invariants)
 
 
 def test_she_does_not_see_advancements(pack):

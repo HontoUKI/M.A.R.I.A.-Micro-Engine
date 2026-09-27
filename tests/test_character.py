@@ -96,6 +96,22 @@ def test_non_rp_mode_adds_the_anti_roleplay_rule_to_the_prefix():
     assert "asterisk actions" in system
 
 
+def test_gamer_mode_pins_the_grounding_rule_and_reminds_every_turn():
+    """GAMER=true — против выдумок в игре (Мидзуки, 26.09: «шум завода» в лесу)."""
+    llm = FakeLLM()
+    CharacterRuntime(make_pack(), llm, gamer=True).respond("hi")
+    messages = llm.chat_calls[1]["messages"]
+    assert "Game mode" in messages[0]["content"]
+    assert "Never invent objects, machines" in messages[0]["content"]
+    assert any("invent nothing" in m["content"] for m in messages[1:])
+
+
+def test_gamer_mode_is_off_by_default():
+    llm = FakeLLM()
+    CharacterRuntime(make_pack(), llm).respond("hi")
+    assert "Game mode" not in llm.chat_calls[1]["messages"][0]["content"]
+
+
 def test_rp_mode_is_the_default_and_adds_no_such_rule():
     llm = FakeLLM()
     CharacterRuntime(make_pack(), llm).respond("hi")

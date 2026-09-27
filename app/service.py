@@ -46,6 +46,7 @@ class EngineService:
     llm: OllamaClient
     axis_max: float = DEFAULT_AXIS_MAX
     non_rp: bool = False
+    gamer: bool = False
     non_romance: bool = False
     language: str = ""
     user_gender: str = ""
@@ -119,6 +120,7 @@ class EngineService:
             prompt_manager=self.prompt_manager,
             axis_max=self.axis_max,
             non_rp=self.non_rp,
+            gamer=self.gamer,
             non_romance=self.non_romance,
             # Per-request values override the server-level defaults.
             language=self.language if language is None else language,
