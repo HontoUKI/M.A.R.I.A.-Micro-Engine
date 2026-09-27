@@ -131,3 +131,36 @@ def test_no_japanese_words_are_invited(pack):
     text = " ".join([pack.identity, *pack.blocks.values(), *(s.block for s in pack.stages)]).lower()
     for word in ("kowai", "itadakimasu", "sugoi", "japanese word"):
         assert word not in text, word
+
+
+def _flat(text):
+    return " ".join(str(text).split())
+
+
+def test_nothing_unseen_is_invited(pack):
+    """Живьём 26.09: «шум как на заводе» на дереве в лесу, «торговый автомат» на кровать.
+
+    Блок `progress` подсказывал сравнение с заводом, поездом, автоматом на ЛЮБОЕ достижение,
+    включая её собственные; идентичность звала сравнивать с домом всё подряд. Пак не должен
+    подсказывать ни одной вещи, которой она не видела.
+    """
+    text = " ".join([pack.identity, *pack.blocks.values(), *(s.block for s in pack.stages)]).lower()
+    for word in ("factory", "vending machine"):
+        assert word not in text, word
+    assert "compare what you actually see here to home" in _flat(pack.identity)
+    assert any("never describe a machine, a sound" in i.lower() for i in pack.invariants)
+
+
+def test_her_advancements_are_not_his_progress(pack):
+    """«Mizuki has made the advancement Sweet Dreams» — это она поспала, а не он что-то построил."""
+    tags = {t.id: t for t in pack.tags}
+    assert "HE (not you)" in tags["progress"].description
+    assert "YOU made an advancement" in tags["she_did"].description
+    assert "say nothing about it" in _flat(pack.blocks["she_did"])
+
+
+def test_home_is_not_one_memory_on_repeat(pack):
+    """Живьём 26.09: «поезд в восемь утра» пять раз за утро — пример из блока стал ответом."""
+    block = _flat(pack.blocks["asks_about_home"])
+    assert "you have not told him yet" in block
+    assert "train at eight" not in block
