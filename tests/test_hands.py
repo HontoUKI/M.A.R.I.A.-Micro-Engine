@@ -457,3 +457,17 @@ class TestSomethingSheWasPulledOffOf:
         speech, did = runtime._reach_for_the_game("sure<play>continue</play>")
         assert did == ()
         assert speech == "sure"
+
+
+def test_what_came_into_her_bag_stands_next_to_what_she_tried():
+    """Живьём 28.09: «I dropped some beef for you» — а мясо уже у неё, и она ищет его на
+    земле. Строка сумки стояла среди строк «где ты» и не читалась; теперь она своя."""
+    told = describe(
+        {"game": "Minecraft", "affordances": [{"verb": "pick_up"}]},
+        {"her": {"health": 20}, "bag_lately": ["+3 beef (picked up), 2 s ago"]},
+        "gather oak_log — worked",
+    )
+    assert "What came into your bag or left it lately: +3 beef (picked up), 2 s ago" in told
+    assert "bag_lately" not in told, "не дважды: не в свалке «где ты»"
+    empty = describe({"game": "Minecraft", "affordances": [{"verb": "pick_up"}]}, {})
+    assert "left it lately: nothing lately." in empty

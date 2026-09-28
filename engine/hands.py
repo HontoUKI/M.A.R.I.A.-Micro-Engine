@@ -315,7 +315,13 @@ def describe(
         "",
         "Where you are right now:",
     ]
+    # Перемены сумки — своей строкой рядом с «последним», а не среди строк «где ты»
+    # (28.09): на «I dropped some beef for you» Мария искала мясо на земле, хотя строка
+    # «+3 beef (picked up)» стояла в её состоянии, — его слова перевешивали свалку.
+    bag = (sight or {}).get("bag_lately")
     for key, value in (sight or {}).items():
+        if key == "bag_lately":
+            continue
         said = plainly(value)
         if said:
             lines.append(f"  {key}: {said}")
@@ -340,6 +346,10 @@ def describe(
     lines += [
         "",
         f"The last thing you tried: {last or 'nothing yet.'}",
+        f"What came into your bag or left it lately: {plainly(bag) or 'nothing lately.'}",
+        "That is your bag as it is now. Anything that touches your feet goes into it by",
+        "itself, so a thing somebody threw to you and that is listed here is already in",
+        "your bag — it is not lying on the ground any more.",
     ]
     if paused:
         # An interrupt is a pause and never an outcome, so the next word is hers —
