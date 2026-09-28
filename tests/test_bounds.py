@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
@@ -21,7 +22,7 @@ from tests._packs import make_pack
 
 
 class _Says:
-    """Модель, которая всегда отвечает одной и той же строкой с `DO:`."""
+    """Модель, которая всегда отвечает одним и тем же блоком `<play>`."""
 
     def __init__(self, line: str, tag: str = "neutral") -> None:
         self._line = line
@@ -49,6 +50,22 @@ class _Hands(GamePort):
     def act(self, intention):
         self.taken.append(intention)
 
+    def read(self, text):
+        """Грамматику читает роутер (`POST /v0/read`); здесь — ровно столько, сколько
+        нужно этим строкам: `verb(object)`, `verb(all: true)`, `verb(ALL EXCEPT [a, b])`."""
+        steps = []
+        for line in filter(None, (s.strip() for s in text.splitlines())):
+            verb, arg = re.fullmatch(r"(\w+)\((.*)\)", line).groups()
+            if arg.startswith("ALL"):
+                spared = re.search(r"EXCEPT \[(.*)\]", arg)
+                left = [w.strip() for w in spared.group(1).split(",")] if spared else []
+                steps.append({"verb": verb, "where": {"select": {"mode": "all", "except": left}}})
+            elif arg == "all: true":
+                steps.append({"verb": verb, "where": {"all": True}})
+            else:
+                steps.append({"verb": verb, "object": arg})
+        return {"steps": steps, "repeat": 1, "word": None}
+
 
 def _pack(**more):
     return make_pack(stage_axis="bond", **more)
@@ -61,7 +78,7 @@ def _runtime(pack, line, *, bond: float, hands):
 
 def test_a_pack_without_bounds_forbids_nothing():
     hands = _Hands()
-    got = _runtime(_pack(), "sure.\n<play>\nDO: fight {\"object\": \"villager\"}\n</play>",
+    got = _runtime(_pack(), "sure.\n<play>\nfight(villager)\n</play>",
                    bond=0.0, hands=hands).respond("go on")
     assert got.did, "движок сам за пак ничего не решает"
     assert hands.taken
@@ -73,7 +90,7 @@ def test_never_means_never_however_close_she_is():
         ActionBound(verb="take_from", object=["bread"], never=True, refuse="he lives on that"),
     ])
     hands = _Hands()
-    got = _runtime(pack, 'ok.\n<play>\nDO: take_from {"object": "bread"}\n</play>',
+    got = _runtime(pack, "ok.\n<play>\ntake_from(bread)\n</play>",
                    bond=100.0, hands=hands).respond("take the bread")
     assert got.did == ()
     assert hands.taken == [], "до рук это не доехало"
@@ -83,7 +100,7 @@ def test_the_window_opens_on_the_stage_and_not_before():
     pack = _pack(bounds=[
         ActionBound(verb="fight", object=["villager"], unlock_at=0.75, refuse="not yet"),
     ])
-    line = 'fine.\n<play>\nDO: fight {"object": "villager"}\n</play>'
+    line = "fine.\n<play>\nfight(villager)\n</play>"
 
     early = _Hands()
     _runtime(pack, line, bond=50.0, hands=early).respond("kill them")
@@ -98,8 +115,7 @@ def test_only_the_named_thing_is_held_back():
     """Один запрещённый шаг не отменяет всего решения."""
     pack = _pack(bounds=[ActionBound(verb="take_from", object=["bread"], never=True)])
     hands = _Hands()
-    line = ('ok.\n<play>\nDO: take_from {"object": "bread"}\n'
-            'DO: take_from {"object": "diamond"}\n</play>')
+    line = "ok.\n<play>\ntake_from(bread)\ntake_from(diamond)\n</play>"
     got = _runtime(pack, line, bond=0.0, hands=hands).respond("clear the chest")
     assert len(hands.taken) == 1
     assert [g.verb for g in hands.taken[0].steps] == ["take_from"]
@@ -111,16 +127,37 @@ def test_taking_EVERYTHING_is_covered_by_the_bound():
     """Иначе граница обходится одним словом: `where.all` не называет ни одного предмета."""
     pack = _pack(bounds=[ActionBound(verb="take_from", object=["bread"], never=True)])
     hands = _Hands()
-    got = _runtime(pack, 'ok.\n<play>\nDO: take_from {"where": {"all": true}}\n</play>',
+    got = _runtime(pack, "ok.\n<play>\ntake_from(all: true)\n</play>",
                    bond=0.0, hands=hands).respond("take it all")
     assert hands.taken == []
     assert got.did == ()
 
 
+def test_a_selection_is_everything_unless_the_forbidden_is_left_out():
+    """`take_from(ALL …)` не называет вещей, и что в неё попадёт, решит мир в момент шага.
+
+    Поэтому выборка — это «всё», как `where.all`: иначе «никогда не бери его хлеб»
+    обходится словом ALL. Выход узкий и её собственный: оставить хлеб за EXCEPT (28.09).
+    """
+    pack = _pack(bounds=[
+        ActionBound(verb="take_from", object=["bread"], never=True, refuse="he lives on that"),
+    ])
+    grabbed = _Hands()
+    runtime = _runtime(pack, "ok.\n<play>\ntake_from(ALL)\n</play>", bond=100.0, hands=grabbed)
+    assert runtime.respond("take it all").did == ()
+    assert grabbed.taken == []
+    assert "leave it out with EXCEPT" in runtime._game_block()
+
+    spared = _Hands()
+    _runtime(pack, "ok.\n<play>\ntake_from(ALL EXCEPT [bread, apple])\n</play>",
+             bond=0.0, hands=spared).respond("take the rest")
+    assert spared.taken, "хлеб оставлен — предел не про этот шаг"
+
+
 def test_a_neighbouring_verb_is_not_touched():
     pack = _pack(bounds=[ActionBound(verb="take_from", object=["bread"], never=True)])
     hands = _Hands()
-    _runtime(pack, 'ok.\n<play>\nDO: gather {"object": "bread"}\n</play>',
+    _runtime(pack, "ok.\n<play>\ngather(bread)\n</play>",
              bond=0.0, hands=hands).respond("get bread")
     assert hands.taken, "предел про сундук, а не про слово «хлеб»"
 
@@ -133,7 +170,7 @@ def test_never_cannot_be_a_window_in_disguise():
 def test_she_is_TOLD_what_she_did_not_do():
     """Молча выброшенный шаг она прочитает как поломку и напишет ту же строку снова.
 
-    Это уже было с нечитаемыми `DO:` 03.09, и лечится тем же способом: сказать ей. Без
+    Это уже было с нечитаемыми строками 03.09, и лечится тем же способом: сказать ей. Без
     этой проверки предел был бы построен и до хода не доезжал — та самая повторяющаяся
     форма.
     """
@@ -141,7 +178,7 @@ def test_she_is_TOLD_what_she_did_not_do():
         ActionBound(verb="take_from", object=["bread"], never=True, refuse="he lives on that"),
     ])
     hands = _Hands()
-    runtime = _runtime(pack, 'ok.\n<play>\nDO: take_from {"object": "bread"}\n</play>',
+    runtime = _runtime(pack, "ok.\n<play>\ntake_from(bread)\n</play>",
                        bond=0.0, hands=hands)
     runtime.respond("take the bread")
 

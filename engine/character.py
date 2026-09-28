@@ -89,7 +89,9 @@ def _language_hint(language: str) -> str:
 # nearby reminder better than a single rule in the far-away system prefix.
 _NON_RP_TAIL_HINT = "Answer in plain words only — no actions, emotes, or stage directions."
 _NON_ROMANCE_TAIL_HINT = "Keep this platonic — warm as a friend, but no flirting or romance."
-_GAMER_TAIL_HINT = "Only what the notes and the player's words showed you is there — invent nothing."
+_GAMER_TAIL_HINT = (
+    "Only what the notes and the player's words showed you is there — invent nothing."
+)
 
 
 @dataclass(frozen=True)
@@ -263,10 +265,9 @@ class CharacterRuntime:
                 # complaint that outlives its turn becomes noise about the past.
                 self._unread = ()
                 block += (
-                    "\n\nYour last DO line could not be read, so nothing "
-                    "moved: " + "; ".join(unread)
-                    + "\nThe verb, then ONE JSON object, like: "
-                    "DO: gather {\"object\": \"cobblestone\", \"quantity\": 3}"
+                    "\n\nWhat you wrote in <play> last time could not be read, so "
+                    "nothing moved: " + "; ".join(unread)
+                    + "\nOne call per line, like: gather(cobblestone, 3)"
                 )
             return block
         except Exception:
@@ -277,17 +278,24 @@ class CharacterRuntime:
 
         Parsed here, where it is read, so a decision cannot be spoken aloud as
         speech or reach a client as words. With no game attached the lines are
-        still cut — a character who narrates `DO:` at somebody is worse than one
-        who cannot act.
+        still cut — a character who narrates her play at somebody is worse than one
+        who cannot act. The block is read by the game (`GamePort.read`), which owns
+        its language (28.09).
         """
-        intention, speech = read_intention(reply)
+        try:
+            intention, speech = read_intention(
+                reply, self._hands.read if self._hands is not None else None
+            )
+        except Exception:
+            # The game did not answer: nothing moved, and the block is still not speech.
+            intention, speech = read_intention(reply)
         # She is told next turn that a line of hers could not be read. Without this she
         # cannot tell "I acted" from "nothing happened", and on 03.09 she wrote the same
         # malformed line twice running — the world had no answer to give, because the
         # line never reached it.
         self._unread = intention.unread
         if not intention:
-            # `speech`, never `reply`. An intention is falsy exactly when a `DO:` line
+            # `speech`, never `reply`. An intention is falsy exactly when her play
             # was there and could not be READ — and that was the one path that put the
             # raw text back, so the protocol went out in the game chat verbatim. Live
             # 03.09 she answered a player with `DO: gather "cobblestone" 3 "search": 5`
@@ -344,7 +352,7 @@ class CharacterRuntime:
         его исполняет.
 
         Отказ обязан быть сказан ЕЙ. Молча выброшенный шаг она прочитает как поломку и
-        напишет ту же строку снова — это уже было с нечитаемыми `DO:` (03.09).
+        напишет ту же строку снова — это уже было с нечитаемыми строками (03.09).
         """
         bounds = getattr(self._pack, "bounds", None) or ()
         if not bounds:
@@ -354,16 +362,29 @@ class CharacterRuntime:
         kept, held = [], []
         for goal in intention.steps:
             objects = _objects_of(goal)
+            spared = _left_out(goal)
             stop = next(
-                (b for b in bounds if b.covers(goal.verb, objects) and not b.allows(ratio)),
+                (
+                    b for b in bounds
+                    if b.covers(goal.verb, objects)
+                    and not (b.names() and set(b.names()) <= spared)
+                    and not b.allows(ratio)
+                ),
                 None,
             )
             if stop is None:
                 kept.append(goal)
                 continue
             named = " ".join(objects) or goal.verb
-            held.append(f"{goal.verb} {named}: {stop.refuse}".strip() if stop.refuse
-                        else f"{goal.verb} {named}")
+            said = f"{goal.verb} {named}"
+            if stop.refuse:
+                said = f"{said}: {stop.refuse}".strip()
+            if _selects(goal) and stop.names():
+                # Выборка (`ALL where …`) не называет вещей, и что в неё попадёт, движок не
+                # знает — словарь у игры. Узкий выход: оставить запретное за EXCEPT.
+                spared = ", ".join(stop.names())
+                said += f" (a selection could include {spared} — leave it out with EXCEPT)"
+            held.append(said)
         if len(kept) == len(intention.steps):
             return intention, ()
         return replace(intention, steps=tuple(kept)), tuple(held)
@@ -478,6 +499,18 @@ def _format_web_results(results: list[WebResult]) -> str:
     lines = [f"- {r.title}: {r.snippet} ({r.url})".strip() for r in results if r.title]
     return "\n".join(lines)
 
+def _selects(goal) -> bool:
+    where = (goal.fields or {}).get("where")
+    return isinstance(where, dict) and isinstance(where.get("select"), dict)
+
+
+def _left_out(goal) -> set[str]:
+    """What a selection leaves out by name (`EXCEPT [bread]`), as she wrote it."""
+    if not _selects(goal):
+        return set()
+    return {str(w) for w in goal.fields["where"]["select"].get("except") or []}
+
+
 def _objects_of(goal) -> tuple[str, ...]:
     """Что названо в шаге: сам предмет и список, если он есть.
 
@@ -486,7 +519,9 @@ def _objects_of(goal) -> tuple[str, ...]:
     """
     fields = goal.fields or {}
     where = fields.get("where") or {}
-    if isinstance(where, dict) and where.get("all") is True:
+    # Выборка (`ALL`/`FIRST … where …`, 28.09) — тоже «всё»: что в неё попадёт, решит мир
+    # в момент шага, а не имена в строке.
+    if isinstance(where, dict) and (where.get("all") is True or _selects(goal)):
         return ()
     named = []
     one = fields.get("object")

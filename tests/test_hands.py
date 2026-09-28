@@ -20,86 +20,103 @@ from engine.hands import (
     describe,
     how_it_went,
     plainly,
-    read_goal,
     read_intention,
 )
 
 
+class _Reader:
+    """Стоит за `POST /v0/read`: грамматику читает роутер, здесь — что он ответил и что ему дали."""
+
+    def __init__(self, answer=None) -> None:
+        self.answer = answer if answer is not None else {"steps": [], "repeat": 1, "word": None}
+        self.texts: list[str] = []
+
+    def __call__(self, text):
+        self.texts.append(text)
+        return self.answer
+
+
 class TestReadingHerDecision:
-    def test_a_do_line_leaves_the_speech(self):
-        intention, speech = read_intention('Okay.\nDO: build {"object": "shelter"}')
+    def test_the_block_goes_to_the_game_and_leaves_the_speech(self):
+        # Язык внутри <play> принадлежит игре (28.09): сюда приходит только то, что она
+        # поняла, и ни одного слова игры движок не знает.
+        read = _Reader(
+            {"steps": [{"verb": "build", "object": "shelter"}], "repeat": 1, "word": None}
+        )
+        intention, speech = read_intention("Okay.<play>\nbuild(shelter)\n</play>", read)
+        assert read.texts == ["build(shelter)"]
         assert speech == "Okay."
         assert intention.steps == (Goal("build", {"object": "shelter"}),)
 
-    def test_several_lines_are_one_intention(self):
-        intention, _ = read_intention("Fine.\nDO: go_to\nDO: gather\nDO: put_into")
-        assert [g.verb for g in intention.steps] == ["go_to", "gather", "put_into"]
-
-    def test_repeat_says_how_many_times(self):
-        intention, speech = read_intention("watch\nDO: place stone\nREPEAT: 20")
+    def test_what_the_game_says_is_one_intention_with_its_repeat(self):
+        read = _Reader({
+            "steps": [{"verb": "place", "object": "stone"}, {"verb": "dig", "where": {"x": 1}}],
+            "repeat": 20,
+            "word": None,
+        })
+        intention, speech = read_intention(
+            "watch <play>repeat 20 { place(stone); dig(x: 1) }</play>", read
+        )
+        assert [g.verb for g in intention.steps] == ["place", "dig"]
+        assert intention.steps[1].fields == {"where": {"x": 1}}
         assert intention.repeat == 20
         assert speech == "watch"
 
-    def test_everything_for_the_game_fits_in_one_block(self):
-        # Замысел автора 08.09, сперва проверенный на Маше: весь протокол игры в одном
-        # декораторе. Строчная форма держится на переводах строки, а они до разбора
-        # доживают не всегда — то, что режет реплику на предложения, склеивает соседние
-        # строки пробелом, и граница исчезает раньше, чем её кто-то ищет.
-        intention, speech = read_intention(
-            'Sure, on it.<play>\nDO: gather {"object": "cobblestone"}\nREPEAT: 2\n</play>'
-        )
-        assert speech == "Sure, on it."
-        assert intention.steps == (Goal("gather", {"object": "cobblestone"}),)
-        assert intention.repeat == 2
+    def test_several_blocks_are_read_as_one(self):
+        read = _Reader()
+        read_intention("a <play>go_to(chest)</play> b <play>put_into(oak_log)</play>", read)
+        assert read.texts == ["go_to(chest)\nput_into(oak_log)"]
 
-    def test_the_bare_lines_still_work(self):
-        # Снисходительность к расположению при строгости к словам: обе формы читает один
-        # разбор, поэтому «две формы» не значит «два разбора».
-        intention, speech = read_intention("Okay.\nCONTINUE\nDO: gather oak_log")
-        assert speech == "Okay."
-        assert intention.carry_on
-        assert [g.verb for g in intention.steps] == ["gather"]
+    def test_a_block_the_game_cannot_read_is_told_back_with_its_reason(self):
+        read = _Reader({"error": "line 1, column 5: dig needs parentheses: dig(…)"})
+        intention, speech = read_intention("Sure.<play>dig stone</play>", read)
+        assert not intention
+        assert speech == "Sure."
+        assert intention.unread == ("line 1, column 5: dig needs parentheses: dig(…)",)
 
     def test_an_unclosed_block_is_never_spoken(self):
         # Недописанное решение лучше потерять, чем произнести вслух: живьём 03.09 она
         # ответила игроку строкой «DO: gather "cobblestone" 3 "search": 5» дважды подряд,
         # не сделав при этом ничего.
-        intention, speech = read_intention("I am on it.<play>\nDO: gather {")
+        read = _Reader()
+        intention, speech = read_intention("I am on it.<play>\ngather(cobble", read)
         assert speech == "I am on it."
-        assert "DO:" not in speech
-        assert intention.unread == ("gather {",)
+        assert read.texts == ["gather(cobble"]
+
+    def test_the_old_form_outside_the_block_is_cut_and_told_not_read(self):
+        # DO: снят (28.09), но строка протокола, сказанная вслух в чат, хуже несделанного.
+        read = _Reader()
+        intention, speech = read_intention('Okay.\nDO: gather {"object": "stone"}\nCONTINUE', read)
+        assert speech == "Okay."
+        assert read.texts == [], "старая форма в игру не уходит"
+        assert len(intention.unread) == 2
+        assert all("old form" in u for u in intention.unread)
+
+    def test_with_no_game_the_block_is_still_cut(self):
+        intention, speech = read_intention("Fine.<play>follow(player Honto)</play>")
+        assert not intention
+        assert speech == "Fine."
 
     def test_the_block_is_named_in_what_she_is_told(self):
         # Правило, живущее только в разборе, до пишущего цель не доезжает.
-        from engine.hands import describe as _describe
-
         offer = {
             "game": "Minecraft",
             "about": "",
             "affordances": [{"verb": "gather", "needs": "object"}],
         }
-        told = _describe(offer, {})
+        told = describe(offer, {})
         assert "<play>" in told
         assert "nothing inside it is spoken" in told.lower()
+        assert "gather(oak_log, 16)" in told
+        assert "DO:" not in told
 
     def test_do_only_counts_at_the_start_of_a_line(self):
         # Any other rule turns her own "just do: whatever you want" into an order
         # to her body, and no test in which she is obedient would ever show it.
-        intention, speech = read_intention("just do: whatever you want")
+        intention, speech = read_intention("just do: whatever you want", _Reader())
         assert not intention
+        assert intention.unread == ()
         assert speech == "just do: whatever you want"
-
-    def test_a_bare_second_word_is_the_object(self):
-        assert read_goal("gather oak_log") == Goal("gather", {"object": "oak_log"})
-
-    def test_prose_is_refused_rather_than_guessed_at(self):
-        # Guessing further is the vocabulary drift a closed set exists to prevent.
-        assert read_goal("gather some wood from over there") is None
-        assert read_goal("gather {oops") is None
-
-    def test_the_game_s_own_words_pass_through_untouched(self):
-        goal = read_goal('equip {"object":"helm","where":{"slot":"head"}}')
-        assert goal.fields["where"] == {"slot": "head"}
 
 
 class TestSayingWhatTheGameSent:
@@ -163,7 +180,7 @@ class TestWhatSheIsTold:
         # Framing is the engine's, not the game's: text arriving from another
         # process and landing in a prompt as instructions is a channel for
         # putting words in somebody's head.
-        assert "DO:" in block
+        assert "<play>" in block
         assert "Wanting" in block and "none of it is an answer" in block
 
     def test_a_game_with_no_verbs_produces_no_block(self):
@@ -245,7 +262,7 @@ class TestTheBoundary:
         assert "wooden_pickaxe" in said
         assert "not finished" in said
         assert "needs a crafting table" in said
-        assert "CONTINUE" in said
+        assert "<play>continue</play>" in said
 
     def test_nothing_unfinished_says_nothing(self):
         said = describe({"game": "g", "affordances": [{"verb": "craft"}]}, {})
@@ -281,11 +298,12 @@ def test_one_step_once_is_an_attempt_and_anything_else_is_a_plan():
     assert calls[1][1] == 20
 
 
-@pytest.mark.parametrize("times", ["0", "nope", "-3"])
+@pytest.mark.parametrize("times", [0, None, -3])
 def test_zero_or_nonsense_times_means_once(times):
     # "Do this zero times" is a slip, not an intention, and obeying it silently
     # is doing nothing and reporting success.
-    intention, _ = read_intention(f"DO: place\nREPEAT: {times}")
+    read = _Reader({"steps": [{"verb": "place"}], "repeat": times, "word": None})
+    intention, _ = read_intention("<play>place()</play>", read)
     assert intention.repeat == 1
 
 
@@ -352,21 +370,21 @@ class TestSomethingSheWasPulledOffOf:
     it", so a job half done stayed half done forever.
     """
 
-    def test_continue_and_drop_are_read_off_their_own_lines(self):
-        from engine.hands import read_intention
-
-        carry, speech = read_intention("ugh, fine.\nCONTINUE")
+    def test_continue_and_drop_come_back_as_the_game_s_word(self):
+        word = _Reader({"steps": [], "repeat": 1, "word": "continue"})
+        carry, speech = read_intention("ugh, fine.<play>continue</play>", word)
         assert carry.carry_on and not carry.let_go
         assert speech == "ugh, fine."
 
-        go, _ = read_intention("not worth it.\nDROP")
+        go, _ = read_intention(
+            "not worth it.<play>drop</play>", _Reader({"steps": [], "repeat": 1, "word": "drop"})
+        )
         assert go.let_go and not go.carry_on
 
     def test_they_count_as_an_intention_even_with_no_steps(self):
-        from engine.hands import read_intention
-
         # Otherwise "carry on" reads as her saying nothing at all.
-        assert bool(read_intention("CONTINUE")[0])
+        word = _Reader({"steps": [], "repeat": 1, "word": "continue"})
+        assert bool(read_intention("<play>continue</play>", word)[0])
 
     def test_a_paused_attempt_is_named_in_the_block(self):
         from engine.character import _paused_id, _paused_name
@@ -384,7 +402,7 @@ class TestSomethingSheWasPulledOffOf:
             _paused_name(history, "a1"),
         )
         assert "part-way through gather oak_log" in block
-        assert "CONTINUE" in block and "DROP" in block
+        assert "<play>continue</play>" in block and "<play>drop</play>" in block
 
     def test_an_attempt_that_is_merely_running_is_not_paused(self):
         from engine.character import _paused_id
@@ -410,11 +428,15 @@ class TestSomethingSheWasPulledOffOf:
             def act(self, intention):
                 done.append("act")
 
+            def read(self, text):
+                gather = {"verb": "gather", "object": "oak_log"}
+                return {"steps": [gather], "repeat": 1, "word": "continue"}
+
         runtime = object.__new__(CharacterRuntime)
         runtime._hands = Port()
         runtime._paused = "a1"
 
-        speech, did = runtime._reach_for_the_game("ok\nDO: gather oak_log\nCONTINUE")
+        speech, did = runtime._reach_for_the_game("ok<play>gather(oak_log)\ncontinue</play>")
         assert done == ["resume a1"]
         assert did == ("continue",)
         assert speech == "ok"
@@ -426,9 +448,12 @@ class TestSomethingSheWasPulledOffOf:
             def act(self, intention):
                 raise AssertionError("nothing to act on")
 
+            def read(self, text):
+                return {"steps": [], "repeat": 1, "word": "continue"}
+
         runtime = object.__new__(CharacterRuntime)
         runtime._hands = Port()
         runtime._paused = ""
-        speech, did = runtime._reach_for_the_game("sure\nCONTINUE")
+        speech, did = runtime._reach_for_the_game("sure<play>continue</play>")
         assert did == ()
         assert speech == "sure"

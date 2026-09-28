@@ -62,29 +62,39 @@ She acts by ending her reply with a block of her own:
 ```
 Alright, hold on.
 <play>
-DO: gather {"object": "oak_log", "quantity": 8}
-DO: build {"object": "shelter", "where": {"x": -45, "y": 64, "z": -43}}
-REPEAT: 2
+repeat 2 {
+  gather(oak_log, 8)
+  build(shelter, at: (-45, 64, -43))
+}
 </play>
 ```
 
-The engine cuts the block out before the reply is returned, so a decision is
-never read aloud as speech, and hands it to the router: one step once is an
-attempt, anything else is a plan. `REPEAT` repeats the whole list, because "do
-that twenty times" is a sequence even when the sequence has one step in it.
+The language inside the block belongs to the **game**, not to the engine
+(28.09). The engine cuts the block out before the reply is returned, so a
+decision is never read aloud as speech, and sends its text as it is to the
+router's `POST /v0/read`. What comes back is what `/attempts` and `/plans`
+already take — steps, how many times through, and a word (`continue` / `drop`)
+about the attempt she was pulled off. One step once is an attempt, anything else
+is a plan. The router's grammar — calls, `ALL`/`FIRST` selections, places — is
+described in its `minecraft/docs/play.md`; this side types none of it.
 
-The block exists because the line form did not survive the trip. Replies are
-cut into sentences for delivery, and whatever does that joins neighbouring
-lines with a space — so the boundary a `DO:` line stands on is gone before
-anything looks for it. Inside `<play>` the lines survive being cut up, and an
+Reading is all the router does with it. Pack bounds and the choice between going
+back and starting something new stay here, where her state is: a selection
+names no things, so a bound treats it as "everything" unless she left the
+forbidden thing out with `EXCEPT`. A block the router cannot read comes back
+with its line, column and reason, and she is told it next turn.
+
+The block exists because a line form did not survive the trip. Replies are cut
+into sentences for delivery, and whatever does that joins neighbouring lines
+with a space. Inside `<play>` the text survives being cut up, and an
 **unclosed** block swallows everything to the end of the reply: an unfinished
 decision is better lost than spoken aloud, which is exactly what happened on
 03.09 when she answered a player with the literal words "DO: gather ...".
 
-Bare lines outside the block still work, each on its own line, and `DO:` counts
-only at the start of one. Any other rule would turn a character's own *"just
-do: whatever you like"* into an order to her body, and no test in which she is
-obedient would ever show it.
+The old `DO:` form is gone. A line of it outside the block (or a bare
+`REPEAT:`, `CONTINUE`, `DROP`) is still cut from the speech and she is told it
+was not read — only at the start of a line, so a character's own *"just do:
+whatever you like"* stays speech.
 
 Every response reports what she set going in `x_micro_engine.did`, so a client
 can show that the words and the world agreed.

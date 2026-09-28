@@ -98,7 +98,7 @@ class ActionBound(GatedTag):
     object: str | list[str] = ""
     never: bool = False
     # Чем ей это объясняют, её же словами. Отказ без причины она прочитает как поломку и
-    # напишет ту же строку снова — это уже было с нечитаемыми `DO:` (03.09).
+    # напишет ту же строку снова — это уже было с нечитаемыми строками (03.09).
     refuse: str = Field(default="", min_length=0)
 
     @model_validator(mode="after")

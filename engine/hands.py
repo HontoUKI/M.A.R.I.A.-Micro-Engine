@@ -21,8 +21,8 @@ second game be attached without a line changing here, and it is why the goal's
 """
 from __future__ import annotations
 
-import json
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -40,23 +40,22 @@ TIMEOUT = 5.0
 # повторение — это про рисунок, а рисунок виден на трёх, не на шестнадцати.
 MOST = 3
 
-_DO = re.compile(r"^\s*do:\s*(?P<body>.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 # Всё, что адресовано игре, одним блоком — как мысль у тех характеров, у кого она есть.
 #
-# Строчная форма держится на переводах строки, а они до разбора доживают не всегда: то,
-# что режет реплику на предложения, склеивает соседние строки пробелом, и граница исчезает
-# раньше, чем её кто-то ищет. Блок находится где угодно в тексте и склейку переживает.
+# Блок находится где угодно в тексте и переживает склейку предложений: то, что режет
+# реплику на предложения, склеивает соседние строки пробелом, и граница строки исчезает
+# раньше, чем её кто-то ищет.
 #
 # Незакрытый блок забирает всё до конца: недописанное решение лучше потерять, чем
 # произнести вслух — ровно тот дефект, из-за которого 03.09 она ответила игроку строкой
 # «DO: gather …».
 _PLAY = re.compile(r"<play>(?P<body>.*?)(?:</play>|\Z)", re.IGNORECASE | re.DOTALL)
-_REPEAT = re.compile(r"^\s*repeat:\s*(?P<times>\d+)\s*$", re.IGNORECASE | re.MULTILINE)
-# Going back to something she was pulled off, or letting it go. Protocol words, not
-# game verbs: they are about the ATTEMPT and no game declares them, so they cannot
-# collide with a vocabulary the router owns.
-_CONTINUE = re.compile(r"^\s*continue\s*$", re.IGNORECASE | re.MULTILINE)
-_DROP = re.compile(r"^\s*drop\s*$", re.IGNORECASE | re.MULTILINE)
+# Старая форма вне блока (`DO: …`, `REPEAT: n`, голые CONTINUE/DROP). С 28.09 язык живёт
+# только внутри `<play>` и читается роутером, но такая строка всё равно вырезается из речи:
+# протокол, сказанный вслух в чат, хуже несделанного. Ей говорится, что строка не прочитана.
+_STRAY = re.compile(
+    r"^\s*(?:do:.*|repeat:\s*\S*|continue|drop)\s*$", re.IGNORECASE | re.MULTILINE
+)
 
 
 @dataclass(frozen=True)
@@ -81,77 +80,69 @@ class Intention:
     # word: she stayed frozen mid-job with no way to say either "carry on" or "forget it".
     carry_on: bool = False
     let_go: bool = False
-    # `DO:` lines that were there and could not be read. Not part of truthiness: an
-    # unreadable line is not a decision. Kept because silence about it is what let her
-    # write the same malformed line twice running, believing both times that she acted.
+    # What she wrote for the game and could not be read, with the reader's reason. Not
+    # part of truthiness: an unreadable block is not a decision. Kept because silence
+    # about it is what let her write the same malformed line twice running, believing
+    # both times that she acted.
     unread: tuple[str, ...] = ()
 
     def __bool__(self) -> bool:
         return bool(self.steps) or self.carry_on or self.let_go
 
 
-def read_intention(reply: str) -> tuple[Intention, str]:
-    """Pull the `DO:` lines out of a reply and hand back what is left to say.
+def split_play(reply: str) -> tuple[str, str, tuple[str, ...]]:
+    """What she wrote for the game, what she said, and old-form lines found outside.
 
-    Line-anchored on purpose. A rule that matched `do:` anywhere would turn her
-    own "do: whatever you like" into an order to her body, and no test in which
-    she is obedient would ever show it.
+    The block is cut out WHOLE and never spoken. Lines of the old form outside it are cut
+    too — line-anchored on purpose, so her own "just do: whatever you like" in the middle
+    of a sentence stays speech.
     """
-    # Блок игры вырезается ЦЕЛИКОМ и разбирается отдельно; всё, что осталось, разбирается
-    # по-старому. Голые строки продолжают работать не как переходный костыль, а по тому же
-    # правилу, что и везде здесь: снисходительность к расположению при строгости к словам.
-    inside = "\n".join(match.group("body") for match in _PLAY.finditer(reply))
+    inside = "\n".join(m.group("body").strip() for m in _PLAY.finditer(reply)).strip()
     outside = _PLAY.sub("", reply)
-    said = f"{inside}\n{outside}"
-
-    steps: list[Goal] = []
-    unread: list[str] = []
-    for match in _DO.finditer(said):
-        body = match.group("body")
-        goal = read_goal(body)
-        if goal is not None:
-            steps.append(goal)
-        else:
-            unread.append(body)
-
-    times = 1
-    for match in _REPEAT.finditer(said):
-        times = max(1, int(match.group("times")))
-
-    carry_on = bool(_CONTINUE.search(said))
-    let_go = bool(_DROP.search(said))
-    speech = _DROP.sub("", _CONTINUE.sub("", _REPEAT.sub("", _DO.sub("", outside)))).strip()
+    stray = tuple(m.group(0).strip() for m in _STRAY.finditer(outside))
+    speech = _STRAY.sub("", outside).strip()
     # Blank lines left where the decisions were.
     speech = re.sub(r"\n{3,}", "\n\n", speech)
-    return Intention(tuple(steps), times, carry_on, let_go, tuple(unread)), speech
+    return inside, speech, stray
 
 
-def read_goal(line: str) -> Goal | None:
-    """`<verb> {json}` — the verb, then the game's own vocabulary.
+def read_intention(
+    reply: str, read: Callable[[str], dict[str, Any]] | None = None
+) -> tuple[Intention, str]:
+    """Cut her decision out of the reply and have the game read it.
 
-    Forgives exactly one thing: a bare second word is read as the object,
-    because that is what anyone writes without thinking and refusing it means
-    she silently did nothing. It forgives nothing more, because guessing further
-    is the vocabulary drift a closed set exists to prevent.
+    The language inside `<play>` belongs to the game (router `POST /v0/read`, 28.09): this
+    side types none of its words, only carries the text and brings back what it means —
+    steps, how many times, or a word about the attempt she was pulled off. With nothing
+    to read it (`read` is None — no game attached), the block is still cut: a character
+    who narrates her play at somebody is worse than one who cannot act.
     """
-    line = line.strip()
-    if not line:
-        return None
-    verb, _, tail = line.partition(" ")
-    tail = tail.strip()
-    if not verb:
-        return None
-    if not tail:
-        return Goal(verb)
-    if tail.startswith("{"):
-        try:
-            fields = json.loads(tail)
-        except ValueError:
-            return None
-        return Goal(verb, fields if isinstance(fields, dict) else {})
-    if len(tail.split()) == 1:
-        return Goal(verb, {"object": tail})
-    return None
+    text, speech, stray = split_play(reply)
+    unread = tuple(
+        f"«{line}» is the old form and was not read — write calls inside <play>"
+        for line in stray
+    )
+    if not text or read is None:
+        return Intention(unread=unread), speech
+    said = read(text)
+    if said.get("error"):
+        return Intention(unread=unread + (str(said["error"]),)), speech
+    steps = tuple(
+        Goal(str(s["verb"]), {k: v for k, v in s.items() if k != "verb"})
+        for s in said.get("steps") or []
+        if isinstance(s, dict) and s.get("verb")
+    )
+    word = said.get("word")
+    return (
+        Intention(
+            steps,
+            max(1, int(said.get("repeat") or 1)),
+            carry_on=word == "continue",
+            let_go=word == "drop",
+            unread=unread,
+        ),
+        speech,
+    )
 
 
 class GamePort:
@@ -184,6 +175,10 @@ class GamePort:
         return list(self._get("/attempts").get("attempts", []))
 
     # ------------------------------------------------------------------ doing
+
+    def read(self, text: str) -> dict[str, Any]:
+        """What the game makes of her `<play>` block: `{steps, repeat, word}` or `{error}`."""
+        return self._post("/read", {"text": text})
 
     def take(self, goal: Goal) -> dict[str, Any]:
         return self._post("/attempts", goal.as_wire())
@@ -354,7 +349,7 @@ def describe(
         lines += [
             "",
             f"You are part-way through {paused} and stopped when something happened.",
-            "Say CONTINUE on its own line to go back to it, or DROP to let it go.",
+            "Write <play>continue</play> to go back to it, or <play>drop</play> to let it go.",
             "Taking a new goal drops it too — that is a choice, not a mistake.",
         ]
     if unfinished:
@@ -378,7 +373,7 @@ def describe(
             + (f" — {unfinished['why']}" if unfinished.get("why") else ""),
             f"Still to do, in order: {plainly(left)}",
             "Doing something else first is how this usually goes — make what it asked",
-            "for, then say CONTINUE on its own line to pick this up again.",
+            "for, then write <play>continue</play> to pick this up again.",
         ]
     if lessons:
         # What the world has refused, kept for a few turns.
@@ -398,15 +393,19 @@ def describe(
         "at the end of your reply, and nothing inside it is spoken:",
         "",
         "  <play>",
-        '  DO: <verb> {"object": "...", "where": {...}}',
+        "  gather(oak_log, 16)",
+        "  follow(player HontoUKI, within: 3)",
         "  </play>",
         "",
-        "One DO line per step. The JSON answers what that verb said it needs. To do",
-        "the whole list more than once, add REPEAT: <n> inside the block. Written",
-        "outside it the lines still work, each on its own line — the block exists",
-        "because inside it they survive being cut into sentences. Saying you will go",
-        "and do something is not doing it: the DO line is your hands, and without",
-        "one nothing moved.",
+        "One call per line, in order. The first argument is what the verb acts on,",
+        "the second how many; everything else goes by name — the fields that verb",
+        "said it needs, so where.x is x: 5 and where.who is who: HontoUKI.",
+        "A place: chest NEAR 8 (by what stands there) or at: (x, y, z).",
+        "Things by what they are: ALL or FIRST, then where and EXCEPT —",
+        "put_into(ALL where mod == create EXCEPT [tools, food], at: chest NEAR 8).",
+        "To do the whole list more than once: repeat 3 { … } around it.",
+        "Saying you will go and do something is not doing it: the block is your",
+        "hands, and without one nothing moved.",
     ]
     return "\n".join(lines)
 
