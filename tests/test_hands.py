@@ -471,3 +471,23 @@ def test_what_came_into_her_bag_stands_next_to_what_she_tried():
     assert "bag_lately" not in told, "не дважды: не в свалке «где ты»"
     empty = describe({"game": "Minecraft", "affordances": [{"verb": "pick_up"}]}, {})
     assert "left it lately: nothing lately." in empty
+
+
+def test_what_she_noticed_and_her_atlas_stand_on_their_own_lines():
+    """29.09: находки вдали и атлас — своими строками, не в свалке «где ты»: в свалке она
+    такое пропускает, как пропускала сумку."""
+    told = describe(
+        {"game": "Minecraft", "affordances": [{"verb": "go_to"}]},
+        {"her": {"health": 20},
+         "noticed": [{"what": "a structure", "distance": 80, "bearing": "east"}],
+         "atlas": {"chunks_seen": 594,
+                   "biomes": [{"biome": "desert", "distance": 73, "bearing": "south"}]}},
+    )
+    assert "What you noticed far off that you did not build:" in told
+    assert "80" in told.split("What you noticed far off")[1].splitlines()[0]
+    assert "What you have seen before, beyond what you see now:" in told
+    assert "desert" in told
+    assert "  noticed:" not in told and "  atlas:" not in told
+    plain = describe({"game": "Minecraft", "affordances": [{"verb": "go_to"}]},
+                     {"her": {"health": 20}})
+    assert "noticed far off" not in plain
