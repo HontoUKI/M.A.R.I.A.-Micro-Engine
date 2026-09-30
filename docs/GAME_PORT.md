@@ -122,6 +122,7 @@ square brackets on the same channel a player's line arrives on.
 | `[HontoUKI has been standing there watching you work for 7s]` | he came over and stayed |
 | `[HontoUKI walked off — 63 blocks away, gone 31s]` · `[HontoUKI is back — 9 blocks away]` | he left, he returned |
 | `[a creeper is 2 blocks from HontoUKI]` | something can hurt him right now |
+| `[HontoUKI died: HontoUKI was slain by Ghost — this world is hardcore, a death here is final]` | the game announced his death; everyone in the world hears it |
 
 Two rules hold this together, and both are about not deciding for her.
 
