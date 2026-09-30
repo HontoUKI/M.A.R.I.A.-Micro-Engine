@@ -124,6 +124,29 @@ advance can be gated to a late stage (`unlock_at: 0.7`), so the character simply
 has no way to accept before then. The pack's `fallback_tag` is always offered
 regardless of its window, so there is always a valid choice.
 
+**Small-talk tags (strongly recommended).** The classifier must pick *one* tag
+every turn, so it can only be as good as the list lets it be. A pack whose tags
+are all story moments (fed, protected, threatened, left…) gives ordinary chatter
+nowhere to go, and the model files it under the nearest story tag — which then
+**moves the relationship** and **steers the reply** as if that moment happened.
+Measured on a live evening (Mizuki pack, 60 of the player's real lines): short
+on-topic answers were read as `neglect` and she replied "you're not listening
+anyway" three times; mock politeness was read as `attention` and answered
+literally. Declare at least:
+
+| tag | describes | typical delta / sentiment |
+|---|---|---|
+| `small_talk` | ordinary chat with nothing at stake; **say in the description that a short answer on the character's topic is normal**, not a brush-off | small positive (trust grows from being talked to) · `neutral` |
+| `joke` | he jokes, banters, laughs *with* her | small positive · `positive`, and list it in `diminishing` |
+| `sarcasm` | he means the opposite (mock politeness, dry irony); block tells her **not to answer the words literally** | near zero · `neutral` |
+
+And keep the negative tags narrow: write into `neglect`-like descriptions what
+is *not* neglect ("a short answer that stays on your topic"), and into
+`teasing`-like ones who it is aimed at. `sentiment` also decides what the deeds
+dossier (§2.12a) remembers: only `positive`/`negative` tags are listed as things
+the user did, so chatter should stay `neutral` or the dossier fills up with
+"small_talk x15".
+
 **Reserved tag `web_lookup`.** If a pack declares a tag with id `web_lookup`
 and the deployment sets `WEB_SEARCH=true`, a turn the classifier assigns to
 that tag triggers a DuckDuckGo search; the result snippets are handed to the
