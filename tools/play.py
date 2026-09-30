@@ -83,6 +83,7 @@ VERB = {
 
 WITH_CONTENT = {
     "given": 0.0,
+    "picked_up_his": 0.0,
     "at_risk": 0.0,
     "left": 0.0,
     "returned": 0.0,
@@ -127,6 +128,15 @@ WAKE_EVERY = 20.0
 # она стояла в тупике `gather → craft → gather`, попытки закрывались каждые несколько
 # секунд, и каждая давала ей слово поверх разговора.
 QUIET_AFTER_HIM = 45.0
+
+# Пока она бежит, спокойные поводы молчат. Живьём 30.09 её гнал призрак, и между двумя
+# «помогите» пришла записка «вижу вдали постройку» — ход ушёл на неё, а не на погоню.
+# Столько секунд после последнего `fled` (число моё); сама погоня, удар и смерть
+# проходят всегда.
+DANGER_HOLD = 20.0
+
+# Что ждёт, пока опасность не пройдёт: находки, память о месте, взгляд и её работа.
+CALM = frozenset({"noticed", "remembered", "watched", *WAKING})
 
 # Сколько живёт очередь подобранного (решение автора 30.09). Живьём после его смерти она
 # подбирала его вещи с места на место, и КАЖДЫЙ подбор был отдельным ходом: пять «спасибо»
@@ -229,8 +239,13 @@ def _ticking(events, every: float = TICK):
             yield None
 
 
+# What she picks up is held and folded (`Gifts`): a gift from him, and his things she
+# picked up after he died — two different facts, never one list.
+PICKUPS = ("given", "picked_up_his")
+
+
 class Gifts:
-    """What people handed her lately, per person, for ``GIFTS_LIVE`` seconds.
+    """What she picked up lately, per person and per kind, for ``GIFTS_LIVE`` seconds.
 
     One pickup is not a moment worth a turn when there are twenty of them: the
     queue folds them into one list, counted by item, in the order they came.
@@ -238,30 +253,27 @@ class Gifts:
 
     def __init__(self, live: float = GIFTS_LIVE) -> None:
         self.live = live
-        self._by: dict[str, tuple[float, dict[str, int]]] = {}
+        self._by: dict[tuple[str, str], tuple[float, dict[str, int]]] = {}
 
-    def add(self, who: str, took: list[dict], now: float) -> None:
-        since, items = self._by.get(who, (now, {}))
+    def add(self, who: str, took: list[dict], now: float, kind: str = "given") -> None:
+        since, items = self._by.get((kind, who), (now, {}))
         for one in took or []:
             what = str(one.get("what") or "something")
             items[what] = items.get(what, 0) + int(one.get("count") or 1)
-        self._by[who] = (since, items)
+        self._by[(kind, who)] = (since, items)
 
-    def take(self, who: str) -> list[dict] | None:
-        """Everything queued from ``who``, now — he is talking to her."""
-        got = self._by.pop(who, None)
-        return _took(got[1]) if got else None
+    def take(self, who: str) -> list[dict]:
+        """Everything queued about ``who``, as folded events — he is talking to her."""
+        return [self._out(key) for key in [key for key in self._by if key[1] == who]]
 
-    def due(self, now: float) -> list[tuple[str, list[dict]]]:
-        """Queues that lived out their time, removed."""
-        out = [
-            (who, _took(items))
-            for who, (since, items) in self._by.items()
-            if now - since >= self.live
-        ]
-        for who, _ in out:
-            del self._by[who]
-        return out
+    def due(self, now: float) -> list[dict]:
+        """Queues that lived out their time, as folded events, removed."""
+        keys = [key for key, (since, _) in self._by.items() if now - since >= self.live]
+        return [self._out(key) for key in keys]
+
+    def _out(self, key: tuple[str, str]) -> dict:
+        _, items = self._by.pop(key)
+        return {"kind": key[0], "who": key[1], "took": _took(items), "folded": True}
 
 
 def _took(items: dict[str, int]) -> list[dict]:
@@ -269,16 +281,22 @@ def _took(items: dict[str, int]) -> list[dict]:
 
 
 def _with_gifts(events, gifts: Gifts, clock=time.time):
-    """Events with ``given`` held back in ``gifts`` and let out folded when due."""
+    """Events with pickups held back in ``gifts`` and let out folded when due."""
     for event in events:
-        for who, took in gifts.due(clock()):
-            yield {"kind": "given", "who": who, "took": took, "folded": True}
+        yield from gifts.due(clock())
         if event is None:
             continue
-        if event.get("kind") == "given" and not event.get("folded"):
-            gifts.add(str(event.get("who") or "somebody"), event.get("took") or [], clock())
+        if event.get("kind") in PICKUPS and not event.get("folded"):
+            who = str(event.get("who") or "somebody")
+            gifts.add(who, event.get("took") or [], clock(), event["kind"])
             continue
         yield event
+
+
+def calm_now(event: dict, fled_at: float, now: float) -> bool:
+    """A calm occasion while she is still running — held back, not said."""
+    calm = event.get("kind") in CALM or (event.get("kind") == "progress" and "came_upon" in event)
+    return calm and now - fled_at < DANGER_HOLD
 
 
 def about_whom(event: dict) -> str:
@@ -303,12 +321,15 @@ def _note(event: dict) -> str:
     """
     kind = event.get("kind")
     who = event.get("who") or "somebody"
-    if kind == "given":
+    if kind in PICKUPS:
         took = ", ".join(
             f"{one.get('what')}"
             + (f" x{one['count']}" if (one.get("count") or 1) > 1 else "")
             for one in event.get("took") or []
         )
+        if kind == "picked_up_his":
+            # Not a gift: he gave nothing. A fact of what she did with his things.
+            return f"[{who} died; you picked up the things he dropped: {took or 'something'}]"
         return f"[{who} gave you {took or 'something'}]"
     if kind == "watched":
         at = "you work" if event.get("while_working") else "you"
@@ -469,6 +490,7 @@ def main() -> int:
     # про человека — тоже ход про него, хотя он молчал.
     last_person = ""
     gifts = Gifts()
+    fled_at = 0.0
     for event in _with_gifts(_ticking(_listen(port)), gifts):
         if not visible(event, unseen):
             continue
@@ -480,6 +502,10 @@ def main() -> int:
         about_him = kind in WITH_CONTENT
         notable = about_him or kind in WAKING or (kind == "progress" and "came_upon" in event)
 
+        if kind == "fled":
+            fled_at = time.time()
+        if notable and calm_now(event, fled_at, time.time()):
+            continue
         if notable:
             # Порог частоты — про её СОБСТВЕННЫЕ дела: попытки закрываются каждые
             # несколько секунд, и без него это трескотня. Поводы про человека наперечёт
@@ -559,9 +585,8 @@ def main() -> int:
         # What he handed her in the last seconds rides in the same turn, before his words:
         # one reaction to both, not a thank-you per pickup and then an answer.
         said_to_her = f"<{who}> {said}"
-        took = gifts.take(who)
-        if took:
-            note = _note({"kind": "given", "who": who, "took": took})
+        for held in gifts.take(who):
+            note = _note(held)
             said_to_her = f"{note}\n{said_to_her}"
             print(f"  {note}")
         # The speaker is NAMED to her.
