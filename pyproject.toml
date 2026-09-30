@@ -1,6 +1,6 @@
 [project]
 name = "maria-micro-engine"
-version = "0.1.0.dev0"
+version = "0.2.0"
 description = "Lightweight character-pack chat engine with an OpenAI-compatible API"
 readme = "README.md"
 requires-python = ">=3.11"
