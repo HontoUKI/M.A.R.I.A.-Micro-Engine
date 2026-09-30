@@ -105,8 +105,14 @@ class EngineService:
         session_key: str,
         language: str | None = None,
         user_gender: str | None = None,
+        world: str | None = None,
     ) -> TurnResult:
         pack = self._require_pack(model)
+        # The pack's loop, if it has one: `world` is the host's fingerprint of the world
+        # this turn happens in; a different one after an arming tag is a new try.
+        loop = self.sessions.loop_for(session_key, pack) if pack.loop else None
+        if loop is not None:
+            loop.entered(world)
 
         driver, window = _split_messages(messages)
         kernel = self.sessions.kernel_for(session_key, pack)
@@ -131,11 +137,15 @@ class EngineService:
             hands=self.hands,
             deeds=done,
             mentioned=mentioned(lived),
+            loop_block=loop.block(pack) if loop is not None else "",
         )
         result = runtime.respond(driver, window)
         self.sessions.record_turn(
             session_key, pack, kernel, user_message=driver, result=result
         )
+        if loop is not None:
+            loop.after(result.tag, pack)
+            self.sessions.save_loop(session_key, pack, loop)
         return result
 
     # ------------------------------------------------------------- scenes (v0.1.2)

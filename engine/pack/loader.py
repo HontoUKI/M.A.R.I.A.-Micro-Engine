@@ -83,6 +83,7 @@ def load_pack(pack_dir: str) -> CharacterPack:
     _spec_version_gate(raw)
     pack = _validate_shape(raw)
     _enforce_content_limits(pack)
+    _check_loop(pack)
     _check_sprites(pack, pack_dir)
     return pack
 
@@ -153,6 +154,16 @@ def _enforce_content_limits(pack: CharacterPack) -> None:
                 f"limit is {MAX_BLOCK_CHARS}"
             )
         _scan_injection(f"stage[{stage.id}]", stage.block)
+
+
+def _check_loop(pack: CharacterPack) -> None:
+    for idx, step in enumerate(pack.loop.steps if pack.loop else []):
+        if len(step.block) > MAX_BLOCK_CHARS:
+            raise PackSecurityError(
+                f"loop step {idx + 1} block is {len(step.block)} chars; "
+                f"limit is {MAX_BLOCK_CHARS}"
+            )
+        _scan_injection(f"loop.steps[{idx}]", step.block)
 
 
 def _scan_injection(where: str, text: str) -> None:

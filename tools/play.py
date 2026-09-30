@@ -431,6 +431,20 @@ def _her_name(port: str) -> str:
         return ""
 
 
+def _world_id(port: str) -> str | None:
+    """Which world she is in, as the router fingerprints it; None when it cannot say.
+
+    Read every turn, not once: he can make a new world while she keeps running, and a
+    pack's loop (engine/loop.py) steps on exactly that.
+    """
+    try:
+        with urllib.request.urlopen(f"{port}/state", timeout=5) as answer:
+            world = (json.load(answer).get("world") or {}).get("id")
+    except (OSError, ValueError):
+        return None
+    return str(world) if world else None
+
+
 def visible(event: dict, unseen: frozenset[str]) -> bool:
     """Whether this character is told about the event at all (pack `unseen_notes`)."""
     return event.get("kind") not in unseen
@@ -558,6 +572,7 @@ def main() -> int:
                     args.character,
                     [*window, ChatMessage(role="user", content=said)],
                     session_key=f"minecraft:{who}",
+                    world=_world_id(port),
                 )
             except Exception as why:  # noqa: BLE001
                 print(f"[ход не вышел: {why}]", file=sys.stderr)
@@ -608,6 +623,7 @@ def main() -> int:
                 args.character,
                 [*window, ChatMessage(role="user", content=said_to_her)],
                 session_key=f"minecraft:{who}",
+                world=_world_id(port),
             )
         except Exception as why:  # noqa: BLE001 - one bad turn must not end the evening
             print(f"[ход не вышел: {why}]", file=sys.stderr)

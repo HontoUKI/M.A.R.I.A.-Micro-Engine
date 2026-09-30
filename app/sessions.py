@@ -21,6 +21,7 @@ from engine.io.json_store import (
     save_json_atomic,
     save_text_atomic,
 )
+from engine.loop import LoopCounter
 from engine.pack import CharacterPack
 from engine.state import DEFAULT_AXIS_MAX, StateKernel
 
@@ -159,6 +160,23 @@ class SessionStore:
             os.remove(os.path.join(self._dir(session_key, pack), "state.json"))
         except OSError:
             pass
+
+    # ------------------------------------------------------------ the loop
+
+    def loop_for(self, session_key: str, pack: CharacterPack) -> LoopCounter:
+        """The pack's hidden loop counter for this session (engine/loop.py).
+
+        Its own file, untouched by `reset_state`: only deleting the session's data
+        clears it.
+        """
+        return LoopCounter.restore(
+            load_json(os.path.join(self._dir(session_key, pack), "loop.json"), None)
+        )
+
+    def save_loop(self, session_key: str, pack: CharacterPack, counter: LoopCounter) -> None:
+        save_json_atomic(
+            os.path.join(self._dir(session_key, pack), "loop.json"), counter.to_dict()
+        )
 
     def __len__(self) -> int:
         return len(self._kernels)

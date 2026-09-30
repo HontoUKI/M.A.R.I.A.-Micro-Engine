@@ -144,6 +144,7 @@ class CharacterRuntime:
         hands: GamePort | None = None,
         deeds: tuple = (),
         mentioned: str = "",
+        loop_block: str = "",
     ) -> None:
         self._pack = pack
         self._llm = llm
@@ -159,6 +160,8 @@ class CharacterRuntime:
         self._hands = hands
         self._deeds = tuple(deeds)
         self._mentioned = mentioned
+        # The step of the pack's loop she is on (engine/loop.py); empty outside one.
+        self._loop_block = loop_block
         # The attempt she is part-way through, if any. Read when the world is
         # described and used when she answers, so "CONTINUE" means the thing she
         # was actually told about rather than whatever is open by then.
@@ -204,7 +207,9 @@ class CharacterRuntime:
         inputs = PromptInputs(
             identity=self._pack.identity,
             invariants=self._invariants(),
-            stage_block=stage_obj.block if stage_obj else "",
+            stage_block="\n\n".join(
+                part for part in (stage_obj.block if stage_obj else "", self._loop_block) if part
+            ),
             steering_block=self._steering_block(tag),
             memory_recall=recall_text,
             web_context=self._web_lookup(tag, user_message),

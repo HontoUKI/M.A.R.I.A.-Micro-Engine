@@ -177,6 +177,30 @@ class Stage(BaseModel):
     block: str = ""
 
 
+class LoopStep(BaseModel):
+    """What she carries into the Nth world of a loop (see `Loop`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    block: str = Field(min_length=1)
+
+
+class Loop(BaseModel):
+    """A story that outlives the world: a hidden counter of tries.
+
+    A tag in `arm_on` arms it; the next time the host reports a DIFFERENT world
+    (a new try), the counter steps and stays. From then on the step's block rides
+    every turn — step N uses `steps[N-1]`, the last step covers the rest. The
+    counter is never reported to a client and survives a relationship reset:
+    only deleting the session's data clears it.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    arm_on: list[str] = Field(min_length=1)
+    steps: list[LoopStep] = Field(min_length=1, max_length=8)
+
+
 class CharacterPack(BaseModel):
     """The fully validated character pack (shape-level)."""
 
@@ -220,6 +244,8 @@ class CharacterPack(BaseModel):
     # Сюжетная игра не видит механики игры: Мидзуки, 27.09 — достижения превращались у неё
     # в «торговый автомат» и «завод». Пусто — видит всё, как было у всех паков до поля.
     unseen_notes: list[str] = Field(default_factory=list)
+    # Петля: скрытый счётчик попыток, переживающий мир (Мидзуки, 30.09). Нет — нет петли.
+    loop: Loop | None = None
 
     @model_validator(mode="after")
     def _cross_references(self) -> CharacterPack:
@@ -262,6 +288,11 @@ class CharacterPack(BaseModel):
         # Balance: at least one negative tag (see SPEC §6).
         if not any(t.sentiment == "negative" for t in self.tags):
             raise ValueError("pack must declare at least one negative-sentiment tag")
+
+        if self.loop is not None:
+            for key in self.loop.arm_on:
+                if key not in tag_set:
+                    raise ValueError(f"loop.arm_on names {key!r}, which is not a tag")
 
         # Stages: unique ids, strictly ascending thresholds (author-defined,
         # any number).
