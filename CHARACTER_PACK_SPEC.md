@@ -410,6 +410,39 @@ defines no stages) and whether this turn crossed into it (`stage_changed`) in
 the `x_micro_engine` extension, so a client can show *why* the character
 shifted.
 
+### 2.14 `loop` (optional) — a story that outlives the world
+
+A hidden counter of *tries*, for a game where a world can end and start again.
+A tag in `arm_on` arms it. The next time the host reports a **different world**
+(the `world` argument of a turn — for Minecraft, the router's `state.world.id`,
+a hash of the world's seed), the counter steps and stays. From then on the
+step's block rides every turn next to the stage block. Step N uses `steps[N-1]`,
+and the last step covers every later try.
+
+```yaml
+loop:
+  arm_on: [he_died_grief]
+  steps:
+    - block: "You remember him; for him it is the first time. Home starts to slip."
+    - block: "It happened again. You know it loops on his death."
+    - block: "Home is a word, not a place."
+```
+
+| Field    | Req | Notes |
+|----------|-----|-------|
+| `arm_on` | ✅  | Tag ids; each must be a declared tag. |
+| `steps`  | ✅  | 1–8 `{block}` entries; each block is length-limited and injection-scanned (§4). |
+
+**Hidden and irreversible, on purpose.** The counter is never part of a turn's
+result or of any client payload. It lives in the session's own `loop.json`, and
+`reset_relationship` does not touch it: only deleting the session's data clears
+it. A pack that uses this should say so to the player in `meta.description` —
+the loop is a consequence the player can avoid only by knowing about it.
+
+The same world seen again (a router restart) is not a new try, and neither is a
+turn with no `world` at all. A world recreated with the same seed has the same
+fingerprint and does not count.
+
 ---
 
 ## 3. A minimal valid pack

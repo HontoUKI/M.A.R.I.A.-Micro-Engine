@@ -150,6 +150,11 @@ the time of his death (`picked_up_his`), and the note says so:
 `[HontoUKI died; you picked up the things he dropped: …]`. The same queue holds
 it, never mixed into a gift.
 
+**Every turn says which world it happens in.** `tools/play.py` reads the
+router's `state.world.id` (a hash of the world's seed) and passes it to the
+turn. A pack with a `loop` (spec §2.14) steps on a new world; for every other
+pack it changes nothing.
+
 **Calm notes wait while she runs.** For `DANGER_HOLD` seconds (20) after she
 flees, "noticed far off", "you are back where…", "he is watching" and her own
 work stay unsaid. The chase, a hit and death always get through. Live on 30.09,
