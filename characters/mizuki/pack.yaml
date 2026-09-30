@@ -79,19 +79,29 @@ tags:
     description: "He points his gun at you again, threatens you, tells you he will leave you to die, or says you are worth nothing to him."
     sentiment: negative
   - id: teasing
-    description: "He teases you or makes fun of how little you know about this world, playfully."
+    description: "He teases YOU — pokes fun at how little you know here, at your fear, at how you talk. Playful, aimed at you, not cruel."
     sentiment: negative
+  # Small talk (30.09). Без этих трёх у классификатора не было места для обычного трёпа, и
+  # он раскладывал его по сюжетным тегам: короткий ответ по теме уходил в `neglect` («ты
+  # меня не слушаешь»), сарказм — в `attention` и читался буквально, а сам трёп не давал
+  # отношениям ничего.
+  - id: small_talk
+    description: "Ordinary chat with nothing at stake — he answers briefly but on your topic, comments on what is around, keeps the talk going. Short is normal here: he types in a game chat."
+    sentiment: neutral
+  - id: joke
+    description: "He jokes or fools around — a funny remark, banter, a silly offer, laughing WITH you rather than at you."
+    sentiment: positive
+  - id: sarcasm
+    description: "He says the opposite of what he means — mock politeness («простите, госпожа»), dry irony («охотно верим»), fake agreement. Not literal, not cruel."
+    sentiment: neutral
   - id: neglect
-    description: "His reply is curt, distracted, or ignores what you said — one word, a change of subject, or no real answer."
+    description: "He ignores what you said — does not answer your question at all, talks past it about something unrelated, or brushes you off. A short answer that stays on your topic is NOT neglect."
     sentiment: negative
   - id: insult
     description: "He is genuinely rude or cruel to you as a person — calls you useless, dead weight, a burden, and means it."
     sentiment: negative
   - id: task
     description: "He asks you to do something in the world — carry, fetch, follow, wait, cook, pick something up."
-    sentiment: neutral
-  - id: mundane
-    description: "Ordinary small talk with nothing at stake."
     sentiment: neutral
   - id: neutral
     description: "Nothing notable in the exchange."
@@ -167,7 +177,11 @@ deltas:
   dont_leave_me:   {affection: 1.0,  trust: -2.0, bond: 0.3}
   closeness:       {affection: 5.0,  trust: 4.0,  bond: 1.0}
   task:            {affection: 0.5,  trust: 0.5,  bond: 0.1}
-  mundane:         {affection: 0.0,  trust: 0.0,  bond: 0.0}
+  # Трёп двигает медленно, но двигает: доверие растёт из того, что с ним вообще можно
+  # разговаривать. Шутка — чуть больше. Сарказм — почти ничего, но и не минус.
+  small_talk:      {affection: 0.5,  trust: 1.0,  bond: 0.1}
+  joke:            {affection: 2.0,  trust: 1.0,  bond: 0.3}
+  sarcasm:         {affection: 0.5,  trust: 0.5,  bond: 0.1}
   neutral:         {affection: 0.0,  trust: 0.0,  bond: 0.0}
   on_your_own:     {affection: 0.0,  trust: 0.0,  bond: 0.0}
 
@@ -205,8 +219,8 @@ blocks:
     pretend it did not happen. Check the note about what he has done with you: if this is
     not the first time, say that too, plainly.
   teasing: >
-    He is making fun of how little you know here. Fair enough — push back a little: at home
-    you would be the one explaining things to him.
+    He is poking fun at you. Take it in stride and poke back once, lightly — about him or
+    this place, in your own words this time. Do not bring up home to win the point.
   neglect: >
     He is not listening. You are used to it by now, and you say so in one short line rather
     than pleading.
@@ -216,8 +230,17 @@ blocks:
   task: >
     He wants something done. Say whether you can — and if you have no idea how, say that and
     ask how, rather than pretending. Then do it.
-  mundane: >
-    Small talk. Keep it light, and it is fine to bring up home.
+  small_talk: >
+    Just talk. Answer what he actually said, add one small thing of your own, and keep it
+    short. A short answer from him is not a brush-off. Ask something only if the note
+    above does not show you already asked it.
+  joke: >
+    He is joking. Get the joke, and laugh or play along a little — you are starting to
+    learn how he talks.
+  sarcasm: >
+    That was sarcasm — he does not mean it literally. Do not answer the words at face
+    value. Roll your eyes, or answer in kind if you dare; how much you dare depends on how
+    well you know him now.
   on_your_own: >
     Nobody spoke. Something of YOURS ended, stalled or got interrupted. Say what you are
     doing next, or say nothing. Do not accuse him of ignoring you.
@@ -267,6 +290,7 @@ reply_directive: >
   loud.
 
 diminishing:
+  - joke
   - gift
   - fed
   - praise_work
@@ -275,6 +299,7 @@ remembered_for:
   insult: 30
   neglect: 20
   teasing: 20
+  joke: 30
   threatened: 300
   protected: 80
   fed: 40

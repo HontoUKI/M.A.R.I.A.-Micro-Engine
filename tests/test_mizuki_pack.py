@@ -173,3 +173,20 @@ def test_home_is_not_one_memory_on_repeat(pack):
     block = _flat(pack.blocks["asks_about_home"])
     assert "you have not told him yet" in block
     assert "train at eight" not in block
+
+
+def test_small_talk_has_its_own_tags_and_neglect_is_narrow():
+    """30.09: without small-talk tags the classifier filed chatter under story tags —
+    short on-topic answers as `neglect` («ты всё равно меня не слушаешь» ×3), mock
+    politeness as `attention` answered literally — and «teasing» told her to say «at
+    home I would explain», five times in one evening."""
+    pack = load_pack(str(_MIZUKI))
+    ids = {t.id for t in pack.tags}
+    assert {"small_talk", "joke", "sarcasm"} <= ids
+    assert "mundane" not in ids
+    assert pack.tag("small_talk").sentiment == "neutral", "chatter is not a deed in the dossier"
+    assert pack.deltas["small_talk"].trust > 0, "small talk raises trust, slowly"
+    assert "joke" in pack.diminishing
+    assert "NOT neglect" in pack.tag("neglect").description
+    assert "literally" in pack.blocks["sarcasm"]
+    assert "home" not in pack.blocks["teasing"].split("Do not bring up home")[0]
