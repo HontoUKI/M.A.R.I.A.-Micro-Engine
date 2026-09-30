@@ -103,6 +103,10 @@ WITH_CONTENT = {
     # Ноль и поверх его реплики: крик о помощи не ждёт паузы в разговоре.
     "fled": 0.0,
     "watched": None,  # None — держать общий порог тишины
+    # Заметила вдали сделанное, а не выросшее (30.09). Один раз на находку: постоянной
+    # строкой в каждом ходе статуя в двухстах блоках была новостью снова и снова. Общий
+    # порог тишины — не поверх его реплики.
+    "noticed": None,
 }
 
 # Не чаще раза в столько секунд. Ход, который нельзя перебить и который идёт каждые две
@@ -227,6 +231,19 @@ def _note(event: dict) -> str:
         return (
             f"[{who} walked off — {event.get('blocks')} blocks away,"
             f" gone {event.get('gone_for')}s]"
+        )
+    if kind == "noticed":
+        kinds = ", ".join(
+            str(k.get("what")) for k in event.get("kinds") or [] if k.get("what")
+        )
+        far = f"{event['distance']} blocks" if event.get("distance") else ""
+        where = " ".join(x for x in (far, str(event.get("bearing") or "")) if x)
+        what = event.get("what") or "something made"
+        return (
+            f"[you noticed far off: {what}"
+            + (f" ({kinds})" if kinds else "")
+            + (f", {where}" if where else "")
+            + "]"
         )
     if kind == "returned":
         return f"[{who} is back — {event.get('blocks')} blocks away]"

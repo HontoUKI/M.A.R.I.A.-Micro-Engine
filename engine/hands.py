@@ -319,10 +319,8 @@ def describe(
     # (28.09): на «I dropped some beef for you» Мария искала мясо на земле, хотя строка
     # «+3 beef (picked up)» стояла в её состоянии, — его слова перевешивали свалку.
     bag = (sight or {}).get("bag_lately")
-    # Замеченное вдали и атлас — тоже своими строками (29.09): в свалке «где ты» такое она
-    # пропускает, как пропускала сумку.
-    noticed = (sight or {}).get("noticed")
-    atlas = (sight or {}).get("atlas")
+    # Замеченное вдали и атлас в свалку «где ты» не идут; и своими строками больше тоже
+    # (30.09) — новая находка приезжает один раз поводом, см. ниже.
     for key, value in (sight or {}).items():
         if key in ("bag_lately", "noticed", "atlas"):
             continue
@@ -355,14 +353,10 @@ def describe(
         "itself, so a thing somebody threw to you and that is listed here is already in",
         "your bag — it is not lying on the ground any more.",
     ]
-    if noticed:
-        lines += [
-            f"What you noticed far off that you did not build: {plainly(noticed)}",
-            "Blocks that are made, not grown, somewhere you have not marked. Whether it is worth",
-            "going to look is yours to say.",
-        ]
-    if atlas:
-        lines.append(f"What you have seen before, beyond what you see now: {plainly(atlas)}")
+    # What she noticed far off and her atlas are NOT standing lines (author, 30.09): printed
+    # every turn, a statue two hundred blocks away was news again each time and Mizuki
+    # talked about it between his lines. A new find arrives once, as its own note
+    # (`noticed` in tools/play.py); the atlas stays in the router for her feet.
     if paused:
         # An interrupt is a pause and never an outcome, so the next word is hers —
         # and until now there was no word. Live 03.09 she was pulled off cutting

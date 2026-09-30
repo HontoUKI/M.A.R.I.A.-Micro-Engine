@@ -121,8 +121,10 @@ def test_only_the_gaze_waits_for_him_to_finish_speaking():
     """
     assert WITH_CONTENT["watched"] is None, "None значит держать общий порог"
     assert QUIET_AFTER_HIM > 0
+    # 30.09: what she noticed far off waits too — it is her news, not his deed.
+    assert WITH_CONTENT["noticed"] is None
     assert all(
-        wait == 0.0 for kind, wait in WITH_CONTENT.items() if kind != "watched"
+        wait == 0.0 for kind, wait in WITH_CONTENT.items() if kind not in ("watched", "noticed")
     )
 
 
