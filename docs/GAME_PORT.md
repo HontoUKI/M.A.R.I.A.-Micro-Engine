@@ -144,6 +144,17 @@ If he stays quiet, it goes out once, as a single note. Live, on 30.09, she
 picked up his things after he died, one spot after another, and thanked him
 five times in thirty seconds.
 
+**What he dropped when he died is not a gift.** The router tells them apart by
+the time of his death (`picked_up_his`), and the note says so:
+`[HontoUKI died; you picked up the things he dropped: …]`. The same queue holds
+it, never mixed into a gift.
+
+**Calm notes wait while she runs.** For `DANGER_HOLD` seconds (20) after she
+flees, "noticed far off", "you are back where…", "he is watching" and her own
+work stay unsaid. The chase, a hit and death always get through. Live on 30.09,
+a ghost was chasing her, and one of her two cries for help was spent on
+"a structure, 11 blocks north-east".
+
 A pack that wants to react to any of this says so in its tags; `characters/yukina`
 is the worked example, including the trap that comes with it — a strong `neglect`
 tag reads `[closed]` as the player ignoring her unless the pack gives the world
