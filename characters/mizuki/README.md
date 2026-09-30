@@ -67,9 +67,27 @@ rather than in prose:
 
 ## The world she is written for
 
-Forge 1.20.1 with Create 6 and **Create: Gunsmithing**. The design depends on one fact read
-from the mod's own recipes: a revolver round cannot be made by hand at all. It is a
-sequenced assembly on brass, and brass needs a heated mixer — a blaze burner, so a trip to
-the Nether. Paper cartridges for the flintlock are hand-craftable, but the flintlock
-itself needs an iron plate, which only a press makes. Starting with a revolver and twelve
-rounds therefore means starting with a clock.
+**Watcher** — Forge 1.20.1, Create 6 and **Create: Gunsmithing** (revolvers on NTGL),
+about 120 mods on the server. Hardcore for both: a death is the end of that world.
+
+- **Ammunition is the clock.** A revolver round cannot be made by hand: it is a sequenced
+  assembly on brass, and brass needs a heated mixer. **Create: Netherless** makes the heat
+  an engineering problem rather than a Nether trip — blaze rods come off a line from coal
+  and lava, soul sand is made by hand, the blaze burner is crafted. Paper cartridges for
+  the flintlock are hand-craftable; the flintlock itself needs an iron plate from a press.
+- **The start.** He has **Last Gaze** — a named revolver — with 32 rounds, a wrench,
+  engineer's goggles and an empty atlas: enough to reach a blaze burner, not enough to be
+  careless. She has a school lunch: onigiri, sushi, a cheeseburger, mochi, peach tea.
+- **The quest book (FTB Quests)** is two lines. His, «Инженер», six chapters from her
+  appearance to a working shell line and a second gun; every early quest pays 4 rounds,
+  chapter 0 ends with an iron backpack and crafting and smelting upgrades, chapter 1
+  with a mechanical mixer. Hers, «Мидзуки», is food and comfort: a garden of onion,
+  cabbage, tomato and wheat, a sandwich that is not insects, onigiri «as at home», hot food
+  by her own hands, surviving alone, and receiving Last Gaze and ten kills of her own.
+  Her quests count what she really did; KubeJS checks them.
+- **The world is poor in food.** Dungeon chests hold materials; the mods' monster food is
+  cut to at most one roll, so people here really do kill for bread.
+- **No advancements.** The only progress the game announces is the quest book.
+
+The server build lives outside this repository (`.local/pack-watcher/build.py`), because
+the mods are not ours to redistribute.
