@@ -143,6 +143,7 @@ class CharacterRuntime:
         web_search: WebSearcher | None = None,
         hands: GamePort | None = None,
         deeds: tuple = (),
+        mentioned: str = "",
     ) -> None:
         self._pack = pack
         self._llm = llm
@@ -157,6 +158,7 @@ class CharacterRuntime:
         # decision, like the choice of model. See engine/hands.py.
         self._hands = hands
         self._deeds = tuple(deeds)
+        self._mentioned = mentioned
         # The attempt she is part-way through, if any. Read when the world is
         # described and used when she answers, so "CONTINUE" means the thing she
         # was actually told about rather than whatever is open by then.
@@ -430,7 +432,14 @@ class CharacterRuntime:
         model heeds them best."""
         # Досье идёт ПЕРВЫМ: оно про то, что уже было, и повод этого хода читается на
         # его фоне, а не наоборот.
-        parts = [summarise(self._deeds), self._pack.blocks[tag], self._pack.reply_directive]
+        # Что уже сказано между ними — рядом с досье: и то и другое про прошлое, а не про
+        # этот ход (engine/mentioned.py).
+        parts = [
+            summarise(self._deeds),
+            self._mentioned,
+            self._pack.blocks[tag],
+            self._pack.reply_directive,
+        ]
         if self._non_rp:
             parts.append(_NON_RP_TAIL_HINT)
         if self._gamer:

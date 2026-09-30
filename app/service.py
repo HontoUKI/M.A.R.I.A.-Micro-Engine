@@ -15,6 +15,7 @@ from engine.character import CharacterRuntime, TurnResult
 from engine.dossier import deeds
 from engine.hands import GamePort
 from engine.llm import OllamaClient
+from engine.mentioned import mentioned
 from engine.prompt_manager import DialogueTurn, PromptManager
 from engine.registry import PackRegistry
 from engine.scene.registry import SceneRegistry
@@ -112,7 +113,8 @@ class EngineService:
         # Что этот человек делал раньше. Между тегом (один ход) и ступенью (накопленная
         # близость) не было ничего, и полоса грубости внутри одной ступени не оставляла
         # следа вовсе.
-        done = deeds(self.sessions.entries(session_key, pack), pack)
+        lived = self.sessions.entries(session_key, pack)
+        done = deeds(lived, pack)
         runtime = CharacterRuntime(
             pack,
             self.llm,
@@ -128,6 +130,7 @@ class EngineService:
             web_search=self.web_search,
             hands=self.hands,
             deeds=done,
+            mentioned=mentioned(lived),
         )
         result = runtime.respond(driver, window)
         self.sessions.record_turn(
