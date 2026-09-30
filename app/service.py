@@ -138,7 +138,7 @@ class EngineService:
         )
         return result
 
-    # ------------------------------------------------------------- scenes (v0.2)
+    # ------------------------------------------------------------- scenes (v0.1.2)
 
     def scene_names(self) -> list[str]:
         return self.scene_registry.names()

@@ -1,4 +1,4 @@
-"""End-to-end API tests for the v0.2 scene surface, against a stub LLM."""
+"""End-to-end API tests for the v0.1.2 scene surface, against a stub LLM."""
 from __future__ import annotations
 
 import json

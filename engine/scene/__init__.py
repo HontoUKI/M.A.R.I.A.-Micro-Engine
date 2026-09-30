@@ -2,7 +2,7 @@
 
 A ScenePack composes several character packs, pins a shared setting, seeds the
 relationship matrix and can grant scenario-only tags. See
-`docs/DESIGN_v0.2_SCENES.md` for the design and the eventual public contract.
+`docs/DESIGN_v0.1.2_SCENES.md` for the design and the eventual public contract.
 """
 
 from engine.scene.errors import (

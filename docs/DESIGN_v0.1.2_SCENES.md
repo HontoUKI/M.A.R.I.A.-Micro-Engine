@@ -1,6 +1,6 @@
-# Design — v0.2: a cast, a stage, and a web of feelings
+# Design — v0.1.2: a cast, a stage, and a web of feelings
 
-> **Status: design, not built yet.** This is the plan for v0.2, written down so
+> **Status: design, not built yet.** This is the plan for v0.1.2, written down so
 > we agree on the shape before writing code. Everything here grows out of the
 > v0.1 pieces we already have — it does not throw any of them away.
 
@@ -8,7 +8,7 @@
 
 Today one character talks to you, and remembers how it feels about *you*.
 
-v0.2 puts **several characters on the same stage**. Each one keeps its own
+v0.1.2 puts **several characters on the same stage**. Each one keeps its own
 feelings — about you *and* about every other character. You can either **join the
 group chat** and talk with all of them, or **step back and direct**, feeding the
 scene cues while the cast acts among themselves. You can also set the **backdrop**
@@ -37,7 +37,7 @@ everyone in it.
 
 ## Everyone keeps their own feelings — the relationship matrix
 
-This is the heart of v0.2.
+This is the heart of v0.1.2.
 
 In v0.1 there's exactly one relationship: *character → you*. In a scene there are
 many, and they point in **both directions independently**. Picture a grid where
@@ -210,7 +210,7 @@ scratch. That's why holding several characters stays cheap.
 
 ## How it reuses what's already here
 
-| v0.2 idea                 | The v0.1 piece it grows from                          |
+| v0.1.2 idea                 | The v0.1 piece it grows from                          |
 |---------------------------|-------------------------------------------------------|
 | A cast on one stage       | Several of today's pinned "who I am" blocks           |
 | ScenePack                 | Composes today's Character Packs; loads them as-is     |
@@ -261,5 +261,5 @@ scratch. That's why holding several characters stays cheap.
   chatting.
 - Not an agent framework — the cast acts *within the scene*. They don't touch the
   real world (no tools, no file or command access; that stays out of this tier).
-- Not a rewrite — v0.2 is the v0.1 Actor Model with more chairs. A scene with a
+- Not a rewrite — v0.1.2 is the v0.1 Actor Model with more chairs. A scene with a
   single character behaves exactly like v0.1 does today.

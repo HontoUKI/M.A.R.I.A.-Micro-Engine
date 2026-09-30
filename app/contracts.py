@@ -74,7 +74,7 @@ class ChatCompletionResponse(BaseModel):
 
 
 class SceneAdvanceRequest(BaseModel):
-    """Advance a scene by one turn (v0.2). `message` is the user's line in group
+    """Advance a scene by one turn (v0.1.2). `message` is the user's line in group
     chat (optional in autonomous play); `speaker` optionally names who acts."""
 
     model_config = ConfigDict(extra="ignore")
@@ -85,7 +85,7 @@ class SceneAdvanceRequest(BaseModel):
 
 
 class SceneRunRequest(BaseModel):
-    """Play/narrator mode (v0.2): feed a stage cue and let the cast act among
+    """Play/narrator mode (v0.1.2): feed a stage cue and let the cast act among
     themselves for up to `max_turns` (the server caps it)."""
 
     model_config = ConfigDict(extra="ignore")
@@ -97,7 +97,7 @@ class SceneRunRequest(BaseModel):
 
 class SceneBackdropRequest(BaseModel):
     """Upload an image (base64, optionally a data: URL) to caption and pin as the
-    scene's backdrop (v0.2, vision-capable Ollama models only)."""
+    scene's backdrop (v0.1.2, vision-capable Ollama models only)."""
 
     model_config = ConfigDict(extra="ignore")
 

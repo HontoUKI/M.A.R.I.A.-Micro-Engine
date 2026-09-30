@@ -209,7 +209,7 @@ compromise between Sydney and Melbourne… kinda boring, tbh."*
 
 ## A directed scene — asynchronous feelings (Daniel & Aria)
 
-The v0.2 scene layer runs a whole *cast* on one stage, with a relationship
+The v0.1.2 scene layer runs a whole *cast* on one stage, with a relationship
 **matrix** (each pair's feelings, directed and independent) instead of a single
 tally. This example is a **play** you narrate: `3_days_before` casts **Daniel**,
 a programmer, and **Aria**, the android he built — whose memory a bug wipes every

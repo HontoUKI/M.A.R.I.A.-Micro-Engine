@@ -196,7 +196,7 @@ def reset_session(model: str, service: ServiceDep, user: str = "default") -> JSO
     return JSONResponse(content={"ok": True})
 
 
-# ------------------------------------------------------------------ scenes (v0.2)
+# ------------------------------------------------------------------ scenes (v0.1.2)
 # Multi-character scenes: a cast, a relationship matrix, group chat. Not part of
 # the OpenAI-compatible surface.
 

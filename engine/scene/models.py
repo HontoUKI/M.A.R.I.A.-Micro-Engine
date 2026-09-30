@@ -3,7 +3,7 @@
 A ScenePack never edits a character; it *composes* several of them: it names the
 cast, pins a shared setting, optionally seeds the relationship matrix with
 starting feelings, and can grant scenario-only tags that layer onto specific
-actors for the duration of the scene. See `docs/DESIGN_v0.2_SCENES.md`.
+actors for the duration of the scene. See `docs/DESIGN_v0.1.2_SCENES.md`.
 
 This validates the *shape* of `scene.yaml`. Filesystem/security concerns (YAML
 safety, size limits, injection scanning) live in `loader.py`. Cross-references
