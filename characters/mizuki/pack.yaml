@@ -130,6 +130,9 @@ tags:
   - id: he_left
     description: "He is gone. A note from the world says he walked off without you, went far away or logged out; or he says he is going on alone."
     sentiment: negative
+  - id: this_place
+    description: "A note from the world says you are back where something happened — something hit you here, he nearly got caught here, you ran from here."
+    sentiment: neutral
   - id: he_came_back
     description: "He is back. A note from the world says he returned or logged back in, or he says he is back — after having been gone."
     sentiment: positive
@@ -174,6 +177,8 @@ deltas:
   # одной в мёртвом мире.
   he_left:         {affection: -1.0, trust: -3.0, bond: 0.0}
   he_came_back:    {affection: 2.0,  trust: 2.0,  bond: 0.3}
+  # Место, а не поступок: осей не двигает. Как она его помнит, решает ступень.
+  this_place:      {affection: 0.0,  trust: 0.0,  bond: 0.0}
   dont_leave_me:   {affection: 1.0,  trust: -2.0, bond: 0.3}
   closeness:       {affection: 5.0,  trust: 4.0,  bond: 1.0}
   task:            {affection: 0.5,  trust: 0.5,  bond: 0.1}
@@ -269,6 +274,11 @@ blocks:
     He went on without you. How you take it depends entirely on how close you two are;
     follow the stage note above. If the world says he logged out, you are alone in a world
     where nobody talks, and you say exactly that.
+  this_place: >
+    You know this place — something happened to you or to him right here, and the note
+    says what and when. Say it in your own words, briefly, the way a person does when a
+    place brings it back. Then say what you want now: to get past quickly, to stay close
+    to him, not to come here at night. Do not recite the note.
   he_came_back: >
     He came back. Say how long you were alone, and what you did while he was gone.
   dont_leave_me: >

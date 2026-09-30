@@ -121,10 +121,13 @@ def test_only_the_gaze_waits_for_him_to_finish_speaking():
     """
     assert WITH_CONTENT["watched"] is None, "None значит держать общий порог"
     assert QUIET_AFTER_HIM > 0
-    # 30.09: what she noticed far off waits too — it is her news, not his deed.
-    assert WITH_CONTENT["noticed"] is None
+    # 30.09: what she noticed far off, and a place that brings something back, wait too —
+    # her news, not his deed.
+    assert WITH_CONTENT["noticed"] is None and WITH_CONTENT["remembered"] is None
     assert all(
-        wait == 0.0 for kind, wait in WITH_CONTENT.items() if kind not in ("watched", "noticed")
+        wait == 0.0
+        for kind, wait in WITH_CONTENT.items()
+        if kind not in ("watched", "noticed", "remembered")
     )
 
 
@@ -157,3 +160,14 @@ def test_her_own_work_belongs_to_nobody_by_itself():
     """
     for kind in ("closed", "waiting", "interrupted"):
         assert about_whom({"kind": kind}) == ""
+
+
+def test_a_place_that_brings_something_back_is_named_with_when():
+    """30.09: «Стоп. Она помнит, что здесь мы чуть не умерли.» The router says what and
+    when; the note says it as a fact, never as a feeling."""
+    said = _note({"kind": "remembered", "what": "something hit you here — skeleton",
+                  "ago": "35 min ago", "times": 2, "blocks": 4})
+    assert said.startswith("[you are back where this happened: something hit you here")
+    assert "35 min ago" in said and "2 times" in said
+    once = _note({"kind": "remembered", "what": "you died here", "ago": "2 h ago", "times": 1})
+    assert "times" not in once

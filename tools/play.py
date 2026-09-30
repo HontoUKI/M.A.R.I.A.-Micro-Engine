@@ -107,6 +107,9 @@ WITH_CONTENT = {
     # строкой в каждом ходе статуя в двухстах блоках была новостью снова и снова. Общий
     # порог тишины — не поверх его реплики.
     "noticed": None,
+    # Она снова там, где что-то случилось (30.09, роутер memories.js): «здесь меня
+    # ударили», «здесь он чуть не попался». Один раз на возвращение, не поверх него.
+    "remembered": None,
 }
 
 # Не чаще раза в столько секунд. Ход, который нельзя перебить и который идёт каждые две
@@ -244,6 +247,12 @@ def _note(event: dict) -> str:
             + (f" ({kinds})" if kinds else "")
             + (f", {where}" if where else "")
             + "]"
+        )
+    if kind == "remembered":
+        again = f", {event['times']} times" if (event.get("times") or 1) > 1 else ""
+        return (
+            f"[you are back where this happened: {event.get('what') or 'something'}"
+            f" — {event.get('ago') or 'a while ago'}{again}]"
         )
     if kind == "returned":
         return f"[{who} is back — {event.get('blocks')} blocks away]"
