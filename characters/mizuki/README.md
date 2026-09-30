@@ -24,6 +24,11 @@ An original character written for this engine, shipped under CC-BY-4.0.
 > Успех зависит от одного: как быстро ты наладишь массовое производство патронов — и не
 > умрёшь от голода.
 
+## ⚠ Warning
+
+**If her attachment reaches 0.5 and you do not wipe the session data between tries,
+there will be irreversible consequences.**
+
 ## What it demonstrates
 
 Yukina is the mirror: she cannot die and you can. **Mizuki can die, once, and the story

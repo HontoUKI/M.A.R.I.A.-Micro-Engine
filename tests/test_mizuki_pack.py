@@ -202,3 +202,11 @@ def test_his_death_is_read_by_the_stage(pack):
         (pack.deltas[t].affection, pack.deltas[t].trust, pack.deltas[t].bond) == (0, 0, 0)
         for t in died
     ), "his death is not his deed toward her"
+
+
+def test_the_loop_arms_only_on_grief_and_the_warning_is_on_the_box(pack):
+    # Петля взводится только горем (связь от 0.5), и предупреждение стоит в описании пака.
+    assert pack.loop.arm_on == ["he_died_grief"]
+    assert len(pack.loop.steps) == 3
+    assert "irreversible consequences" in pack.meta.description
+    assert "0.5" in pack.meta.description
