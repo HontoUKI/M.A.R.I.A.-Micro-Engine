@@ -133,6 +133,22 @@ tags:
   - id: this_place
     description: "A note from the world says you are back where something happened — something hit you here, he nearly got caught here, you ran from here."
     sentiment: neutral
+  # Его смерть (30.09). Один факт, три окна по связи — то же, чем окна тегов гейтятся у
+  # Юкины: классификатор видит ровно один из трёх, и выбрать горе на стадии страха он не
+  # может. Нейтрально → лёгкая грусть → горечь (решение автора).
+  - id: he_died
+    description: "A note from the world says HE died — the game announced his death. Not that he is in danger: he is dead."
+    sentiment: neutral
+    lock_at: 0.15
+  - id: he_died_missed
+    description: "A note from the world says HE died — the game announced his death. Not that he is in danger: he is dead."
+    sentiment: negative
+    unlock_at: 0.15
+    lock_at: 0.50
+  - id: he_died_grief
+    description: "A note from the world says HE died — the game announced his death. Not that he is in danger: he is dead."
+    sentiment: negative
+    unlock_at: 0.50
   - id: he_came_back
     description: "He is back. A note from the world says he returned or logged back in, or he says he is back — after having been gone."
     sentiment: positive
@@ -188,6 +204,10 @@ deltas:
   joke:            {affection: 2.0,  trust: 1.0,  bond: 0.3}
   sarcasm:         {affection: 0.5,  trust: 0.5,  bond: 0.1}
   neutral:         {affection: 0.0,  trust: 0.0,  bond: 0.0}
+  # Его смерть — не его поступок по отношению к ней: отношения она не двигает.
+  he_died:         {affection: 0.0,  trust: 0.0,  bond: 0.0}
+  he_died_missed:  {affection: 0.0,  trust: 0.0,  bond: 0.0}
+  he_died_grief:   {affection: 0.0,  trust: 0.0,  bond: 0.0}
   on_your_own:     {affection: 0.0,  trust: 0.0,  bond: 0.0}
 
 blocks:
@@ -279,6 +299,21 @@ blocks:
     says what and when. Say it in your own words, briefly, the way a person does when a
     place brings it back. Then say what you want now: to get past quickly, to stay close
     to him, not to come here at night. Do not recite the note.
+  he_died: >
+    He is dead. The man who pointed a gun at you, and the only one here who talks. You do
+    not grieve him — you barely know him. What you feel is for yourself: now nobody stands
+    between you and the dark. Say it flatly, in a few words. If the note says a death here is
+    final, you understand he is not coming back.
+  he_died_missed: >
+    He is dead. You had got used to walking behind him, and now there is nobody in front.
+    A quiet sadness, not tears: say you are sorry, in plain words, and one small thing you
+    will miss. Then the practical fear — you are alone again. If the note says a death here
+    is final, he is not coming back, and you know it.
+  he_died_grief: >
+    He is dead. The one person in this world you could not lose, and you lost him. Bitter,
+    not hysterical: it is unfair, he should have let you come, you should have warned him
+    sooner. Say it to him as if he can still hear. If the note says a death here is final,
+    he is not coming back — and you say what that leaves you with.
   he_came_back: >
     He came back. Say how long you were alone, and what you did while he was gone.
   dont_leave_me: >
@@ -320,6 +355,9 @@ remembered_for:
   attention: 20
   he_left: 30
   he_came_back: 30
+  he_died: 300
+  he_died_missed: 300
+  he_died_grief: 300
   dont_leave_me: 40
   closeness: 60
 

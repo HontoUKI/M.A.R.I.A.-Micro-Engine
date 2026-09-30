@@ -190,3 +190,15 @@ def test_small_talk_has_its_own_tags_and_neglect_is_narrow():
     assert "NOT neglect" in pack.tag("neglect").description
     assert "literally" in pack.blocks["sarcasm"]
     assert "home" not in pack.blocks["teasing"].split("Do not bring up home")[0]
+
+
+def test_his_death_is_read_by_the_stage(pack):
+    # Нейтрально → лёгкая грусть → горечь: один факт, три окна, и в каждом ровно одно.
+    died = ("he_died", "he_died_missed", "he_died_grief")
+    for bond, want in ((0.05, "he_died"), (0.30, "he_died_missed"), (0.80, "he_died_grief")):
+        offered = [t.id for t in _available_tags(pack, ratio=bond) if t.id in died]
+        assert offered == [want], (bond, offered)
+    assert all(
+        (pack.deltas[t].affection, pack.deltas[t].trust, pack.deltas[t].bond) == (0, 0, 0)
+        for t in died
+    ), "his death is not his deed toward her"
