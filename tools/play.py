@@ -128,6 +128,16 @@ WAKE_EVERY = 20.0
 # секунд, и каждая давала ей слово поверх разговора.
 QUIET_AFTER_HIM = 45.0
 
+# Сколько живёт очередь подобранного (решение автора 30.09). Живьём после его смерти она
+# подбирала его вещи с места на место, и КАЖДЫЙ подбор был отдельным ходом: пять «спасибо»
+# за тридцать секунд. Подобранное копится; заговорил он за это время — всё описывается
+# одной запиской перед его репликой, в том же ходе. Промолчал — уходит одним поводом.
+GIFTS_LIVE = 10.0
+
+# Как часто цикл просыпается без событий, чтобы очередь могла истечь: у потока роутера
+# нет пульса, и тишина в мире иначе держала бы подарки сколько угодно.
+TICK = 1.0
+
 # Minecraft chat is one line. Anything longer is sent as several messages rather
 # than truncated, because a companion cut off mid-sentence reads as broken.
 LINE = 220
@@ -194,6 +204,81 @@ def _listen(port: str):
             print("[поток кончился — жду]", file=sys.stderr)
         quiet = True
         time.sleep(RECONNECT_EVERY)
+
+
+def _ticking(events, every: float = TICK):
+    """The same events, plus a ``None`` every ``every`` seconds of silence.
+
+    The stream is read on its own thread: a blocking read cannot notice that a queue
+    ran out while nothing happened in the world.
+    """
+    import queue
+    import threading
+
+    box: queue.Queue = queue.Queue()
+
+    def pump() -> None:
+        for event in events:
+            box.put(event)
+
+    threading.Thread(target=pump, daemon=True).start()
+    while True:
+        try:
+            yield box.get(timeout=every)
+        except queue.Empty:
+            yield None
+
+
+class Gifts:
+    """What people handed her lately, per person, for ``GIFTS_LIVE`` seconds.
+
+    One pickup is not a moment worth a turn when there are twenty of them: the
+    queue folds them into one list, counted by item, in the order they came.
+    """
+
+    def __init__(self, live: float = GIFTS_LIVE) -> None:
+        self.live = live
+        self._by: dict[str, tuple[float, dict[str, int]]] = {}
+
+    def add(self, who: str, took: list[dict], now: float) -> None:
+        since, items = self._by.get(who, (now, {}))
+        for one in took or []:
+            what = str(one.get("what") or "something")
+            items[what] = items.get(what, 0) + int(one.get("count") or 1)
+        self._by[who] = (since, items)
+
+    def take(self, who: str) -> list[dict] | None:
+        """Everything queued from ``who``, now — he is talking to her."""
+        got = self._by.pop(who, None)
+        return _took(got[1]) if got else None
+
+    def due(self, now: float) -> list[tuple[str, list[dict]]]:
+        """Queues that lived out their time, removed."""
+        out = [
+            (who, _took(items))
+            for who, (since, items) in self._by.items()
+            if now - since >= self.live
+        ]
+        for who, _ in out:
+            del self._by[who]
+        return out
+
+
+def _took(items: dict[str, int]) -> list[dict]:
+    return [{"what": what, "count": count} for what, count in items.items()]
+
+
+def _with_gifts(events, gifts: Gifts, clock=time.time):
+    """Events with ``given`` held back in ``gifts`` and let out folded when due."""
+    for event in events:
+        for who, took in gifts.due(clock()):
+            yield {"kind": "given", "who": who, "took": took, "folded": True}
+        if event is None:
+            continue
+        if event.get("kind") == "given" and not event.get("folded"):
+            gifts.add(str(event.get("who") or "somebody"), event.get("took") or [], clock())
+            continue
+        yield event
 
 
 def about_whom(event: dict) -> str:
@@ -383,7 +468,8 @@ def main() -> int:
     # Про КОГО был последний ход. Не то же, что «кто говорил последним»: записка мира
     # про человека — тоже ход про него, хотя он молчал.
     last_person = ""
-    for event in _listen(port):
+    gifts = Gifts()
+    for event in _with_gifts(_ticking(_listen(port)), gifts):
         if not visible(event, unseen):
             continue
         kind = event.get("kind")
@@ -470,6 +556,14 @@ def main() -> int:
         print(f"<{who}> {said}")
 
         window = windows.setdefault(who, [])
+        # What he handed her in the last seconds rides in the same turn, before his words:
+        # one reaction to both, not a thank-you per pickup and then an answer.
+        said_to_her = f"<{who}> {said}"
+        took = gifts.take(who)
+        if took:
+            note = _note({"kind": "given", "who": who, "took": took})
+            said_to_her = f"{note}\n{said_to_her}"
+            print(f"  {note}")
         # The speaker is NAMED to her.
         #
         # In a game chat you see who typed; she was seeing only the words. Live
@@ -480,14 +574,14 @@ def main() -> int:
         try:
             result = service.complete(
                 args.character,
-                [*window, ChatMessage(role="user", content=f"<{who}> {said}")],
+                [*window, ChatMessage(role="user", content=said_to_her)],
                 session_key=f"minecraft:{who}",
             )
         except Exception as why:  # noqa: BLE001 - one bad turn must not end the evening
             print(f"[ход не вышел: {why}]", file=sys.stderr)
             continue
 
-        window.append(ChatMessage(role="user", content=f"<{who}> {said}"))
+        window.append(ChatMessage(role="user", content=said_to_her))
         window.append(ChatMessage(role="assistant", content=result.reply))
         windows[who] = window[-WINDOW:]
 
