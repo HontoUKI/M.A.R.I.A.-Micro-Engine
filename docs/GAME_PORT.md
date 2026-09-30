@@ -137,6 +137,13 @@ she was doing is already in front of her. Nothing anywhere says he *just* put a
 diamond in her hands — that is a moment, not a state of affairs, and without its
 content it would reach her as an empty bracket.
 
+**Pickups are gathered, not announced one by one.** A gift is held for
+`GIFTS_LIVE` seconds (10) and counted by item. If he speaks in that time, the
+whole list rides in front of his line in the same turn — one reaction to both.
+If he stays quiet, it goes out once, as a single note. Live, on 30.09, she
+picked up his things after he died, one spot after another, and thanked him
+five times in thirty seconds.
+
 A pack that wants to react to any of this says so in its tags; `characters/yukina`
 is the worked example, including the trap that comes with it — a strong `neglect`
 tag reads `[closed]` as the player ignoring her unless the pack gives the world
