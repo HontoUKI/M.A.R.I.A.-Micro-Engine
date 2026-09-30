@@ -89,6 +89,9 @@ WITH_CONTENT = {
     "returned": 0.0,
     "beside": 0.0,
     "died": 0.0,
+    # Умер он (или другой игрок) — объявлением самой игры (30.09). Без этого она через
+    # десять секунд после его смерти спросила «куда вы пропали?». Ноль и поверх всего.
+    "player_died": 0.0,
     # Всё, что происходит с их уговором идти вместе. До сих пор поза жила молча: она
     # говорила «я иду за тобой», отставала, теряла его из виду и переставала быть его
     # спутницей — и ни одна из этих трёх вещей до неё не доезжала. «Я иду» оставалось
@@ -331,6 +334,10 @@ def _note(event: dict) -> str:
             # Not a gift: he gave nothing. A fact of what she did with his things.
             return f"[{who} died; you picked up the things he dropped: {took or 'something'}]"
         return f"[{who} gave you {took or 'something'}]"
+    if kind == "player_died":
+        how = str(event.get("how") or "").strip()
+        rule = " — this world is hardcore, a death here is final" if event.get("hardcore") else ""
+        return f"[{who} died{f': {how}' if how else ''}{rule}]"
     if kind == "watched":
         at = "you work" if event.get("while_working") else "you"
         return f"[{who} has been standing there watching {at} for {event.get('watching_for', 0)}s]"

@@ -171,3 +171,17 @@ def test_a_place_that_brings_something_back_is_named_with_when():
     assert "35 min ago" in said and "2 times" in said
     once = _note({"kind": "remembered", "what": "you died here", "ago": "2 h ago", "times": 1})
     assert "times" not in once
+
+
+def test_his_death_is_told_in_the_game_s_own_words():
+    note = _note({
+        "kind": "player_died", "who": "HontoUKI",
+        "how": "HontoUKI was slain by Ghost", "hardcore": True,
+    })
+    assert note == (
+        "[HontoUKI died: HontoUKI was slain by Ghost"
+        " — this world is hardcore, a death here is final]"
+    )
+    assert _note({"kind": "player_died", "who": "HontoUKI"}) == "[HontoUKI died]"
+    assert about_whom({"kind": "player_died", "who": "HontoUKI"}) == "HontoUKI"
+    assert WITH_CONTENT["player_died"] == 0.0, "his death does not wait for a pause"
