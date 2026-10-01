@@ -93,6 +93,15 @@ class Settings:
     # warm far more slowly — a global "slow-burn" knob, independent of packs.
     axis_max: float = 100.0
 
+    def __post_init__(self) -> None:
+        if self.game_port and self.llm_backend.lower() == "ollama":
+            if self.num_ctx is not None and self.num_ctx < 16384:
+                raise ValueError("Game mode requires NUM_CTX >= 16384")
+            if self.num_ctx is None:
+                object.__setattr__(self, "num_ctx", 16384)
+        if self.num_ctx is not None and self.prompt_max_tokens >= self.num_ctx:
+            raise ValueError("PROMPT_MAX_TOKENS must leave output room below NUM_CTX")
+
 
 def _optional_int(name: str) -> int | None:
     value = os.getenv(name)

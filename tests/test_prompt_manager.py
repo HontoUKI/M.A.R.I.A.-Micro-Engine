@@ -151,6 +151,19 @@ def test_user_message_is_always_kept_even_over_budget():
     assert "critical question" in messages[-1]["content"]
 
 
+def test_large_world_is_cut_before_the_recent_conversation():
+    window = tuple(DialogueTurn("user", f"previous {i}") for i in range(4))
+    inputs = PromptInputs(identity="id", user_message="current request",
+                          dialogue_window=window,
+                          game_block="Important situation\n\n" + "detail " * 1000)
+    pm = PromptManager(max_tokens=100, conversation_reserve=20, estimate_tokens=_words)
+    messages = pm.build_messages(inputs)
+    assert [m["content"] for m in messages[1:-1]] == [t.content for t in window]
+    assert "Important situation" in messages[-1]["content"]
+    assert "detail " not in messages[-1]["content"]
+    assert sum(_words(m["content"]) for m in messages) <= 100
+
+
 def test_the_newest_turns_survive_a_budget_that_has_nothing_left():
     """Ходы, ради которых поле и заведено.
 

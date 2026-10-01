@@ -31,6 +31,12 @@ _service: EngineService | None = None
 
 def _build_llm(settings: Settings):
     """Build the response backend from settings (Ollama by default)."""
+    _log.info(
+        "LLM backend=%s model=%s requested_context=%s prompt_ceiling=%d",
+        settings.llm_backend,
+        settings.openai_model if settings.llm_backend.lower() == "openai" else settings.chat_model,
+        settings.num_ctx or "provider default", settings.prompt_max_tokens,
+    )
     if settings.llm_backend.lower() == "openai":
         if not settings.openai_api_key:
             _log.warning("LLM_BACKEND=openai but OPENAI_API_KEY is empty; calls will fail")

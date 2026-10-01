@@ -47,6 +47,19 @@ def _client(session):
     )
 
 
+def test_game_context_reaches_the_actual_ollama_request():
+    from app.deps import _build_llm
+    from engine.config import Settings
+
+    client = _build_llm(Settings(game_port="http://router/v0", prompt_max_tokens=8144))
+    session = StubSession(StubResponse(payload={"message": {"content": "ok"}}))
+    client._session = session
+    client.chat([{"role": "user", "content": "hi"}])
+    assert session.calls[0]["json"]["options"]["num_ctx"] == 16384
+    with pytest.raises(ValueError, match="NUM_CTX"):
+        Settings(game_port="http://router/v0", num_ctx=8192)
+
+
 # ---------------------------------------------------------------- chat
 
 

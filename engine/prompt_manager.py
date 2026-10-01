@@ -34,7 +34,7 @@ that overruns its ceiling says so out loud instead of paying for it in memory.
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from engine.logging_config import get_logger
 
@@ -114,12 +114,26 @@ class PromptManager:
     # Below this a session stops being a conversation, and that is not a saving
     # any ceiling is allowed to make silently.
     keep_last: int = 4
+    conversation_reserve: int = 1024
     estimate_tokens: Callable[[str], int] = field(default=_estimate_tokens)
 
     def build_messages(self, inputs: PromptInputs) -> list[dict[str, str]]:
         """Build the OpenAI-style message list for one turn."""
         system = self._build_prefix(inputs)
         system_cost = self.estimate_tokens(system)
+
+        # Reserve the conversation BEFORE allocating the world. A world dump is
+        # expendable; the last exchanges and this user's words are not.
+        floor = inputs.dialogue_window[-self.keep_last:] if self.keep_last else ()
+        reserve = max(
+            self.conversation_reserve if inputs.game_block else 0,
+            sum(self.estimate_tokens(t.content) for t in floor),
+        )
+        without_world = self._build_tail(replace(inputs, game_block=""), include_memory=False)
+        world_budget = max(0, self.max_tokens - system_cost -
+                           self.estimate_tokens(without_world) - reserve - 16)
+        if inputs.game_block and self.estimate_tokens(inputs.game_block) > world_budget:
+            inputs = replace(inputs, game_block=self._fit_world(inputs.game_block, world_budget))
 
         # The tail (direction + user message) is load-bearing and always kept
         # whole; measure it without recalled memory first.
@@ -130,7 +144,7 @@ class PromptManager:
         remaining = self.max_tokens - fixed_cost
 
         # Recalled memory is the first thing to sacrifice when space is tight.
-        include_memory = bool(inputs.memory_recall) and remaining >= self.estimate_tokens(
+        include_memory = bool(inputs.memory_recall) and remaining - reserve >= self.estimate_tokens(
             inputs.memory_recall
         )
         if include_memory:
@@ -149,11 +163,24 @@ class PromptManager:
             # the line, and everything sacrificable has already gone. Said once
             # per turn because the alternative is paying for it in her memory.
             _log.warning(
-                "prompt %d tokens over the %d ceiling (world block and steering are "
-                "kept whole; %d of %d prior messages survived)",
+                "prompt %d tokens over the %d ceiling (required direction and conversation "
+                "exceed budget; %d of %d prior messages survived)",
                 total, self.max_tokens, len(window), len(inputs.dialogue_window),
             )
         return messages
+
+    def _fit_world(self, block: str, budget: int) -> str:
+        """Keep whole world sections in the priority order supplied by the port."""
+        kept: list[str] = []
+        marker = "[World details omitted to preserve the conversation.]"
+        for section in block.split("\n\n"):
+            candidate = "\n\n".join([*kept, section, marker])
+            if self.estimate_tokens(candidate) > budget:
+                break
+            kept.append(section)
+        _log.info("world budget: %d -> %d estimated tokens",
+                  self.estimate_tokens(block), self.estimate_tokens("\n\n".join(kept)))
+        return "\n\n".join([*kept, marker]) if kept else ""
 
     # ------------------------------------------------------------------ prefix
 
