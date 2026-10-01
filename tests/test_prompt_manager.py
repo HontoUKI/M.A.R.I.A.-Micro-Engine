@@ -237,3 +237,14 @@ def test_memory_kept_when_budget_allows():
 def test_dialogue_turn_rejects_unknown_role():
     with pytest.raises(ValueError):
         DialogueTurn("system", "nope")
+
+
+def test_routine_names_survive_an_oversized_world_section_before_them():
+    manager = PromptManager()
+    block = ("Your situation: safe.\n\n" + "large terrain " * 10000
+             + "\n\nYour routines (name, details):\ncrank: turn the handle")
+    fitted = manager._fit_world(block, 100)
+    assert 'Your situation: safe.' in fitted
+    assert 'crank: turn the handle' in fitted
+    assert 'large terrain' not in fitted
+    assert manager.estimate_tokens(fitted) <= 100

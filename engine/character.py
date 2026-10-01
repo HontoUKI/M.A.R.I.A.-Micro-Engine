@@ -15,7 +15,8 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 
 from engine.dossier import summarise, worth
-from engine.hands import GamePort, describe, how_it_went, read_intention, refusals
+from engine.glossary import LOOKUP, GlossaryNotes
+from engine.hands import GamePort, describe, how_it_went, read_intention, refusals, worked_plays
 from engine.llm import LLMError, OllamaClient
 from engine.memory import VectorStore
 from engine.pack.models import CharacterPack
@@ -145,6 +146,7 @@ class CharacterRuntime:
         deeds: tuple = (),
         mentioned: str = "",
         loop_block: str = "",
+        glossary_notes: GlossaryNotes | None = None,
     ) -> None:
         self._pack = pack
         self._llm = llm
@@ -158,6 +160,8 @@ class CharacterRuntime:
         # A pack cannot turn this on: whether a game is attached is a deployment
         # decision, like the choice of model. See engine/hands.py.
         self._hands = hands
+        self._glossary = glossary_notes if glossary_notes is not None else GlossaryNotes()
+        self._lookup_blocked = False
         self._deeds = tuple(deeds)
         self._mentioned = mentioned
         # The step of the pack's loop she is on (engine/loop.py); empty outside one.
@@ -183,6 +187,7 @@ class CharacterRuntime:
         dialogue_window: tuple[DialogueTurn, ...] = (),
     ) -> TurnResult:
         usage_before = self._usage_snapshot()
+        self._glossary.begin_turn()
 
         # Gate the classifier's choices by the relationship *before* this turn:
         # a tag only unlocks once the standing is inside its window.
@@ -218,6 +223,22 @@ class CharacterRuntime:
             user_message=user_message,
         )
         reply = self._llm.chat(self._pm.build_messages(inputs))
+        request = LOOKUP.search(reply)
+        if request is not None and self._hands is not None and not self._lookup_blocked:
+            article = {"name": "Lookup", "index": True,
+                       "text": "The glossary did not answer. Do not invent its contents."}
+            try:
+                article = self._hands.glossary(request.group(1))
+                self._glossary.remember(article)
+            except Exception:
+                pass
+            # No first-pass play is executed. Exactly one continuation, even if the
+            # model emits another lookup; both the lookup and discarded play stay private.
+            reference = (f"\n\nReference: {article['name']}\n{article['text']}\n"
+                         "Answer the original turn now. No further lookup this turn.")
+            continuation = replace(inputs, user_message=user_message + reference)
+            reply = self._llm.chat(self._pm.build_messages(continuation))
+        reply = LOOKUP.sub("", reply).strip()
         reply, did = self._reach_for_the_game(reply)
 
         self._remember(user_message, query_vec)
@@ -244,6 +265,7 @@ class CharacterRuntime:
         try:
             history = self._hands.history()
             sight = self._hands.sight()
+            self._lookup_blocked = bool(sight.get("defending") or sight.get("mending"))
             self._paused = _paused_id(sight)
             # Незаконченное желание: за чем она шла и что осталось. Держится отдельно от
             # паузы, потому что это разные вещи — прерванную работу продолжают с того же
@@ -256,6 +278,8 @@ class CharacterRuntime:
                 refusals(history),
                 _paused_name(history, self._paused),
                 self._unfinished,
+                self._glossary.render(),
+                worked_plays(history),
             )
             held = getattr(self, "_held_back", ())
             if held:

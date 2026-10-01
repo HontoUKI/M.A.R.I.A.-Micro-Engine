@@ -173,14 +173,18 @@ class PromptManager:
         """Keep whole world sections in the priority order supplied by the port."""
         kept: list[str] = []
         marker = "[World details omitted to preserve the conversation.]"
-        for section in block.split("\n\n"):
-            candidate = "\n\n".join([*kept, section, marker])
+        sections = block.split("\n\n")
+        routines = [s for s in sections if s.startswith("Your routines (name, details):")]
+        for section in sections:
+            if section in routines:
+                continue
+            candidate = "\n\n".join([*kept, section, *routines, marker])
             if self.estimate_tokens(candidate) > budget:
                 break
             kept.append(section)
         _log.info("world budget: %d -> %d estimated tokens",
                   self.estimate_tokens(block), self.estimate_tokens("\n\n".join(kept)))
-        return "\n\n".join([*kept, marker]) if kept else ""
+        return "\n\n".join([*kept, *routines, marker]) if kept or routines else ""
 
     # ------------------------------------------------------------------ prefix
 

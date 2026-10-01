@@ -6,13 +6,14 @@ dependencies injected so the API can be tested against a stub LLM.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.contracts import ChatMessage
 from app.scenes import SceneStore
 from app.sessions import SessionStore
 from engine.character import CharacterRuntime, TurnResult
 from engine.dossier import deeds
+from engine.glossary import GlossaryNotes
 from engine.hands import GamePort
 from engine.llm import OllamaClient
 from engine.mentioned import mentioned
@@ -62,6 +63,7 @@ class EngineService:
     sessions: SessionStore = None  # type: ignore[assignment]
     scene_store: SceneStore = None  # type: ignore[assignment]
     prompt_manager: PromptManager = None  # type: ignore[assignment]
+    glossary_notes: dict[tuple[str, str], GlossaryNotes] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.sessions is None:
@@ -96,6 +98,7 @@ class EngineService:
 
     def reset_relationship(self, model: str, session_key: str) -> None:
         self.sessions.reset_state(session_key, self._require_pack(model))
+        self.glossary_notes.pop((session_key, model), None)
 
     def complete(
         self,
@@ -135,6 +138,7 @@ class EngineService:
             user_gender=self.user_gender if user_gender is None else user_gender,
             web_search=self.web_search,
             hands=self.hands,
+            glossary_notes=self.glossary_notes.setdefault((session_key, model), GlossaryNotes()),
             deeds=done,
             mentioned=mentioned(lived),
             loop_block=loop.block(pack) if loop is not None else "",

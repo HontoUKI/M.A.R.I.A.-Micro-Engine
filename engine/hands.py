@@ -174,6 +174,12 @@ class GamePort:
     def history(self) -> list[dict[str, Any]]:
         return list(self._get("/attempts").get("attempts", []))
 
+    def glossary(self, name: str) -> dict[str, Any]:
+        """Read one generated reference article, or the index for an unknown name."""
+        from urllib.parse import quote
+
+        return self._get("/glossary?name=" + quote(name, safe=""))
+
     # ------------------------------------------------------------------ doing
 
     def read(self, text: str) -> dict[str, Any]:
@@ -295,6 +301,8 @@ def describe(
     lessons: tuple[str, ...] = (),
     paused: str = "",
     unfinished: dict[str, Any] | None = None,
+    notes: str = "",
+    successes: str = "",
 ) -> str:
     """The block that tells her she has hands, and what they can do.
 
@@ -308,6 +316,10 @@ def describe(
     verbs = offer.get("affordances") or []
     if not verbs:
         return ""
+
+    if offer.get("glossary"):
+        return _describe_reference(offer, sight, last, lessons, paused, unfinished,
+                                   notes, successes)
 
     lines = [
         f"You are in {offer.get('game') or 'a world'} and you can act in it yourself. "
@@ -440,6 +452,59 @@ def describe(
     return "\n".join(lines)
 
 
+def _describe_reference(offer, sight, last, lessons, paused, unfinished, notes, successes):
+    """World sections ordered for truncation: situation, belongings, failures, people, index."""
+    sections = [
+        f"You are in {offer.get('game') or 'a world'}. "
+        "Act only inside <play>...</play>, one call per line. Speech does not move your hands. "
+        "Use run(name, with: {param: value}) for a known routine. "
+        "<lookup>Glossary</lookup> lists reference topics; <lookup>Teach</lookup> explains "
+        "how to save routines, loops and conditions. At most one lookup per turn; "
+        "lookup is disabled under threat. Only listed things and places are known. "
+        "Wanting none of it is an answer.",
+        f"The last thing you tried: {last or 'nothing yet.'}",
+    ]
+    if paused:
+        sections.append(f"You are part-way through {paused}. "
+                        "<play>continue</play> resumes; <play>drop</play> abandons it.")
+    if unfinished:
+        sections.append("Unfinished intention: " + plainly(unfinished))
+    core = {k: sight[k] for k in ("her", "world", "walking_with", "defending", "mending")
+            if k in sight}
+    sections.append("Your situation:\n" + plainly(core))
+    hand = sight.get("in_hand")
+    if hand:
+        sections.append("In your hand: " + plainly(hand))
+    if "inventory" in sight:
+        sections.append("Your bag:\n" + plainly(sight["inventory"]))
+    sections.append("What came into your bag or left it lately: "
+                    + (plainly(sight.get("bag_lately")) or "nothing lately.")
+                    + "\nListed pickups are already in your bag, not lying on the ground.")
+    if lessons:
+        sections.append("What the world has refused lately:\n" + "\n".join(lessons))
+    for key in ("around", "people", "entities", "bosses"):
+        if key in sight:
+            sections.append(f"{key}: {plainly(sight[key])}")
+    if notes:
+        sections.append(notes)
+    if successes:
+        sections.append(successes)
+    # Routines are never discarded behind a large terrain dump.
+    if "routines" in sight:
+        sections.append("Your routines (name, details):\n"
+                        + "\n".join(plainly(r) for r in sight["routines"]))
+    for key in ("window", "sense", "terrain", "plants_around"):
+        if key in sight:
+            sections.append(f"{key}: {plainly(sight[key])}")
+    skip = {"her", "world", "walking_with", "defending", "mending", "inventory", "in_hand",
+            "bag_lately", "routines", "noticed", "atlas", "around", "people", "entities", "bosses",
+            "window", "sense", "terrain", "plants_around"}
+    for key, value in sight.items():
+        if key not in skip:
+            sections.append(f"{key}: {plainly(value)}")
+    return "\n\n".join(sections)
+
+
 def refusals(attempts: list[dict[str, Any]], most: int = 3) -> tuple[str, ...]:
     """The last few distinct things the world said no to.
 
@@ -485,3 +550,20 @@ def how_it_went(attempts: list[dict[str, Any]]) -> str:
         why = attempt.get("foreclosed_by")
         return f"{goal.get('verb')}{named} — the world said no" + (f": {why}" if why else "")
     return ""
+
+
+def worked_plays(attempts: list[dict[str, Any]]) -> str:
+    """Recent successful top-level calls, in the game's own executable language."""
+    calls = []
+    for attempt in reversed(attempts or []):
+        play = attempt.get("play")
+        if attempt.get("outcome") == "reached" and not attempt.get("parent") and play:
+            if play not in calls:
+                calls.append(str(play))
+        if len(calls) == 2:
+            break
+    if not calls:
+        return ""
+    return ("Calls that worked recently (most recent first):\n<play>\n"
+            + "\n".join(calls) + "\n</play>\n"
+            "To remember the last worked routine, use teach(name, because: \"why\").")
