@@ -486,3 +486,19 @@ def test_what_she_noticed_and_her_atlas_are_not_standing_lines():
     assert "noticed far off" not in told
     assert "desert" not in told and "594" not in told
     assert "  noticed:" not in told and "  atlas:" not in told
+
+
+def test_the_thing_in_her_hand_is_its_own_paragraph_with_its_keys():
+    from engine.hands import describe
+
+    offer = {"affordances": [{"verb": "press", "needs": "object — a key"}]}
+    sight = {"in_hand": {
+        "item": "cgs:flintlock",
+        "data": '{"AmmoCount":{"ntgl:primary":0}}',
+        "keys": "ntgl:C2SMessageReload(hand, weaponMode); ntgl:C2SMessageShoot(shooterId)",
+        "more": 70,
+    }}
+    text = describe(offer, sight)
+    assert "In your hand: cgs:flintlock" in text
+    assert "ntgl:C2SMessageReload(hand, weaponMode)" in text
+    assert "in_hand:" not in text, "not again in the dump of everything she sees"

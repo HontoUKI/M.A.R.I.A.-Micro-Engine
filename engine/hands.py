@@ -322,7 +322,7 @@ def describe(
     # Замеченное вдали и атлас в свалку «где ты» не идут; и своими строками больше тоже
     # (30.09) — новая находка приезжает один раз поводом, см. ниже.
     for key, value in (sight or {}).items():
-        if key in ("bag_lately", "noticed", "atlas"):
+        if key in ("bag_lately", "noticed", "atlas", "in_hand"):
             continue
         said = plainly(value)
         if said:
@@ -353,6 +353,20 @@ def describe(
         "itself, so a thing somebody threw to you and that is listed here is already in",
         "your bag — it is not lying on the ground any more.",
     ]
+    # What is in her hand and the keys it has — its own paragraph, like the bag (01.10).
+    # Buried in the dump of everything she sees, a flintlock's reload was one line among
+    # forty, and she told him «where is the button?» with the button in front of her.
+    hand = (sight or {}).get("in_hand")
+    if isinstance(hand, dict) and hand.get("keys"):
+        lines += [
+            "",
+            f"In your hand: {hand.get('item')}"
+            + (f" — its data: {hand['data']}" if hand.get("data") else "") + ".",
+            f"What it does is its keys (press one): {hand['keys']}"
+            + (f" (and {hand['more']} more of its mods')" if hand.get("more") else "") + ".",
+            "  press(<key>, args: [values in that order]) — a hand is MAIN_HAND or OFF_HAND;",
+            "  @self, @yaw, @pitch are filled in for you; a refusal names the values it wants.",
+        ]
     # What she noticed far off and her atlas are NOT standing lines (author, 30.09): printed
     # every turn, a statue two hundred blocks away was news again each time and Mizuki
     # talked about it between his lines. A new find arrives once, as its own note
