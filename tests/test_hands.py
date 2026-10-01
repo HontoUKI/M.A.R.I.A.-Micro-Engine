@@ -120,6 +120,24 @@ class TestReadingHerDecision:
 
 
 class TestSayingWhatTheGameSent:
+    @pytest.mark.parametrize("reference", [False, True])
+    def test_all_current_effects_and_bounded_body_notices_reach_the_prompt(self, reference):
+        offer = {"game": "test", "affordances": [{"verb": "wait"}]}
+        if reference:
+            offer["glossary"] = "reference"
+        sight = {"her": {
+            "effects": [{"name": f"effect_{i}"} for i in range(5)],
+            "body_lately": [{"kind": "effect_removed", "effect": f"old_{i}"}
+                            for i in range(4)] + [{"kind": "consumed", "item": "golden_apple",
+                                                  "source": "healing_reflex", "count": 1}],
+        }, "entities": [{"name": f"creature_{i}"} for i in range(8)]}
+        told = describe(offer, sight)
+        assert "effect_4" in told
+        assert "golden_apple" in told
+        assert "healing_reflex" in told
+        # General nested censuses still keep their normal size limit.
+        assert "creature_7" not in plainly({"entities": sight["entities"]})
+
     def test_the_engine_knows_none_of_the_keys(self):
         # Reading state by meaning would make the engine know ONE game, and the
         # second game would arrive in the prompt empty while reporting success.

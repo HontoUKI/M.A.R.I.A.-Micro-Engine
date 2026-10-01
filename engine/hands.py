@@ -231,7 +231,7 @@ class GamePort:
 
 # --------------------------------------------------------------------- saying it
 
-def plainly(value: Any, depth: int = 0) -> str:
+def plainly(value: Any, depth: int = 0, *, unabridged: frozenset[str] = frozenset()) -> str:
     """Say what the game sent, knowing none of its words.
 
     Mechanical on purpose. Reading the state by meaning — "health", "around",
@@ -257,7 +257,7 @@ def plainly(value: Any, depth: int = 0) -> str:
     if isinstance(value, (int, float, str)):
         return str(value)
     if isinstance(value, list):
-        said = [p for p in (plainly(v, depth + 1) for v in value) if p]
+        said = [p for p in (plainly(v, depth + 1, unabridged=unabridged) for v in value) if p]
         # **Пустой список — это ФАКТ, а отсутствующее значение — нет.**
         #
         # Пустое читалось как ничего и выбрасывалось из промпта целиком. Живьём 03.09
@@ -275,7 +275,9 @@ def plainly(value: Any, depth: int = 0) -> str:
         out: list[str] = []
         told: list[str] = []
         for k, v in value.items():
-            said = plainly(v, depth + 1)
+            # A caller may preserve already bounded notifications instead of
+            # losing their newest entries behind an ordinary census limit.
+            said = plainly(v, 0 if k in unabridged else depth + 1, unabridged=unabridged)
             if not said:
                 continue
             # Already said, in this same breath. A STRICT part of something already
@@ -336,7 +338,7 @@ def describe(
     for key, value in (sight or {}).items():
         if key in ("bag_lately", "noticed", "atlas", "in_hand"):
             continue
-        said = plainly(value)
+        said = plainly(value, unabridged=frozenset({"effects", "body_lately"}))
         if said:
             lines.append(f"  {key}: {said}")
     lines += [
@@ -471,7 +473,8 @@ def _describe_reference(offer, sight, last, lessons, paused, unfinished, notes, 
         sections.append("Unfinished intention: " + plainly(unfinished))
     core = {k: sight[k] for k in ("her", "world", "walking_with", "defending", "mending")
             if k in sight}
-    sections.append("Your situation:\n" + plainly(core))
+    sections.append("Your situation:\n" + plainly(
+        core, unabridged=frozenset({"effects", "body_lately"})))
     hand = sight.get("in_hand")
     if hand:
         sections.append("In your hand: " + plainly(hand))
