@@ -243,7 +243,8 @@ class CharacterRuntime:
         leftover_lookup = bool(LOOKUP.search(reply))
         reply = LOOKUP.sub("", reply).strip()
         reply, did = self._reach_for_the_game(reply)
-        if leftover_lookup and self._hands is not None and not getattr(self, "_lookup_blocked", False):
+        if (leftover_lookup and self._hands is not None
+                and not getattr(self, "_lookup_blocked", False)):
             self._unread = getattr(self, "_unread", ()) + (
                 "An additional lookup in your final response was not processed. "
                 "Only one lookup is allowed per turn; request the next article on a later turn. "
