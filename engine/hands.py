@@ -122,6 +122,11 @@ def read_intention(
         f"«{line}» is the old form and was not read — write calls inside <play>"
         for line in stray
     )
+    if not text and _PLAY.search(reply) and read is not None:
+        unread += (
+            "Your <play> block contained no action calls. "
+            "Write a game call there, or omit the block to wait.",
+        )
     if not text or read is None:
         return Intention(unread=unread), speech
     said = read(text)

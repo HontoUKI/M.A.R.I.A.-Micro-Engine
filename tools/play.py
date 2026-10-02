@@ -612,6 +612,8 @@ def main() -> int:
             except Exception as why:  # noqa: BLE001
                 print(f"[ход не вышел: {why}]", file=sys.stderr)
                 continue
+            if getattr(result, "game_feedback_pending", False):
+                deferred.defer({"kind": "waiting"})
             print(f"  {said}")
             if result.reply.strip():
                 print(f"<{display}> {result.reply}")
@@ -664,6 +666,9 @@ def main() -> int:
         except Exception as why:  # noqa: BLE001 - one bad turn must not end the evening
             print(f"[ход не вышел: {why}]", file=sys.stderr)
             continue
+
+        if getattr(result, "game_feedback_pending", False):
+            deferred.defer({"kind": "waiting"})
 
         window.append(ChatMessage(role="user", content=said_to_her))
         window.append(ChatMessage(role="assistant", content=result.reply))

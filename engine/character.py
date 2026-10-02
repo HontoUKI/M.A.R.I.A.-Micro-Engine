@@ -119,6 +119,8 @@ class TurnResult:
     # when no game is attached or when she chose to do nothing — which is a
     # choice, and one the block in the prompt says out loud she may make.
     did: tuple[str, ...] = ()
+    # Internal game-loop wake: there may be no router event for an unread call.
+    game_feedback_pending: bool = False
 
 
 class CharacterRuntime:
@@ -251,6 +253,9 @@ class CharacterRuntime:
             stage_changed=stage_changed,
             usage=self._usage_delta(usage_before),
             did=did,
+            game_feedback_pending=bool(
+                getattr(self, "_unread", ()) or getattr(self, "_game_delivery_issue", "")
+            ),
         )
 
     def _game_block(self) -> str:
@@ -300,6 +305,10 @@ class CharacterRuntime:
                     "nothing moved: " + "; ".join(unread)
                     + "\nOne call per line, like: gather(cobblestone, 3)"
                 )
+            delivery = getattr(self, "_game_delivery_issue", "")
+            if delivery:
+                self._game_delivery_issue = ""
+                block += "\n\n" + delivery
             return block
         except Exception:
             return ""
@@ -320,6 +329,10 @@ class CharacterRuntime:
         except Exception:
             # The game did not answer: nothing moved, and the block is still not speech.
             intention, speech = read_intention(reply)
+            self._game_delivery_issue = (
+                "The game reader did not answer last time. Your calls were not sent for execution. "
+                "This is a connection failure, not a syntax error or a refusal by the world."
+            )
         # She is told next turn that a line of hers could not be read. Without this she
         # cannot tell "I acted" from "nothing happened", and on 03.09 she wrote the same
         # malformed line twice running — the world had no answer to give, because the
@@ -361,6 +374,13 @@ class CharacterRuntime:
                 return speech, ()
             self._hands.act(intention)
         except Exception:
+            # A request may reach the game before its response is lost. Do not say
+            # nothing happened, or encourage spending the same resources twice.
+            self._game_delivery_issue = (
+                "The game did not confirm your last action request. It may have been accepted; "
+                "check current state and recent attempts before repeating it. "
+                "This is a connection failure, not a confirmed refusal by the world."
+            )
             return speech, ()
         said = tuple(
             f"{goal.verb} " + " ".join(f"{k}={v}" for k, v in goal.fields.items())
