@@ -459,7 +459,9 @@ def _describe_reference(offer, sight, last, lessons, paused, unfinished, notes, 
     sections = [
         f"You are in {offer.get('game') or 'a world'}. "
         "Act only inside <play>...</play>, one call per line. Speech does not move your hands. "
-        "Use run(name, with: {param: value}) for a known routine. "
+        "Use run(name, param: value) for a known routine. "
+        "Write routines as teach { DSL calls } name(my_routine) details(\"purpose\"); "
+        "the router compiles before saving. Do not write JSON steps. "
         "<lookup>Glossary</lookup> lists reference topics; <lookup>Teach</lookup> explains "
         "how to save routines, loops and conditions. At most one lookup per turn; "
         "lookup is disabled under threat. Only listed things and places are known. "
