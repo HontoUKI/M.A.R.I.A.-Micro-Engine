@@ -93,6 +93,14 @@ names no things, so a bound treats it as "everything" unless she left the
 forbidden thing out with `EXCEPT`. A block the router cannot read comes back
 with its line, column and reason, and she is told it next turn.
 
+Рутины модель пишет на DSL: `teach { вызовы } name(имя) details("назначение")`.
+Запись тела, формализация и компиляция — стадии одного исходника. Движок передаёт
+текст в `/read`; роутер проверяет весь блок до сохранения и возвращает место ошибки
+с фрагментом строки и указателем. Запуск — отдельным ходом:
+`run(имя, параметр: значение)`. Модель не составляет JSON-шаги; внутренний HTTP-протокол
+по-прежнему передаёт скомпилированные данные. Полная грамматика доступна через
+`lookup Teach` из определений роутера.
+
 The block exists because a line form did not survive the trip. Replies are cut
 into sentences for delivery, and whatever does that joins neighbouring lines
 with a space. Inside `<play>` the text survives being cut up, and an
