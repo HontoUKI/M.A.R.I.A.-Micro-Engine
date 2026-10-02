@@ -110,3 +110,70 @@ def test_play_delivers_local_feedback_through_normal_pause_without_router_events
     monkeypatch.setattr(play.sys, "argv", ["play", "--character", "test", "--port", "http://test/v0"])
     assert play.main() == 0
     assert len(calls) == 3
+
+
+@pytest.mark.parametrize("failure", ["unread", "read_connection", "act_connection"])
+def test_feedback_crosses_service_requests_isolated_by_session_and_survives_world_budget(
+    tmp_path, failure
+):
+    from app.contracts import ChatMessage
+    from app.service import EngineService
+    from engine.prompt_manager import PromptManager
+    from engine.registry import PackRegistry
+
+    class Port(Hands):
+        failed = False
+
+        def sight(self):
+            return {"large_world": "terrain " * 6000}
+
+        def read(self, text):
+            if failure == "unread":
+                return {"error": "test syntax needs parentheses"}
+            if failure == "read_connection":
+                raise ConnectionError("read failed")
+            return super().read(text)
+
+        def act(self, intention):
+            raise ConnectionError("response lost after submission")
+
+    class Model:
+        def __init__(self):
+            self.inputs = []
+            self.fail = False
+
+        def chat(self, messages, *, fmt=None, **kwargs):
+            if fmt:
+                return '{"tag":"neutral"}'
+            if self.fail:
+                raise RuntimeError("model unavailable")
+            self.inputs.append(messages)
+            return "<play>move()</play>" if len(self.inputs) == 1 else "I will wait."
+
+    pack, model = make_pack(), Model()
+    service = EngineService(
+        registry=PackRegistry({"aria": pack}), llm=model, hands=Port(),
+        sessions_dir=str(tmp_path / "sessions"), scenes_dir=str(tmp_path / "scenes"),
+        prompt_manager=PromptManager(max_tokens=1800),
+    )
+    messages = [ChatMessage(role="user", content="Go")]
+    assert service.complete("aria", messages, session_key="alice").game_feedback_pending
+    service.complete("aria", messages, session_key="bob")
+    assert "test syntax" not in str(model.inputs[-1])
+    assert "connection failure" not in str(model.inputs[-1])
+    model.fail = True
+    with pytest.raises(RuntimeError, match="model unavailable"):
+        service.complete("aria", messages, session_key="alice")
+    assert ("alice", "aria") in service.game_feedback
+    model.fail = False
+    result = service.complete("aria", messages, session_key="alice")
+    text = str(model.inputs[-1])
+    expected = "test syntax" if failure == "unread" else "connection failure"
+    assert expected in text, "the service builds a new runtime for every request"
+    assert "World details omitted" in text
+    assert not result.game_feedback_pending
+    service.complete("aria", messages, session_key="alice")
+    assert expected not in str(model.inputs[-1])
+    service.game_feedback[("alice", "aria")] = {"_unread": ("old error",)}
+    service.reset_relationship("aria", "alice")
+    assert ("alice", "aria") not in service.game_feedback

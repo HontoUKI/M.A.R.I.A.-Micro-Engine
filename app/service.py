@@ -64,6 +64,8 @@ class EngineService:
     scene_store: SceneStore = None  # type: ignore[assignment]
     prompt_manager: PromptManager = None  # type: ignore[assignment]
     glossary_notes: dict[tuple[str, str], GlossaryNotes] = field(default_factory=dict)
+    # Runtime instances live for one request; unsaid game feedback lives for the session.
+    game_feedback: dict[tuple[str, str], dict] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.sessions is None:
@@ -99,6 +101,7 @@ class EngineService:
     def reset_relationship(self, model: str, session_key: str) -> None:
         self.sessions.reset_state(session_key, self._require_pack(model))
         self.glossary_notes.pop((session_key, model), None)
+        self.game_feedback.pop((session_key, model), None)
 
     def complete(
         self,
@@ -143,7 +146,27 @@ class EngineService:
             mentioned=mentioned(lived),
             loop_block=loop.block(pack) if loop is not None else "",
         )
-        result = runtime.respond(driver, window)
+        feedback_key = (session_key, model)
+        for name, value in self.game_feedback.get(feedback_key, {}).items():
+            setattr(runtime, name, value)
+        try:
+            result = runtime.respond(driver, window)
+        except Exception:
+            # Building the prompt consumes feedback; a failed model turn must not
+            # consume its only delivery to the character.
+            for name, value in self.game_feedback.get(feedback_key, {}).items():
+                if not getattr(runtime, name, None):
+                    setattr(runtime, name, value)
+            raise
+        finally:
+            pending = {
+                name: value for name in ("_unread", "_held_back", "_game_delivery_issue")
+                if (value := getattr(runtime, name, None))
+            }
+            if pending:
+                self.game_feedback[feedback_key] = pending
+            else:
+                self.game_feedback.pop(feedback_key, None)
         self.sessions.record_turn(
             session_key, pack, kernel, user_message=driver, result=result
         )

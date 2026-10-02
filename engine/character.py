@@ -291,24 +291,25 @@ class CharacterRuntime:
                 # Сказано один раз и снято: это про строку, которую она только что
                 # написала, а жалоба, пережившая свой ход, становится шумом о прошлом.
                 self._held_back = ()
-                block += (
-                    "\n\nYou did not do this, and it was not the world that"
-                    " stopped you: " + "; ".join(held)
+                block = (
+                    "You did not do this, and it was not the world that"
+                    " stopped you: " + "; ".join(held) + "\n\n" + block
                 )
             unread = getattr(self, "_unread", ())
             if unread:
                 # Said once and cleared: it is about the line she just wrote, and a
                 # complaint that outlives its turn becomes noise about the past.
                 self._unread = ()
-                block += (
-                    "\n\nWhat you wrote in <play> last time could not be read, so "
+                block = (
+                    "What you wrote in <play> last time could not be read, so "
                     "nothing moved: " + "; ".join(unread)
                     + "\nOne call per line, like: gather(cobblestone, 3)"
+                    + "\n\n" + block
                 )
             delivery = getattr(self, "_game_delivery_issue", "")
             if delivery:
                 self._game_delivery_issue = ""
-                block += "\n\n" + delivery
+                block = delivery + "\n\n" + block
             return block
         except Exception:
             return ""
