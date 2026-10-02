@@ -283,17 +283,43 @@ def _took(items: dict[str, int]) -> list[dict]:
     return [{"what": what, "count": count} for what, count in items.items()]
 
 
-def _with_gifts(events, gifts: Gifts, clock=time.time):
+def _with_gifts(events, gifts: Gifts, clock=time.time, *, keep_ticks=False):
     """Events with pickups held back in ``gifts`` and let out folded when due."""
     for event in events:
         yield from gifts.due(clock())
         if event is None:
+            if keep_ticks:
+                yield None
             continue
         if event.get("kind") in PICKUPS and not event.get("folded"):
             who = str(event.get("who") or "somebody")
             gifts.add(who, event.get("took") or [], clock(), event["kind"])
             continue
         yield event
+
+
+class DeferredWake:
+    """Coalesce own work notifications; read fresh state once the pause expires."""
+
+    def __init__(self):
+        self.pending = None
+
+    def defer(self, event):
+        if event.get("kind") in WAKING:
+            self.pending = event
+
+    def clear(self):
+        self.pending = None
+
+    def take(self, now, *, heard_at, woke_at, fled_at):
+        if self.pending is None:
+            return None
+        if (now - heard_at < QUIET_AFTER_HIM or now - woke_at < WAKE_EVERY
+                or calm_now(self.pending, fled_at, now)):
+            return None
+        event = self.pending
+        self.clear()
+        return event
 
 
 def calm_now(event: dict, fled_at: float, now: float) -> bool:
@@ -512,7 +538,12 @@ def main() -> int:
     last_person = ""
     gifts = Gifts()
     fled_at = 0.0
-    for event in _with_gifts(_ticking(_listen(port)), gifts):
+    deferred = DeferredWake()
+    for event in _with_gifts(_ticking(_listen(port)), gifts, keep_ticks=True):
+        if event is None:
+            event = deferred.take(time.time(), heard_at=heard_at, woke_at=woke_at, fled_at=fled_at)
+            if event is None:
+                continue
         if not visible(event, unseen):
             continue
         kind = event.get("kind")
@@ -526,6 +557,7 @@ def main() -> int:
         if kind == "fled":
             fled_at = time.time()
         if notable and calm_now(event, fled_at, time.time()):
+            deferred.defer(event)
             continue
         if notable:
             # Порог частоты — про её СОБСТВЕННЫЕ дела: попытки закрываются каждые
@@ -533,12 +565,14 @@ def main() -> int:
             # и уже прорежены роутером — про взгляд и про опасность он говорит не чаще
             # раза в минуту на человека, — так что глушить их ещё раз значит терять их.
             if not about_him and time.time() - woke_at < WAKE_EVERY:
+                deferred.defer(event)
                 continue
             # Разговор старше собственного повода: слово берут в тишине, а не поперёк
             # только что сказанного. Иначе её собственный ход выглядит как «ты меня не
             # слушаешь» ровно там, где он её слушает.
             quiet = QUIET_AFTER_HIM if WITH_CONTENT.get(kind) is None else WITH_CONTENT[kind]
             if time.time() - heard_at < quiet:
+                deferred.defer(event)
                 continue
             woke_at = time.time()
             # Чей это ход.
@@ -556,6 +590,7 @@ def main() -> int:
             who = about_whom(event) or last_person
             if not who:
                 continue
+            deferred.clear()  # This turn reads the current world, including pending outcomes.
             last_person = who
             window = windows.setdefault(who, [])
             # Ход про её работу идёт БЕЗ содержания, и это не упущение: состояние мира
@@ -599,6 +634,7 @@ def main() -> int:
         if not said:
             continue
         last_person = who
+        deferred.clear()  # A human turn also receives the latest action outcome.
         # Отметка о том, что он говорил: её собственный повод молчит столько-то после.
         heard_at = time.time()
         print(f"<{who}> {said}")
