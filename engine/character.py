@@ -240,8 +240,15 @@ class CharacterRuntime:
                          "Answer the original turn now. No further lookup this turn.")
             continuation = replace(inputs, user_message=user_message + reference)
             reply = self._llm.chat(self._pm.build_messages(continuation))
+        leftover_lookup = bool(LOOKUP.search(reply))
         reply = LOOKUP.sub("", reply).strip()
         reply, did = self._reach_for_the_game(reply)
+        if leftover_lookup and self._hands is not None and not getattr(self, "_lookup_blocked", False):
+            self._unread = getattr(self, "_unread", ()) + (
+                "An additional lookup in your final response was not processed. "
+                "Only one lookup is allowed per turn; request the next article on a later turn. "
+                "The action calls in the final response were handled separately.",
+            )
 
         self._remember(user_message, query_vec)
         return TurnResult(

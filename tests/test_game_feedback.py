@@ -56,13 +56,52 @@ def test_delivery_failure_is_reported_once_after_reconnect_without_claiming_outc
     assert "connection failure" not in runtime._game_block()
 
 
-def test_empty_block_produces_feedback_but_speech_only_is_a_valid_wait():
-    assert read_intention("Wait.<play> </play>", Hands().read)[0].unread
+def test_empty_block_and_speech_only_are_valid_waits():
+    assert not read_intention("Wait.<play> </play>", Hands().read)[0].unread
     assert not read_intention("Wait.", Hands().read)[0].unread
     assert not read_intention("Wait.<play></play>")[0].unread
 
 
+def test_ignored_second_lookup_gets_one_turn_of_feedback_then_empty_wait_stops(tmp_path):
+    from app.contracts import ChatMessage
+    from app.service import EngineService
+    from engine.registry import PackRegistry
+
+    class Port(Hands):
+        def offer(self):
+            return {**super().offer(), "glossary": True}
+
+        def glossary(self, name):
+            return {"name": name, "text": "Reference article"}
+
+    class Model:
+        def __init__(self):
+            self.inputs = []
+
+        def chat(self, messages, *, fmt=None, **kwargs):
+            if fmt:
+                return '{"tag":"neutral"}'
+            self.inputs.append(messages)
+            return ["<lookup>Teach</lookup>", "<play><lookup>Other</lookup></play>",
+                    "Done.<play></play>"][len(self.inputs) - 1]
+
+    model = Model()
+    service = EngineService(registry=PackRegistry({"aria": make_pack()}), llm=model,
+                            hands=Port(), sessions_dir=str(tmp_path / "s"),
+                            scenes_dir=str(tmp_path / "c"))
+    first = service.complete("aria", [ChatMessage(role="user", content="Go")], session_key="one")
+    assert first.game_feedback_pending and not first.did
+    second = service.complete("aria", [ChatMessage(role="user", content="[waiting]")],
+                              session_key="one")
+    assert "additional lookup" in str(model.inputs[-1])
+    assert second.reply == "Done." and not second.game_feedback_pending and not second.did
+
+
 def test_runtime_marks_unread_calls_for_game_loop_and_clears_feedback_on_next_turn():
+    class Reader(Hands):
+        def read(self, text):
+            return {"error": "move needs parentheses"}
+
     class Model:
         def __init__(self):
             self.voices = []
@@ -71,13 +110,13 @@ def test_runtime_marks_unread_calls_for_game_loop_and_clears_feedback_on_next_tu
             if fmt:
                 return '{"tag":"neutral"}'
             self.voices.append(messages)
-            return "Waiting.<play></play>" if len(self.voices) == 1 else "I will wait."
+            return "Waiting.<play>move</play>" if len(self.voices) == 1 else "I will wait."
 
     model = Model()
-    runtime = CharacterRuntime(make_pack(), model, hands=Hands())
+    runtime = CharacterRuntime(make_pack(), model, hands=Reader())
     assert runtime.respond("Go").game_feedback_pending
     assert not runtime.respond("[waiting]").game_feedback_pending
-    assert "contained no action calls" in str(model.voices[-1])
+    assert "move needs parentheses" in str(model.voices[-1])
 
 
 def test_play_delivers_local_feedback_through_normal_pause_without_router_events(monkeypatch):
