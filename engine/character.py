@@ -311,7 +311,9 @@ class CharacterRuntime:
                 block = (
                     "What you wrote in <play> last time could not be read, so "
                     "nothing moved: " + "; ".join(unread)
-                    + "\nOne call per line, like: gather(cobblestone, 3)"
+                    + "\nKnown routines use run(name, param: value); "
+                    "primitive verbs use verb(arguments). "
+                    "Do not write run name(arguments). Read lookup for the call's parameters."
                     + "\n\n" + block
                 )
             delivery = getattr(self, "_game_delivery_issue", "")
@@ -372,9 +374,13 @@ class CharacterRuntime:
             if intention.carry_on and unfinished:
                 self._hands.resume_plan(unfinished.get("plan", ""))
                 return speech, ("continue",)
-            if intention.let_go and self._paused:
-                self._hands.abandon(self._paused)
-                return speech, ("drop",)
+            if intention.let_go:
+                if self._paused:
+                    self._hands.abandon(self._paused)
+                if unfinished:
+                    self._hands.abandon_plan(unfinished["plan"])
+                if not intention.steps:
+                    return speech, ("drop",)
             if not intention.steps:
                 return speech, ()
             intention, held = self._within_bounds(intention)

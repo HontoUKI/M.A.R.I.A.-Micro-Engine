@@ -26,6 +26,27 @@ class Hands:
         return {}
 
 
+@pytest.mark.parametrize("replacement", [False, True])
+def test_drop_releases_both_paused_work_and_closed_intention_before_replacement(replacement):
+    calls = []
+    hands = Hands()
+    hands.read = lambda text: {
+        "word": "drop", "steps": [{"verb": "move"}] if replacement else []
+    }
+    hands.abandon = lambda key: calls.append(("attempt", key))
+    hands.abandon_plan = lambda key: calls.append(("plan", key))
+    hands.act = lambda intention: calls.append(("act", intention.steps[0].verb))
+    runtime = CharacterRuntime(make_pack(), object(), hands=hands)
+    runtime._paused = "paused"
+    runtime._unfinished = {"plan": "closed-plan"}
+    speech, did = runtime._reach_for_the_game("Okay.<play>drop</play>")
+    assert speech == "Okay."
+    assert calls == [("attempt", "paused"), ("plan", "closed-plan")] + (
+        [("act", "move")] if replacement else []
+    )
+    assert did
+
+
 @pytest.mark.parametrize("phase", ["read", "act"])
 def test_delivery_failure_is_reported_once_after_reconnect_without_claiming_outcome(phase):
     hands = Hands()

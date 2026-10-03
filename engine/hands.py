@@ -209,6 +209,10 @@ class GamePort:
     def abandon(self, attempt_id: str) -> dict[str, Any]:
         return self._post(f"/attempts/{attempt_id}/abandon", {})
 
+    def abandon_plan(self, plan_id: str) -> dict[str, Any]:
+        """Release an unfinished plan without rewriting its recorded outcome."""
+        return self._post(f"/plans/{plan_id}/abandon", {})
+
     def act(self, intention: Intention) -> dict[str, Any]:
         """Set an intention going. One step once is an attempt; anything else is
         a plan, because "twenty times" is a sequence even when the sequence has
@@ -459,7 +463,12 @@ def _describe_reference(offer, sight, last, lessons, paused, unfinished, notes, 
     sections = [
         f"You are in {offer.get('game') or 'a world'}. "
         "Act only inside <play>...</play>, one call per line. Speech does not move your hands. "
+        "Calls request actions; they do not prove success. While submitting a call, "
+        "describe your intention, not a completed result. Report success on a later turn "
+        "only when current state and outcomes confirm the player's actual request. "
+        "A reached craft does not mean the crafted block was placed or handed over. "
         "Use run(name, param: value) for a known routine. "
+        "Primitive verbs are direct calls, never run(primitive_name, ...). "
         "Write routines as teach { DSL calls } name(my_routine) details(\"purpose\"); "
         "the router compiles before saving. Do not write JSON steps. "
         "<lookup>Glossary</lookup> lists reference topics; <lookup>Teach</lookup> explains "
@@ -472,7 +481,9 @@ def _describe_reference(offer, sight, last, lessons, paused, unfinished, notes, 
         sections.append(f"You are part-way through {paused}. "
                         "<play>continue</play> resumes; <play>drop</play> abandons it.")
     if unfinished:
-        sections.append("Unfinished intention: " + plainly(unfinished))
+        sections.append("Unfinished intention: " + plainly(unfinished)
+                        + "\n<play>continue</play> retries it; <play>drop</play> releases it "
+                        "when you change the plan, including before replacement calls.")
     core = {k: sight[k] for k in ("her", "world", "walking_with", "defending", "mending")
             if k in sight}
     sections.append("Your situation:\n" + plainly(
