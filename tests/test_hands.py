@@ -410,6 +410,17 @@ def test_execution_facts_have_one_dedicated_section():
     assert "stream: one" not in told
 
 
+def test_priority_ammunition_is_first_body_data_without_raw_duplicate():
+    told = describe(
+        {"game": "Minecraft", "glossary": True, "affordances": [{"verb": "track"}]},
+        {"her": {"health": 20}, "ammunition": [{"item": "spectral_arrow", "remaining": 0}]},
+        "Ammunition:\nspectral_arrow: remaining 0",
+    )
+    assert '<body>\nAmmunition:' in told
+    assert told.count('spectral_arrow') == 1
+    assert told.endswith('</body>')
+
+
 def test_what_she_noticed_and_her_atlas_are_not_standing_lines():
     """30.09: printed every turn, a statue far off was news again each time and Mizuki
     talked about it between his lines. Neither a line of its own nor in the dump."""

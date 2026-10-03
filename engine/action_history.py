@@ -29,7 +29,7 @@ class ActionHistory:
             self.stream = stream
             self.seen.clear()
             self.cells.clear()
-        present = {str(row['id']) for row in feed.get('records') or []}
+        present = {str(row["id"]) for row in feed.get("records") or []}
         self.seen = {key: revision for key, revision in self.seen.items() if key in present}
         for row in feed.get("records") or []:
             key = str(row["id"])
@@ -39,12 +39,29 @@ class ActionHistory:
             self.seen[key] = revision
             self.cells[key] = (row, self.turn)
 
-    def render(self) -> str:
+    def render(self, ammunition: list[dict[str, Any]] | None = None) -> str:
         """Render measured changes and outcomes, preserving distinct retries."""
-        if not self.cells:
-            return "Recent actions: none observed in the last five turns."
-        lines = ["Recent actions (oldest first; each observation lasts five turns):"]
+        watched = {str(item["item"]).removeprefix("minecraft:"): item for item in ammunition or []}
+        lines = []
         ordered = sorted(self.cells.values(), key=lambda cell: cell[0].get("sequence", 0))
+        if watched:
+            lines.append("Ammunition (current stock; changes last five turns):")
+            for item, stock in watched.items():
+                lines.append(f"{item}: remaining {stock['remaining']}")
+                for row, observed in ordered:
+                    for delta in row.get("changes") or []:
+                        if str(delta["item"]).removeprefix("minecraft:") == item:
+                            lines.append(
+                                f"  {delta['change']:+g}, "
+                                f"reason: {delta.get('reason') or 'unknown'}; "
+                                f"actor: {row.get('actor') or 'unknown'}; action: #{row['id']}; "
+                                f"observed {self.turn - observed} turns ago"
+                                + (f"; routine: {row['routine']}" if row.get("routine") else "")
+                            )
+            lines.append("")
+        if not ordered:
+            return "\n".join(lines + ["Recent actions: none observed in the last five turns."])
+        lines.append("Recent actions (oldest first; each observation lasts five turns):")
         for row, observed in ordered:
             goal = row.get("goal") or {}
             title = str(goal.get("verb") or "action")
@@ -61,6 +78,8 @@ class ActionHistory:
             if row.get("parent"):
                 lines.append(f"parent: {row['parent']}")
             for delta in row.get("changes") or []:
+                if str(delta["item"]).removeprefix("minecraft:") in watched:
+                    continue
                 reason = delta.get("reason") or "unknown"
                 lines.append(f"{delta['change']:+g} {delta['item']}, reason: {reason}")
             if row.get("world"):

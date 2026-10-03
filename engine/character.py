@@ -295,7 +295,7 @@ class CharacterRuntime:
             block = describe(
                 self._hands.offer(),
                 sight,
-                actions.render(),
+                actions.render(sight.get('ammunition')),
                 _paused_name(history, self._paused),
                 self._unfinished,
                 self._glossary.render(),

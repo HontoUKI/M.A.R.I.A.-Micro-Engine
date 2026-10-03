@@ -328,15 +328,18 @@ def describe(
         f"You are in {offer.get('game') or 'a world'} and you can act in it yourself. "
         + str(offer.get("about") or "").strip(),
         "",
+        "<body>",
+        actions or "Recent actions: none observed yet.",
         "Where you are right now:",
     ]
     for key, value in (sight or {}).items():
-        if key in ("actions", "noticed", "atlas", "in_hand"):
+        if key in ("actions", "ammunition", "noticed", "atlas", "in_hand"):
             continue
         said = plainly(value, unabridged=frozenset({"effects", "body_lately"}))
         if said:
             lines.append(f"  {key}: {said}")
     lines += [
+        "</body>",
         "",
         # Рамка, а не характер. Пак Юкины писан под отыгрыш, а в отыгрыше придумать
         # подробность — это работа; в мире это враньё, и разницу должен объявить тот,
@@ -354,10 +357,6 @@ def describe(
         needs = str(one.get("needs") or one.get("predicate") or "").strip()
         lines.append(f"  {one.get('verb')}" + (f" — {needs}" if needs else ""))
 
-    lines += [
-        "",
-        actions or "Recent actions: none observed yet.",
-    ]
     # What is in her hand and the keys it has — its own paragraph, like the bag (01.10).
     # Buried in the dump of everything she sees, a flintlock's reload was one line among
     # forty, and she told him «where is the button?» with the button in front of her.
@@ -451,7 +450,7 @@ def _describe_reference(offer, sight, actions, paused, unfinished, notes):
         "how to save routines, loops and conditions. At most one lookup per turn; "
         "lookup is disabled under threat. Only listed things and places are known. "
         "Wanting none of it is an answer.",
-        actions or "Recent actions: none observed yet.",
+        "<body>\n" + (actions or "Recent actions: none observed yet."),
     ]
     if paused:
         sections.append(f"You are part-way through {paused}. "
@@ -482,9 +481,11 @@ def _describe_reference(offer, sight, actions, paused, unfinished, notes):
         if key in sight:
             sections.append(f"{key}: {plainly(sight[key])}")
     skip = {"her", "world", "walking_with", "defending", "mending", "inventory", "in_hand",
-            "actions", "routines", "noticed", "atlas", "around", "people", "entities", "bosses",
+            "actions", "ammunition", "routines", "noticed", "atlas", "around", "people",
+            "entities", "bosses",
             "window", "sense", "terrain", "plants_around"}
     for key, value in sight.items():
         if key not in skip:
             sections.append(f"{key}: {plainly(value)}")
+    sections.append('</body>')
     return "\n\n".join(sections)

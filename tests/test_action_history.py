@@ -3,6 +3,35 @@
 from engine.action_history import ActionHistory
 
 
+def test_selected_ammunition_has_current_stock_and_single_copy_of_measured_changes():
+    notes = ActionHistory()
+    notes.begin_turn()
+    notes.observe(
+        feed(
+            action(
+                "shots",
+                actor="reflex",
+                routine="spell_fighting",
+                changes=[
+                    {"item": "minecraft:spectral_arrow", "change": -10, "reason": "guard_reflex"},
+                    {"item": "bread", "change": -1, "reason": "healing_reflex"},
+                ],
+            )
+        )
+    )
+    text = notes.render([{"item": "spectral_arrow", "remaining": 0}])
+    assert text.startswith("Ammunition")
+    assert "spectral_arrow: remaining 0" in text
+    assert text.count("-10") == 1
+    assert "reason: guard_reflex; actor: reflex" in text
+    assert "-1 bread, reason: healing_reflex" in text
+    for _ in range(5):
+        notes.begin_turn()
+    text = notes.render([{"item": "spectral_arrow", "remaining": 0}])
+    assert "remaining 0" in text and "-10" not in text
+    assert "Ammunition" not in notes.render()
+
+
 def feed(*rows, stream="world"):
     return {"stream": stream, "records": list(rows)}
 
