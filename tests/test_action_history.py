@@ -167,3 +167,35 @@ def test_service_retains_history_across_request_runtimes_and_reset(tmp_path):
         assert ("#placed" in model.inputs[-1]) is (turn <= 5)
     service.reset_relationship("aria", "one")
     assert not service.action_histories
+
+
+def test_transport_success_remains_distinct_from_game_effect_and_revisions_expire():
+    history = ActionHistory()
+    history.begin_turn()
+    row = action(
+        "cast",
+        confirmation={
+            "completion_basis": "server_ack",
+            "stages": [
+                {"kind": "packet_sent", "detail": {"action": "cast"}},
+                {"kind": "server_ack", "detail": {"acceptance": "accepted"}},
+            ],
+        },
+    )
+    history.observe(feed(row))
+    text = history.render()
+    assert "completion_basis: server_ack" in text
+    assert "effect: unconfirmed" in text
+    row["revision"] += 1
+    row["confirmation"]["stages"].append(
+        {"kind": "effect_confirmed", "detail": {"evidence": "inventory delta"}}
+    )
+    row["confirmation"]["completion_basis"] = "effect_confirmed"
+    history.begin_turn()
+    history.observe(feed(row))
+    text = history.render()
+    assert text.count("#cast ") == 1
+    assert "effect: unconfirmed" not in text
+    for _ in range(5):
+        history.begin_turn()
+    assert "#cast " not in history.render()

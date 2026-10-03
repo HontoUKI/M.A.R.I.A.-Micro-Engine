@@ -112,6 +112,19 @@ class ActionHistory:
                 f"actor: {row.get('actor') or 'unknown'}; "
                 f"observed {self.turn - observed} turns ago"
             )
+            confirmation = row.get("confirmation") or {}
+            if confirmation:
+                lines.append(
+                    "completion_basis: " + str(confirmation.get("completion_basis") or "none yet")
+                )
+                stages = confirmation.get("stages") or []
+                for stage in stages:
+                    lines.append(str(stage.get("kind")) + ": " + plainly(stage.get("detail") or {}))
+                if not any(stage.get("kind") == "effect_confirmed" for stage in stages):
+                    lines.append(
+                        "effect: unconfirmed; a sent packet or server reply "
+                        "does not prove the game effect"
+                    )
             if row.get("parent"):
                 lines.append(f"parent: {row['parent']}")
             for delta in row.get("changes") or []:
