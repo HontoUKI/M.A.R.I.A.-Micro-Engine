@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from app.contracts import ChatMessage
 from app.scenes import SceneStore
 from app.sessions import SessionStore
+from engine.action_history import ActionHistory
 from engine.character import CharacterRuntime, TurnResult
 from engine.dossier import deeds
 from engine.glossary import GlossaryNotes
@@ -64,6 +65,7 @@ class EngineService:
     scene_store: SceneStore = None  # type: ignore[assignment]
     prompt_manager: PromptManager = None  # type: ignore[assignment]
     glossary_notes: dict[tuple[str, str], GlossaryNotes] = field(default_factory=dict)
+    action_histories: dict[tuple[str, str], ActionHistory] = field(default_factory=dict)
     # Runtime instances live for one request; unsaid game feedback lives for the session.
     game_feedback: dict[tuple[str, str], dict] = field(default_factory=dict)
 
@@ -101,6 +103,7 @@ class EngineService:
     def reset_relationship(self, model: str, session_key: str) -> None:
         self.sessions.reset_state(session_key, self._require_pack(model))
         self.glossary_notes.pop((session_key, model), None)
+        self.action_histories.pop((session_key, model), None)
         self.game_feedback.pop((session_key, model), None)
 
     def complete(
@@ -142,6 +145,7 @@ class EngineService:
             web_search=self.web_search,
             hands=self.hands,
             glossary_notes=self.glossary_notes.setdefault((session_key, model), GlossaryNotes()),
+            action_history=self.action_histories.setdefault((session_key, model), ActionHistory()),
             deeds=done,
             mentioned=mentioned(lived),
             loop_block=loop.block(pack) if loop is not None else "",

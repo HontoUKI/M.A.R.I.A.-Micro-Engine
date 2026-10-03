@@ -76,20 +76,13 @@ def test_lookup_only_once_discards_first_action_and_hides_tags(threat):
         assert 'Reference body' in model.voices[1][-1]['content']
 
 
-def test_routine_index_and_worked_calls_reach_the_compact_world():
-    from engine.hands import describe, worked_plays
+def test_routine_index_and_action_history_reach_the_compact_world():
+    from engine.hands import describe
 
     routines = [{'name': f'routine_{i}', 'details': f'Purpose {i}'} for i in range(26)]
-    history = [{'outcome': 'reached', 'play': 'activate(hand_crank, hold: 4)'},
-               {'outcome': 'foreclosed', 'play': 'dig(stone)'},
-               {'outcome': 'reached', 'parent': 'r1', 'play': 'consume(bread)'}]
     text = describe({'game': 'Minecraft', 'glossary': True, 'affordances': [{'verb': 'activate'}]},
-                    {'routines': routines}, successes=worked_plays(history))
+                    {'routines': routines}, 'Recent actions: #a activate — reached')
     for routine in routines:
         assert routine['name'] in text
-    assert 'activate(hand_crank, hold: 4)' in text
-    assert 'dig(stone)' not in text and 'consume(bread)' not in text
-    assert 'teach(name' in text
-    history_text = worked_plays(history)
-    assert '<play>' not in history_text and '</play>' not in history_text
-    assert 'do not repeat a completed request' in history_text
+    assert 'Recent actions: #a activate — reached' in text
+    assert 'History of completed calls' not in text

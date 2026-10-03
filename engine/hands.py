@@ -303,12 +303,10 @@ def plainly(value: Any, depth: int = 0, *, unabridged: frozenset[str] = frozense
 def describe(
     offer: dict[str, Any],
     sight: dict[str, Any],
-    last: str = "",
-    lessons: tuple[str, ...] = (),
+    actions: str = "",
     paused: str = "",
     unfinished: dict[str, Any] | None = None,
     notes: str = "",
-    successes: str = "",
 ) -> str:
     """The block that tells her she has hands, and what they can do.
 
@@ -324,8 +322,7 @@ def describe(
         return ""
 
     if offer.get("glossary"):
-        return _describe_reference(offer, sight, last, lessons, paused, unfinished,
-                                   notes, successes)
+        return _describe_reference(offer, sight, actions, paused, unfinished, notes)
 
     lines = [
         f"You are in {offer.get('game') or 'a world'} and you can act in it yourself. "
@@ -333,14 +330,8 @@ def describe(
         "",
         "Where you are right now:",
     ]
-    # Перемены сумки — своей строкой рядом с «последним», а не среди строк «где ты»
-    # (28.09): на «I dropped some beef for you» Мария искала мясо на земле, хотя строка
-    # «+3 beef (picked up)» стояла в её состоянии, — его слова перевешивали свалку.
-    bag = (sight or {}).get("bag_lately")
-    # Замеченное вдали и атлас в свалку «где ты» не идут; и своими строками больше тоже
-    # (30.09) — новая находка приезжает один раз поводом, см. ниже.
     for key, value in (sight or {}).items():
-        if key in ("bag_lately", "noticed", "atlas", "in_hand"):
+        if key in ("actions", "noticed", "atlas", "in_hand"):
             continue
         said = plainly(value, unabridged=frozenset({"effects", "body_lately"}))
         if said:
@@ -365,11 +356,7 @@ def describe(
 
     lines += [
         "",
-        f"The last thing you tried: {last or 'nothing yet.'}",
-        f"What came into your bag or left it lately: {plainly(bag) or 'nothing lately.'}",
-        "That is your bag as it is now. Anything that touches your feet goes into it by",
-        "itself, so a thing somebody threw to you and that is listed here is already in",
-        "your bag — it is not lying on the ground any more.",
+        actions or "Recent actions: none observed yet.",
     ]
     # What is in her hand and the keys it has — its own paragraph, like the bag (01.10).
     # Buried in the dump of everything she sees, a flintlock's reload was one line among
@@ -408,7 +395,7 @@ def describe(
         # прощает ложное «я сделала» — следующий шаг упрётся и скажет; ОТХОД не прощает,
         # потому что отход ровно то место, где внешнее желание надо держать.
         #
-        # А держать было нечем: план закрывался, `how_it_went` рассказывал про последнюю
+        # А держать было нечем: план закрывался, описание исхода рассказывало про последнюю
         # попытку, и то, что она шла за КИРКОЙ, не помнил никто. Проще всего модели в
         # этот момент считать, что кирка сделана.
         after = plainly(unfinished.get("after"))
@@ -423,17 +410,6 @@ def describe(
             "Doing something else first is how this usually goes — make what it asked",
             "for, then write <play>continue</play> to pick this up again.",
         ]
-    if lessons:
-        # What the world has refused, kept for a few turns.
-        #
-        # One line of history teaches nothing. Live 03.09: told that a pig is
-        # alive and not a block, she fought one — and two turns later asked to
-        # `gather pig` again, because by then the only thing she could see was
-        # the outcome of the last attempt and the refusal had scrolled away. A
-        # world that answers and is then forgotten is a world that has to answer
-        # the same thing forever.
-        lines += ["", "What the world has refused lately:"]
-        lines += [f"  {one}" for one in lessons]
     lines += [
         "",
         "This is a list of what is possible, not a list of things to do. Wanting",
@@ -458,7 +434,7 @@ def describe(
     return "\n".join(lines)
 
 
-def _describe_reference(offer, sight, last, lessons, paused, unfinished, notes, successes):
+def _describe_reference(offer, sight, actions, paused, unfinished, notes):
     """World sections ordered for truncation: situation, belongings, failures, people, index."""
     sections = [
         f"You are in {offer.get('game') or 'a world'}. "
@@ -475,7 +451,7 @@ def _describe_reference(offer, sight, last, lessons, paused, unfinished, notes, 
         "how to save routines, loops and conditions. At most one lookup per turn; "
         "lookup is disabled under threat. Only listed things and places are known. "
         "Wanting none of it is an answer.",
-        f"The last thing you tried: {last or 'nothing yet.'}",
+        actions or "Recent actions: none observed yet.",
     ]
     if paused:
         sections.append(f"You are part-way through {paused}. "
@@ -493,18 +469,11 @@ def _describe_reference(offer, sight, last, lessons, paused, unfinished, notes, 
         sections.append("In your hand: " + plainly(hand))
     if "inventory" in sight:
         sections.append("Your bag:\n" + plainly(sight["inventory"]))
-    sections.append("What came into your bag or left it lately: "
-                    + (plainly(sight.get("bag_lately")) or "nothing lately.")
-                    + "\nListed pickups are already in your bag, not lying on the ground.")
-    if lessons:
-        sections.append("What the world has refused lately:\n" + "\n".join(lessons))
     for key in ("around", "people", "entities", "bosses"):
         if key in sight:
             sections.append(f"{key}: {plainly(sight[key])}")
     if notes:
         sections.append(notes)
-    if successes:
-        sections.append(successes)
     # Routines are never discarded behind a large terrain dump.
     if "routines" in sight:
         sections.append("Your routines (name, details):\n"
@@ -513,75 +482,9 @@ def _describe_reference(offer, sight, last, lessons, paused, unfinished, notes, 
         if key in sight:
             sections.append(f"{key}: {plainly(sight[key])}")
     skip = {"her", "world", "walking_with", "defending", "mending", "inventory", "in_hand",
-            "bag_lately", "routines", "noticed", "atlas", "around", "people", "entities", "bosses",
+            "actions", "routines", "noticed", "atlas", "around", "people", "entities", "bosses",
             "window", "sense", "terrain", "plants_around"}
     for key, value in sight.items():
         if key not in skip:
             sections.append(f"{key}: {plainly(value)}")
     return "\n\n".join(sections)
-
-
-def refusals(attempts: list[dict[str, Any]], most: int = 3) -> tuple[str, ...]:
-    """The last few distinct things the world said no to.
-
-    Distinct, because the same refusal five times running is one fact and four
-    wasted lines. Newest first, because the most recent wall is the one she is
-    standing in front of.
-    """
-    seen: list[str] = []
-    for attempt in reversed(attempts or []):
-        why = attempt.get("foreclosed_by")
-        if not why:
-            continue
-        goal = attempt.get("goal") or {}
-        what = goal.get("object")
-        said = f"{goal.get('verb')}{f' {plainly(what)}' if what else ''} — {why}"
-        if said not in seen:
-            seen.append(said)
-        if len(seen) >= most:
-            break
-    return tuple(seen)
-
-
-def how_it_went(attempts: list[dict[str, Any]]) -> str:
-    """What became of the last thing she actually tried.
-
-    `take` returns while the attempt is still running, so on her own turn there
-    is no answer yet: only the next turn can say whether it worked, and it has
-    to say it in words or she learns of the world's refusal from nowhere.
-    """
-    for attempt in reversed(attempts or []):
-        outcome = attempt.get("outcome")
-        if not outcome:
-            continue
-        goal = attempt.get("goal") or {}
-        what = goal.get("object")
-        named = f" {plainly(what)}" if what else ""
-        if any(e.get("kind") == "already" for e in attempt.get("events") or []):
-            return f"{goal.get('verb')}{named} — nothing to do, it was already true"
-        if outcome == "reached":
-            summary = attempt.get("summary")
-            came = f": {summary}" if summary else ""
-            return f"Most recent completed attempt: {goal.get('verb')}{named} — worked{came}"
-        if outcome == "abandoned":
-            return f"{goal.get('verb')}{named} — you dropped it"
-        why = attempt.get("foreclosed_by")
-        return f"{goal.get('verb')}{named} — the world said no" + (f": {why}" if why else "")
-    return ""
-
-
-def worked_plays(attempts: list[dict[str, Any]]) -> str:
-    """Recent successful top-level calls, in the game's own executable language."""
-    calls = []
-    for attempt in reversed(attempts or []):
-        play = attempt.get("play")
-        if attempt.get("outcome") == "reached" and not attempt.get("parent") and play:
-            if play not in calls:
-                calls.append(str(play))
-        if len(calls) == 2:
-            break
-    if not calls:
-        return ""
-    return ("History of completed calls (most recent first; do not repeat a completed request):\n"
-            + "\n".join(f"- {call}" for call in calls) + "\n"
-            "To remember the last worked routine, use teach(name, because: \"why\").")

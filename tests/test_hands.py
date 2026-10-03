@@ -18,7 +18,6 @@ from engine.hands import (
     Goal,
     Intention,
     describe,
-    how_it_went,
     plainly,
     read_intention,
 )
@@ -207,35 +206,6 @@ class TestWhatSheIsTold:
         assert describe({"game": "X", "affordances": []}, {}) == ""
 
 
-class TestDidItWork:
-    def test_the_answer_arrives_next_turn_in_words(self):
-        assert "worked" in how_it_went([{"goal": {"verb": "gather"}, "outcome": "reached"}])
-
-    def test_a_refusal_carries_its_reason(self):
-        said = how_it_went(
-            [{"goal": {"verb": "gather"}, "outcome": "foreclosed", "foreclosed_by": "none near"}]
-        )
-        assert "the world said no: none near" in said
-
-    def test_already_true_does_not_read_as_work_done(self):
-        said = how_it_went(
-            [{"goal": {"verb": "gather"}, "outcome": "reached", "events": [{"kind": "already"}]}]
-        )
-        assert "already true" in said
-
-    def test_an_attempt_still_running_is_not_an_answer(self):
-        assert how_it_went([{"goal": {"verb": "gather"}, "outcome": None}]) == ""
-
-    def test_completed_drop_carries_actual_quantity_and_pickup_uncertainty(self):
-        said = how_it_went([{
-            "goal": {"verb": "drop", "object": "oak_log", "quantity": 4},
-            "outcome": "reached",
-            "summary": "dropped (toward Guide; recipient pickup unconfirmed) oak_log 1",
-        }])
-        assert "oak_log 1" in said and "recipient pickup unconfirmed" in said
-        assert "Most recent completed attempt" in said
-
-
 class TestTheBoundary:
     def test_no_game_attached_means_no_block_and_no_leak(self, monkeypatch):
         """With nothing attached she is told nothing — and her DO line is still
@@ -334,61 +304,6 @@ def test_zero_or_nonsense_times_means_once(times):
     assert intention.repeat == 1
 
 
-class TestWhatTheWorldRefused:
-    """One line of history teaches nothing.
-
-    Live 03.09: told that a pig is alive and not a block, she fought one — and two
-    turns later asked to `gather pig` again, because by then the only thing she
-    could see was the outcome of the last attempt and the refusal had scrolled
-    away. A world that answers and is then forgotten is a world that has to
-    answer the same thing forever.
-    """
-
-    HISTORY = [
-        {"goal": {"verb": "gather", "object": "pig"}, "outcome": "foreclosed",
-         "foreclosed_by": "pig is alive, not a block"},
-        {"goal": {"verb": "fight", "object": "pig"}, "outcome": "reached"},
-        {"goal": {"verb": "gather", "object": "iron"}, "outcome": "foreclosed",
-         "foreclosed_by": "nothing yields iron"},
-    ]
-
-    def test_recent_refusals_survive_a_successful_turn(self):
-        from engine.hands import refusals
-
-        said = refusals(self.HISTORY)
-        assert any("alive, not a block" in one for one in said)
-        assert any("nothing yields iron" in one for one in said)
-
-    def test_the_same_wall_five_times_is_one_fact(self):
-        from engine.hands import refusals
-
-        same = [self.HISTORY[0]] * 5
-        assert len(refusals(same)) == 1
-
-    def test_newest_first_because_that_is_the_wall_she_is_facing(self):
-        from engine.hands import refusals
-
-        assert "iron" in refusals(self.HISTORY)[0]
-
-    def test_they_reach_the_block_she_reads(self):
-        from engine.hands import describe, refusals
-
-        block = describe(
-            {"game": "X", "affordances": [{"verb": "fight"}]},
-            {},
-            "",
-            refusals(self.HISTORY),
-        )
-        assert "What the world has refused lately" in block
-        assert "alive, not a block" in block
-
-    def test_nothing_refused_adds_no_heading(self):
-        from engine.hands import describe
-
-        block = describe({"game": "X", "affordances": [{"verb": "fight"}]}, {}, "", ())
-        assert "refused lately" not in block
-
-
 class TestSomethingSheWasPulledOffOf:
     """An interrupt is a pause and never an outcome, so the next word is hers.
 
@@ -424,9 +339,7 @@ class TestSomethingSheWasPulledOffOf:
         block = describe(
             {"game": "X", "affordances": [{"verb": "gather"}]},
             sight,
-            "",
-            (),
-            _paused_name(history, "a1"),
+            paused=_paused_name(history, "a1"),
         )
         assert "part-way through gather oak_log" in block
         assert "<play>continue</play>" in block and "<play>drop</play>" in block
@@ -486,18 +399,15 @@ class TestSomethingSheWasPulledOffOf:
         assert speech == "sure"
 
 
-def test_what_came_into_her_bag_stands_next_to_what_she_tried():
-    """Живьём 28.09: «I dropped some beef for you» — а мясо уже у неё, и она ищет его на
-    земле. Строка сумки стояла среди строк «где ты» и не читалась; теперь она своя."""
+def test_execution_facts_have_one_dedicated_section():
     told = describe(
-        {"game": "Minecraft", "affordances": [{"verb": "pick_up"}]},
-        {"her": {"health": 20}, "bag_lately": ["+3 beef (picked up), 2 s ago"]},
-        "gather oak_log — worked",
+        {"game": "Minecraft", "glossary": True, "affordances": [{"verb": "place"}]},
+        {"actions": {"stream": "one", "records": []}},
+        "Recent actions: -1 crafting_table, reason: placed",
     )
-    assert "What came into your bag or left it lately: +3 beef (picked up), 2 s ago" in told
-    assert "bag_lately" not in told, "не дважды: не в свалке «где ты»"
-    empty = describe({"game": "Minecraft", "affordances": [{"verb": "pick_up"}]}, {})
-    assert "left it lately: nothing lately." in empty
+    assert told.count("-1 crafting_table") == 1
+    assert "bag_lately" not in told and "The last thing you tried" not in told
+    assert "stream: one" not in told
 
 
 def test_what_she_noticed_and_her_atlas_are_not_standing_lines():

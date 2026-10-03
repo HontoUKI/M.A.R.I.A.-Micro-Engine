@@ -14,9 +14,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
+from engine.action_history import ActionHistory
 from engine.dossier import summarise, worth
 from engine.glossary import LOOKUP, GlossaryNotes
-from engine.hands import GamePort, describe, how_it_went, read_intention, refusals, worked_plays
+from engine.hands import GamePort, describe, read_intention
 from engine.llm import LLMError, OllamaClient
 from engine.memory import VectorStore
 from engine.pack.models import CharacterPack
@@ -149,6 +150,7 @@ class CharacterRuntime:
         mentioned: str = "",
         loop_block: str = "",
         glossary_notes: GlossaryNotes | None = None,
+        action_history: ActionHistory | None = None,
     ) -> None:
         self._pack = pack
         self._llm = llm
@@ -163,6 +165,7 @@ class CharacterRuntime:
         # decision, like the choice of model. See engine/hands.py.
         self._hands = hands
         self._glossary = glossary_notes if glossary_notes is not None else GlossaryNotes()
+        self._actions = action_history if action_history is not None else ActionHistory()
         self._lookup_blocked = False
         self._deeds = tuple(deeds)
         self._mentioned = mentioned
@@ -190,6 +193,7 @@ class CharacterRuntime:
     ) -> TurnResult:
         usage_before = self._usage_snapshot()
         self._glossary.begin_turn()
+        self._actions.begin_turn()
 
         # Gate the classifier's choices by the relationship *before* this turn:
         # a tag only unlocks once the standing is inside its window.
@@ -278,6 +282,10 @@ class CharacterRuntime:
         try:
             history = self._hands.history()
             sight = self._hands.sight()
+            actions = getattr(self, '_actions', None)
+            if actions is None:
+                actions = self._actions = ActionHistory()
+            actions.observe(sight.get('actions') or {})
             self._lookup_blocked = bool(sight.get("defending") or sight.get("mending"))
             self._paused = _paused_id(sight)
             # Незаконченное желание: за чем она шла и что осталось. Держится отдельно от
@@ -287,12 +295,10 @@ class CharacterRuntime:
             block = describe(
                 self._hands.offer(),
                 sight,
-                how_it_went(history),
-                refusals(history),
+                actions.render(),
                 _paused_name(history, self._paused),
                 self._unfinished,
                 self._glossary.render(),
-                worked_plays(history),
             )
             held = getattr(self, "_held_back", ())
             if held:
