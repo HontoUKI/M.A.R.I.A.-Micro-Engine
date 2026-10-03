@@ -39,18 +39,38 @@ class ActionHistory:
             self.seen[key] = revision
             self.cells[key] = (row, self.turn)
 
-    def render(self, ammunition: list[dict[str, Any]] | None = None) -> str:
+    def render(
+        self,
+        ammunition: list[dict[str, Any]] | None = None,
+        effects: list[dict[str, Any]] | None = None,
+    ) -> str:
         """Render measured changes and outcomes, preserving distinct retries."""
         watched = {str(item["item"]).removeprefix("minecraft:"): item for item in ammunition or []}
+
+        def owner(item):
+            item = str(item).removeprefix("minecraft:")
+            if item in watched:
+                return item
+            base = item.split("[")[0]
+            return base if base in watched else None
+
         lines = []
         ordered = sorted(self.cells.values(), key=lambda cell: cell[0].get("sequence", 0))
         if watched:
-            lines.append("Ammunition (current stock; changes last five turns):")
+            lines.append("Ammunition / consumables (current stock; changes last five turns):")
             for item, stock in watched.items():
-                lines.append(f"{item}: remaining {stock['remaining']}")
+                lines.append(
+                    f"{item}: remaining {stock['remaining']}"
+                    + ("; LOCKED — explicit unlock required" if stock.get("locked") else "")
+                    + (
+                        f"; locked units {stock['locked_remaining']}"
+                        if stock.get("locked_remaining") and not stock.get("locked")
+                        else ""
+                    )
+                )
                 for row, observed in ordered:
                     for delta in row.get("changes") or []:
-                        if str(delta["item"]).removeprefix("minecraft:") == item:
+                        if owner(delta["item"]) == item:
                             lines.append(
                                 f"  {delta['change']:+g}, "
                                 f"reason: {delta.get('reason') or 'unknown'}; "
@@ -58,6 +78,23 @@ class ActionHistory:
                                 f"observed {self.turn - observed} turns ago"
                                 + (f"; routine: {row['routine']}" if row.get("routine") else "")
                             )
+            lines.append("")
+        if effects is not None:
+            lines.append("Under effects right now:")
+            if not effects:
+                lines.append("none")
+            for effect in effects:
+                duration = (
+                    "infinite"
+                    if effect.get("infinite")
+                    else f"~{effect['seconds_left_estimate']}s"
+                    if "seconds_left_estimate" in effect
+                    else "duration unknown"
+                )
+                lines.append(
+                    f"{effect.get('name') or 'unknown'}: level {effect.get('level', '?')}; "
+                    + duration
+                )
             lines.append("")
         if not ordered:
             return "\n".join(lines + ["Recent actions: none observed in the last five turns."])
@@ -78,7 +115,7 @@ class ActionHistory:
             if row.get("parent"):
                 lines.append(f"parent: {row['parent']}")
             for delta in row.get("changes") or []:
-                if str(delta["item"]).removeprefix("minecraft:") in watched:
+                if owner(delta["item"]) is not None:
                     continue
                 reason = delta.get("reason") or "unknown"
                 lines.append(f"{delta['change']:+g} {delta['item']}, reason: {reason}")

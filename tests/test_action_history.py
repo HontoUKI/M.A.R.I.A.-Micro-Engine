@@ -3,6 +3,38 @@
 from engine.action_history import ActionHistory
 
 
+def test_consumable_variants_locks_and_effects_stay_current_after_delta_expires():
+    notes = ActionHistory()
+    notes.begin_turn()
+    notes.observe(
+        feed(
+            action(
+                "drink",
+                changes=[
+                    {
+                        "item": "potion[fire_resistance]",
+                        "change": -1,
+                        "reason": "prepare_for_battle",
+                    },
+                ],
+            )
+        )
+    )
+    stock = [
+        {"item": "potion[fire_resistance]", "remaining": 0, "locked": True},
+        {"item": "potion", "remaining": 2, "locked_remaining": 1},
+    ]
+    effects = [{"name": "fire_resistance", "level": 1, "seconds_left_estimate": 300}]
+    text = notes.render(stock, effects)
+    assert text.count("-1") == 1
+    assert "LOCKED" in text and "locked units 1" in text
+    assert "fire_resistance: level 1; ~300s" in text
+    for _ in range(5):
+        notes.begin_turn()
+    text = notes.render(stock, effects)
+    assert "-1" not in text and "LOCKED" in text and "~300s" in text
+
+
 def test_selected_ammunition_has_current_stock_and_single_copy_of_measured_changes():
     notes = ActionHistory()
     notes.begin_turn()

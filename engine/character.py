@@ -295,10 +295,11 @@ class CharacterRuntime:
             block = describe(
                 self._hands.offer(),
                 sight,
-                actions.render(sight.get('ammunition')),
+                actions.render(sight.get('ammunition'), sight.get('her', {}).get('effects')),
                 _paused_name(history, self._paused),
                 self._unfinished,
                 self._glossary.render(),
+                effects_in_actions=sight.get('her', {}).get('effects') is not None,
             )
             held = getattr(self, "_held_back", ())
             if held:

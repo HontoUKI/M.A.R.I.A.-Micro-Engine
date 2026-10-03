@@ -307,6 +307,7 @@ def describe(
     paused: str = "",
     unfinished: dict[str, Any] | None = None,
     notes: str = "",
+    effects_in_actions: bool = False,
 ) -> str:
     """The block that tells her she has hands, and what they can do.
 
@@ -322,7 +323,8 @@ def describe(
         return ""
 
     if offer.get("glossary"):
-        return _describe_reference(offer, sight, actions, paused, unfinished, notes)
+        return _describe_reference(
+            offer, sight, actions, paused, unfinished, notes, effects_in_actions)
 
     lines = [
         f"You are in {offer.get('game') or 'a world'} and you can act in it yourself. "
@@ -335,6 +337,8 @@ def describe(
     for key, value in (sight or {}).items():
         if key in ("actions", "ammunition", "noticed", "atlas", "in_hand"):
             continue
+        if key == 'her' and effects_in_actions:
+            value = {name: fact for name, fact in value.items() if name != 'effects'}
         said = plainly(value, unabridged=frozenset({"effects", "body_lately"}))
         if said:
             lines.append(f"  {key}: {said}")
@@ -433,7 +437,7 @@ def describe(
     return "\n".join(lines)
 
 
-def _describe_reference(offer, sight, actions, paused, unfinished, notes):
+def _describe_reference(offer, sight, actions, paused, unfinished, notes, effects_in_actions=False):
     """World sections ordered for truncation: situation, belongings, failures, people, index."""
     sections = [
         f"You are in {offer.get('game') or 'a world'}. "
@@ -461,6 +465,8 @@ def _describe_reference(offer, sight, actions, paused, unfinished, notes):
                         "when you change the plan, including before replacement calls.")
     core = {k: sight[k] for k in ("her", "world", "walking_with", "defending", "mending")
             if k in sight}
+    if effects_in_actions and isinstance(core.get('her'), dict):
+        core['her'] = {key: value for key, value in core['her'].items() if key != 'effects'}
     sections.append("Your situation:\n" + plainly(
         core, unabridged=frozenset({"effects", "body_lately"})))
     hand = sight.get("in_hand")
