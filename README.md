@@ -145,3 +145,11 @@ Engine code: **Apache-2.0**. Sample character *content* is licensed separately �
 each pack under `characters/` has its own README and `meta.license`.
 
 > Work in progress — v0.2 «Game-Adaptation-Line»: characters step into a game through a router (hands, sight, a quest book) and keep the same tags, stages and dossier. Expect rough edges.
+
+Игровая обратная связь: ошибки DSL с позицией в исходнике доходят в следующий ход;
+`run(name, param: value)` вызывает рутину, примитивы вызываются напрямую.
+`<play>drop</play>` отменяет текущую приостановленную попытку и сохранённый
+незавершённый план. В том же блоке после отмены можно написать новые вызовы.
+Код сохраняет исходный отказ закрытого плана в истории. Отправка действия не
+подтверждает выполнение поручения: модель должна сопоставить последующее
+состояние с просьбой игрока; успешный крафт не означает постановку или передачу.
