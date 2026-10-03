@@ -226,6 +226,15 @@ class TestDidItWork:
     def test_an_attempt_still_running_is_not_an_answer(self):
         assert how_it_went([{"goal": {"verb": "gather"}, "outcome": None}]) == ""
 
+    def test_completed_drop_carries_actual_quantity_and_pickup_uncertainty(self):
+        said = how_it_went([{
+            "goal": {"verb": "drop", "object": "oak_log", "quantity": 4},
+            "outcome": "reached",
+            "summary": "dropped (toward Guide; recipient pickup unconfirmed) oak_log 1",
+        }])
+        assert "oak_log 1" in said and "recipient pickup unconfirmed" in said
+        assert "Most recent completed attempt" in said
+
 
 class TestTheBoundary:
     def test_no_game_attached_means_no_block_and_no_leak(self, monkeypatch):

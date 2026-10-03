@@ -560,7 +560,9 @@ def how_it_went(attempts: list[dict[str, Any]]) -> str:
         if any(e.get("kind") == "already" for e in attempt.get("events") or []):
             return f"{goal.get('verb')}{named} — nothing to do, it was already true"
         if outcome == "reached":
-            return f"{goal.get('verb')}{named} — worked"
+            summary = attempt.get("summary")
+            came = f": {summary}" if summary else ""
+            return f"Most recent completed attempt: {goal.get('verb')}{named} — worked{came}"
         if outcome == "abandoned":
             return f"{goal.get('verb')}{named} — you dropped it"
         why = attempt.get("foreclosed_by")
@@ -580,6 +582,6 @@ def worked_plays(attempts: list[dict[str, Any]]) -> str:
             break
     if not calls:
         return ""
-    return ("Calls that worked recently (most recent first):\n<play>\n"
-            + "\n".join(calls) + "\n</play>\n"
+    return ("History of completed calls (most recent first; do not repeat a completed request):\n"
+            + "\n".join(f"- {call}" for call in calls) + "\n"
             "To remember the last worked routine, use teach(name, because: \"why\").")

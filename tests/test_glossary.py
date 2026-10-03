@@ -90,3 +90,6 @@ def test_routine_index_and_worked_calls_reach_the_compact_world():
     assert 'activate(hand_crank, hold: 4)' in text
     assert 'dig(stone)' not in text and 'consume(bread)' not in text
     assert 'teach(name' in text
+    history_text = worked_plays(history)
+    assert '<play>' not in history_text and '</play>' not in history_text
+    assert 'do not repeat a completed request' in history_text
