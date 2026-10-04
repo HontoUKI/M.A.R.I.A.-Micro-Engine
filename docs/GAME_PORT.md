@@ -93,13 +93,12 @@ names no things, so a bound treats it as "everything" unless she left the
 forbidden thing out with `EXCEPT`. A block the router cannot read comes back
 with its line, column and reason, and she is told it next turn.
 
-Рутины модель пишет на DSL: `teach { вызовы } name(имя) details("назначение")`.
-Запись тела, формализация и компиляция — стадии одного исходника. Движок передаёт
-текст в `/read`; роутер проверяет весь блок до сохранения и возвращает место ошибки
-с фрагментом строки и указателем. Запуск — отдельным ходом:
-`run(имя, параметр: значение)`. Модель не составляет JSON-шаги; внутренний HTTP-протокол
-по-прежнему передаёт скомпилированные данные. Полная грамматика доступна через
-`lookup Teach` из определений роутера.
+The model writes routines as Router DSL: `@teach(details: "purpose") def name(...) { calls }`.
+The engine forwards source to `/read`; the Router validates the entire block and
+returns syntax locations and source fragments. Saving requires `routine_saved`,
+`saved: true`, name and version. Launch it on a separate turn with
+`run(name, parameter: value)`. JSON remains the compiled HTTP/storage format;
+models do not write JSON steps. Read `lookup Teach` for the Router's grammar.
 
 The block exists because a line form did not survive the trip. Replies are cut
 into sentences for delivery, and whatever does that joins neighbouring lines
@@ -113,8 +112,23 @@ The old `DO:` form is gone. A line of it outside the block (or a bare
 was not read — only at the start of a line, so a character's own *"just do:
 whatever you like"* stays speech.
 
-Every response reports what she set going in `x_micro_engine.did`, so a client
-can show that the words and the world agreed.
+Every response reports requests she set going in `x_micro_engine.did`. This is
+delivery evidence, not proof that their effects completed.
+
+## Router refusals and action results
+
+Explicit HTTP 4xx/action refusals retain the Router's diagnostic body and become
+next-turn feedback. A refused action, resume or abandon is not reported in did.
+Reader refusals remain source diagnostics; no action was sent from that block.
+
+HTTP 202 can return an action that already closed as foreclosed or abandoned.
+That record is reported as an action outcome, separately from a rejected request.
+Its reason and confirmation remain available; an unconfirmed effect must not be
+treated as proof that nothing happened or as permission to spend resources again.
+
+HTTP 5xx or a lost response leaves delivery uncertain. The model is told to inspect
+current state and recent attempts before repeating. This consumer port recognizes
+generic Router result fields and introduces no Minecraft verbs or DSL parser.
 
 ## Did it work
 
