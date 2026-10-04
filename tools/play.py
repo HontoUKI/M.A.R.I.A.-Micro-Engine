@@ -451,7 +451,7 @@ def _note(event: dict) -> str:
 
 def _her_name(port: str) -> str:
     try:
-        with urllib.request.urlopen(f"{port}/state", timeout=5) as answer:
+        with urllib.request.urlopen(f"{port}/state?peek=1", timeout=5) as answer:
             return str((json.load(answer).get("her") or {}).get("name") or "")
     except OSError:
         return ""
@@ -461,10 +461,11 @@ def _world_id(port: str) -> str | None:
     """Which world she is in, as the router fingerprints it; None when it cannot say.
 
     Read every turn, not once: he can make a new world while she keeps running, and a
-    pack's loop (engine/loop.py) steps on exactly that.
+    pack's loop (engine/loop.py) steps on exactly that. A `peek` read: only her turn's
+    own read of the state spends what the Router carries for a few turns (an example).
     """
     try:
-        with urllib.request.urlopen(f"{port}/state", timeout=5) as answer:
+        with urllib.request.urlopen(f"{port}/state?peek=1", timeout=5) as answer:
             world = (json.load(answer).get("world") or {}).get("id")
     except (OSError, ValueError):
         return None

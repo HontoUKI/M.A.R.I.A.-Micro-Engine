@@ -353,3 +353,23 @@ def test_feedback_crosses_service_requests_isolated_by_session_and_survives_worl
     service.game_feedback[("alice", "aria")] = {"_unread": ("old error",)}
     service.reset_relationship("aria", "alice")
     assert ("alice", "aria") not in service.game_feedback
+
+
+def test_helper_state_reads_peek_so_they_do_not_spend_her_turns(monkeypatch):
+    # The Router carries a selected example for three turn reads of /state; the world
+    # id and her name are read beside every turn and must not spend those.
+    import io
+    import json
+
+    import tools.play as play
+
+    seen = []
+
+    def urlopen(url, timeout=None):
+        seen.append(url)
+        return io.BytesIO(json.dumps({"world": {"id": "w"}, "her": {"name": "Aria"}}).encode())
+
+    monkeypatch.setattr(play.urllib.request, "urlopen", urlopen)
+    assert play._world_id("http://r/v0") == "w"
+    assert play._her_name("http://r/v0") == "Aria"
+    assert seen == ["http://r/v0/state?peek=1"] * 2
