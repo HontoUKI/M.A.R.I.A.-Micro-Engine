@@ -145,6 +145,50 @@ def read_intention(
     )
 
 
+def _game_result_diagnostic(result: dict[str, Any], status: int | None = None) -> str:
+    """Carry the diagnostic into a turn without duplicating the whole action body."""
+    fields = (
+        "id", "name", "routine_name", "status", "outcome", "error", "code", "why",
+        "foreclosed_by", "saved", "step_path", "line", "column", "expected", "received",
+        "message", "confirmation",
+    )
+    diagnostic = {key: result[key] for key in fields if key in result}
+    if status is not None:
+        diagnostic["http_status"] = status
+    return plainly(diagnostic)
+
+
+class GameRequestRejected(RuntimeError):
+    """An explicit Router refusal, distinct from a lost response."""
+
+    def __init__(self, result: dict[str, Any], status: int | None = None) -> None:
+        self.result = result
+        self.status = status
+        super().__init__(_game_result_diagnostic(result, status))
+
+
+class GameActionNotCompleted(RuntimeError):
+    """A delivered request whose returned action already closed without success."""
+
+    def __init__(self, result: dict[str, Any]) -> None:
+        self.result = result
+        super().__init__(_game_result_diagnostic(result))
+
+
+def require_game_acceptance(result: Any, status: int | None = None) -> None:
+    """Preserve structured refusals before reporting a request as delivered.
+
+    Acceptance only starts an action; the Router still owns its final outcome.
+    In-process ports may return None, while HTTP ports return a result record.
+    """
+    if isinstance(result, dict) and (
+        result.get("error") or result.get("ok") is False or (status and 400 <= status < 500)
+    ):
+        raise GameRequestRejected(result, status)
+    if isinstance(result, dict) and result.get("outcome") in {"foreclosed", "abandoned"}:
+        raise GameActionNotCompleted(result)
+
+
 class GamePort:
     """A game she can reach, over the wire."""
 
@@ -230,7 +274,14 @@ class GamePort:
 
     def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
         r = requests.post(f"{self.base}{path}", json=body, timeout=self.timeout)
-        return r.json()
+        # A server failure can leave delivery uncertain. A 4xx response explicitly
+        # refuses this request. Reader errors remain data for syntax feedback.
+        if r.status_code >= 500:
+            r.raise_for_status()
+        result = r.json()
+        if path != "/read":
+            require_game_acceptance(result, r.status_code)
+        return result
 
 
 # --------------------------------------------------------------------- saying it

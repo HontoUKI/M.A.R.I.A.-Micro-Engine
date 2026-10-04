@@ -17,7 +17,14 @@ from dataclasses import dataclass, replace
 from engine.action_history import ActionHistory
 from engine.dossier import summarise, worth
 from engine.glossary import LOOKUP, GlossaryNotes
-from engine.hands import GamePort, describe, read_intention
+from engine.hands import (
+    GameActionNotCompleted,
+    GamePort,
+    GameRequestRejected,
+    describe,
+    read_intention,
+    require_game_acceptance,
+)
 from engine.llm import LLMError, OllamaClient
 from engine.memory import VectorStore
 from engine.pack.models import CharacterPack
@@ -372,20 +379,19 @@ class CharacterRuntime:
             # turn that says both meant the first, and taking a goal would silently
             # abandon what she just said she wanted to finish.
             if intention.carry_on and self._paused:
-                self._hands.resume(self._paused)
+                require_game_acceptance(self._hands.resume(self._paused))
                 return speech, ("continue",)
-            # Прерванного нет, а незаконченное есть — «продолжай» про него. Для неё это
-            # одно слово: чем возвращение после отхода отличается от возвращения после
-            # помехи, знает роутер, и он же заводит новый ряд вместо старого.
+            # The Router owns the difference between resuming a paused attempt
+            # and starting the remaining steps of an unfinished plan.
             unfinished = getattr(self, "_unfinished", None)
             if intention.carry_on and unfinished:
-                self._hands.resume_plan(unfinished.get("plan", ""))
+                require_game_acceptance(self._hands.resume_plan(unfinished.get("plan", "")))
                 return speech, ("continue",)
             if intention.let_go:
                 if self._paused:
-                    self._hands.abandon(self._paused)
+                    require_game_acceptance(self._hands.abandon(self._paused))
                 if unfinished:
-                    self._hands.abandon_plan(unfinished["plan"])
+                    require_game_acceptance(self._hands.abandon_plan(unfinished["plan"]))
                 if not intention.steps:
                     return speech, ("drop",)
             if not intention.steps:
@@ -394,7 +400,23 @@ class CharacterRuntime:
             self._held_back = held
             if not intention.steps:
                 return speech, ()
-            self._hands.act(intention)
+            require_game_acceptance(self._hands.act(intention))
+        except GameRequestRejected as refusal:
+            self._game_delivery_issue = (
+                "The Router explicitly refused your last request; do not claim it succeeded. "
+                "This is a confirmed request refusal, not a lost response. "
+                "Current work may still be active; inspect it before replacing or repeating it. "
+                + str(refusal)
+            )
+            return speech, ()
+        except GameActionNotCompleted as outcome:
+            self._game_delivery_issue = (
+                "The Router returned a closed action without confirming completion. "
+                "This is an action outcome, not a connection failure. Do not claim success "
+                "or repeat a spending request without checking state and its confirmation. "
+                + str(outcome)
+            )
+            return speech, ()
         except Exception:
             # A request may reach the game before its response is lost. Do not say
             # nothing happened, or encourage spending the same resources twice.

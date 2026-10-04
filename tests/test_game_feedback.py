@@ -5,7 +5,7 @@ import pytest
 
 from engine.character import CharacterRuntime
 from engine.glossary import GlossaryNotes
-from engine.hands import read_intention
+from engine.hands import GamePort, GameRequestRejected, Goal, read_intention
 from tests._packs import make_pack
 
 
@@ -24,6 +24,82 @@ class Hands:
 
     def act(self, intention):
         return {}
+
+
+@pytest.mark.parametrize("method", ["act", "resume", "resume_plan", "abandon", "abandon_plan"])
+def test_explicit_router_refusal_reaches_next_turn_without_a_success_claim(method):
+    hands = Hands()
+    refusal = {"error": "invalid bound parameters", "code": "invalid_argument", "saved": False}
+    setattr(hands, method, lambda *args: refusal)
+    runtime = CharacterRuntime(make_pack(), object(), hands=hands)
+    source = "move()"
+    if method in {"resume", "abandon"}:
+        runtime._paused = "active-attempt"
+        source = "continue" if method == "resume" else "drop"
+    if method in {"resume_plan", "abandon_plan"}:
+        runtime._unfinished = {"plan": "active-plan"}
+        source = "continue" if method == "resume_plan" else "drop"
+    if method != "act":
+        hands.read = lambda text: {"word": source}
+    speech, did = runtime._reach_for_the_game(f"Okay.<play>{source}</play>")
+    assert speech == "Okay." and did == ()
+    block = runtime._game_block()
+    assert "confirmed request refusal" in block
+    assert "invalid bound parameters" in block and "invalid_argument" in block
+    assert "saved" in block
+    assert "connection failure" not in block
+    assert "confirmed request refusal" not in runtime._game_block()
+
+
+def test_http_port_preserves_reader_diagnostics_but_rejects_failed_action_requests(monkeypatch):
+    import requests
+
+    refusal = {"error": "duplicate_argument", "saved": False}
+    class Response:
+        status_code = 422
+
+        def json(self):
+            return refusal
+
+        def raise_for_status(self):
+            raise requests.HTTPError("server failed")
+
+    monkeypatch.setattr("engine.hands.requests.post", lambda *args, **kwargs: Response())
+    port = GamePort("http://test/v0")
+    assert port.read("<play>move()</play>") == refusal
+    with pytest.raises(GameRequestRejected) as rejected:
+        port.take(Goal("move"))
+    assert rejected.value.result == refusal and rejected.value.status == 422
+    Response.status_code = 503
+    with pytest.raises(requests.HTTPError):
+        port.take(Goal("move"))
+
+
+def test_refusal_keeps_raw_result_but_prompt_feedback_does_not_repeat_the_whole_catalog():
+    result = {
+        "error": "verb unavailable", "code": "unknown_verb",
+        "affordances": [{"verb": "large_catalog_entry"}] * 1000,
+    }
+    refusal = GameRequestRejected(result, 422)
+    assert refusal.result is result
+    assert "unknown_verb" in str(refusal) and "422" in str(refusal)
+    assert "large_catalog_entry" not in str(refusal)
+
+
+@pytest.mark.parametrize("error", ["invalid bound parameters", "effect_unconfirmed"])
+def test_immediate_closed_action_is_feedback_even_when_http_request_was_accepted(error):
+    hands = Hands()
+    hands.act = lambda intention: {
+        "id": "closed-action", "open": False, "outcome": "foreclosed",
+        "foreclosed_by": error, "confirmation": {"completion_basis": None},
+    }
+    runtime = CharacterRuntime(make_pack(), object(), hands=hands)
+    speech, did = runtime._reach_for_the_game("Okay.<play>move()</play>")
+    assert speech == "Okay." and did == ()
+    block = runtime._game_block()
+    assert "closed action" in block and "foreclosed" in block and error in block
+    assert "confirmed request refusal" not in block
+    assert "check" in block and "confirmation" in block
 
 
 @pytest.mark.parametrize("replacement", [False, True])
