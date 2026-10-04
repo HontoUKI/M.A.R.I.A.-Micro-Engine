@@ -141,7 +141,7 @@ Apache-2.0). The community contribution is **characters**. See
 
 ## License
 
-Engine code: **Apache-2.0**. Sample character *content* is licensed separately —
+Engine code: **Apache-2.0** — see [LICENSE](LICENSE) and [NOTICE](NOTICE). Sample character *content* is licensed separately —
 each pack under `characters/` has its own README and `meta.license`.
 
 > Work in progress — v0.2 «Game-Adaptation-Line»: characters step into a game through a router (hands, sight, a quest book) and keep the same tags, stages and dossier. Expect rough edges.
