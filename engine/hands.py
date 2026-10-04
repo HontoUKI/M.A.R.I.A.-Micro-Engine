@@ -175,16 +175,22 @@ class GameActionNotCompleted(RuntimeError):
         super().__init__(_game_result_diagnostic(result))
 
 
-def require_game_acceptance(result: Any, status: int | None = None) -> None:
+def require_game_acceptance(
+    result: Any, status: int | None = None, *, release: bool = False
+) -> None:
     """Preserve structured refusals before reporting a request as delivered.
 
     Acceptance only starts an action; the Router still owns its final outcome.
     In-process ports may return None, while HTTP ports return a result record.
+    A release (abandon) is answered with the closed record itself: `abandoned`,
+    or the outcome a plan had already recorded, is its success, not a failure.
     """
     if isinstance(result, dict) and (
         result.get("error") or result.get("ok") is False or (status and 400 <= status < 500)
     ):
         raise GameRequestRejected(result, status)
+    if release:
+        return
     if isinstance(result, dict) and result.get("outcome") in {"foreclosed", "abandoned"}:
         raise GameActionNotCompleted(result)
 
@@ -280,7 +286,7 @@ class GamePort:
             r.raise_for_status()
         result = r.json()
         if path != "/read":
-            require_game_acceptance(result, r.status_code)
+            require_game_acceptance(result, r.status_code, release=path.endswith("/abandon"))
         return result
 
 

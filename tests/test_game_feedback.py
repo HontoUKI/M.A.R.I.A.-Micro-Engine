@@ -123,6 +123,46 @@ def test_drop_releases_both_paused_work_and_closed_intention_before_replacement(
     assert did
 
 
+@pytest.mark.parametrize("plan_outcome", ["abandoned", "foreclosed"])
+def test_drop_accepts_the_closed_records_the_router_really_returns(plan_outcome):
+    # The Router answers abandon with the record it just closed; a plan keeps the
+    # outcome it already had. Stubs returning None hid that a release was being
+    # reported as a failed action and stopped the rest of the drop.
+    calls = []
+    hands = Hands()
+    hands.read = lambda text: {"word": "drop", "steps": [{"verb": "move"}]}
+    hands.abandon = lambda key: calls.append(("attempt", key)) or {
+        "id": key, "open": False, "outcome": "abandoned",
+    }
+    hands.abandon_plan = lambda key: calls.append(("plan", key)) or {
+        "id": key, "outcome": plan_outcome,
+    }
+    hands.act = lambda intention: calls.append(("act", intention.steps[0].verb)) or {
+        "id": "new", "open": True,
+    }
+    runtime = CharacterRuntime(make_pack(), object(), hands=hands)
+    runtime._paused = "paused"
+    runtime._unfinished = {"plan": "closed-plan"}
+    speech, did = runtime._reach_for_the_game("Okay.<play>drop</play>")
+    assert calls == [("attempt", "paused"), ("plan", "closed-plan"), ("act", "move")]
+    assert did and "closed action" not in runtime._game_block()
+
+
+def test_http_abandon_returns_the_closed_record_without_raising(monkeypatch):
+    closed = {"id": "a1", "open": False, "outcome": "abandoned"}
+
+    class Response:
+        status_code = 200
+
+        def json(self):
+            return closed
+
+    monkeypatch.setattr("engine.hands.requests.post", lambda *args, **kwargs: Response())
+    port = GamePort("http://test/v0")
+    assert port.abandon("a1") == closed
+    assert port.abandon_plan("p1") == closed
+
+
 @pytest.mark.parametrize("phase", ["read", "act"])
 def test_delivery_failure_is_reported_once_after_reconnect_without_claiming_outcome(phase):
     hands = Hands()

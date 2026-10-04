@@ -389,9 +389,11 @@ class CharacterRuntime:
                 return speech, ("continue",)
             if intention.let_go:
                 if self._paused:
-                    require_game_acceptance(self._hands.abandon(self._paused))
+                    require_game_acceptance(self._hands.abandon(self._paused), release=True)
                 if unfinished:
-                    require_game_acceptance(self._hands.abandon_plan(unfinished["plan"]))
+                    require_game_acceptance(
+                        self._hands.abandon_plan(unfinished["plan"]), release=True
+                    )
                 if not intention.steps:
                     return speech, ("drop",)
             if not intention.steps:
