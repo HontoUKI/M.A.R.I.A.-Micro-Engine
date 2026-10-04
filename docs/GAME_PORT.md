@@ -126,6 +126,11 @@ That record is reported as an action outcome, separately from a rejected request
 Its reason and confirmation remain available; an unconfirmed effect must not be
 treated as proof that nothing happened or as permission to spend resources again.
 
+A release is the exception. `abandon` is answered with the record it just closed,
+and a plan keeps the outcome it had already recorded, so a closed record is what a
+successful `drop` looks like. Only an explicit refusal stops a release; otherwise
+the rest of the drop — the plan, then any replacement steps — goes out as usual.
+
 HTTP 5xx or a lost response leaves delivery uncertain. The model is told to inspect
 current state and recent attempts before repeating. This consumer port recognizes
 generic Router result fields and introduces no Minecraft verbs or DSL parser.
