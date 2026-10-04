@@ -190,6 +190,9 @@ it, never mixed into a gift.
 router's `state.world.id` (a hash of the world's seed) and passes it to the
 turn. A pack with a `loop` (spec §2.14) steps on a new world; for every other
 pack it changes nothing.
+That read, like the one for her name, is a `GET /state?peek=1`: only the turn's own
+read of the state counts as her turn, which is what spends the three turns the
+router carries a selected routine example for.
 
 **Calm notes wait while she runs.** For `DANGER_HOLD` seconds (20) after she
 flees, "noticed far off", "you are back where…", "he is watching" and her own
