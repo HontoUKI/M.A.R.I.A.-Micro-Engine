@@ -135,6 +135,14 @@ HTTP 5xx or a lost response leaves delivery uncertain. The model is told to insp
 current state and recent attempts before repeating. This consumer port recognizes
 generic Router result fields and introduces no Minecraft verbs or DSL parser.
 
+## What she has on
+
+When the router sends `state.equipment`, it opens the world block. It is one short block: each slot, what is in it, and what she carries that fits it ("head: iron_helmet. Can equip: diamond_helmet"). Accessory slots are included, as are her healing item and her tracked ammunition.
+
+Below it stay only the ammunition changes of the last five turns, because the stock is already in the block. The `wearing` list in her situation is dropped then, so the same armour is not said twice.
+
+With an older router nothing changes: the ammunition block shows the stock as before.
+
 ## Did it work
 
 `POST /v0/attempts` returns while the attempt is still **running** — a verb
