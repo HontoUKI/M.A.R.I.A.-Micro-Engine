@@ -64,6 +64,26 @@ def test_selected_ammunition_has_current_stock_and_single_copy_of_measured_chang
     assert "Ammunition" not in notes.render()
 
 
+
+def test_equipment_block_comes_first_and_keeps_only_ammunition_changes():
+    # The router's block already carries the stock; a second stock line would say it twice.
+    notes = ActionHistory()
+    notes.begin_turn()
+    notes.observe(feed(action("shots", changes=[
+        {"item": "minecraft:spectral_arrow", "change": -10, "reason": "guard_reflex"},
+    ])))
+    block = "head: iron_helmet. Can equip: diamond_helmet\nammunition: spectral_arrow 0"
+    stock = [{"item": "spectral_arrow", "remaining": 0}, {"item": "bread", "remaining": 3}]
+    text = notes.render(stock, None, block)
+    assert text.startswith("Equipment (what is on you")
+    assert block in text
+    assert "remaining 0" not in text, "stock lives in the equipment block"
+    assert "Ammunition changes (last five turns):\nspectral_arrow:\n  -10" in text
+    assert "bread:" not in text, "no empty header for an item without changes"
+    for _ in range(5):
+        notes.begin_turn()
+    assert "Ammunition changes" not in notes.render(stock, None, block)
+
 def feed(*rows, stream="world"):
     return {"stream": stream, "records": list(rows)}
 

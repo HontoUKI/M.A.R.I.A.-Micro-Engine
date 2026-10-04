@@ -43,8 +43,14 @@ class ActionHistory:
         self,
         ammunition: list[dict[str, Any]] | None = None,
         effects: list[dict[str, Any]] | None = None,
+        equipment: str | None = None,
     ) -> str:
-        """Render measured changes and outcomes, preserving distinct retries."""
+        """Render measured changes and outcomes, preserving distinct retries.
+
+        With the router's ``equipment`` block, it comes first: each slot, what is in it and
+        what she carries that fits, ammunition stock included. Only the ammunition changes
+        stay here then, because the stock is already in that block.
+        """
         watched = {str(item["item"]).removeprefix("minecraft:"): item for item in ammunition or []}
 
         def owner(item):
@@ -56,7 +62,31 @@ class ActionHistory:
 
         lines = []
         ordered = sorted(self.cells.values(), key=lambda cell: cell[0].get("sequence", 0))
-        if watched:
+        if equipment:
+            lines.append("Equipment (what is on you, and what you carry that fits each slot):")
+            lines.append(equipment)
+            lines.append("")
+        def changes(item):
+            return [
+                f"  {delta['change']:+g}, "
+                f"reason: {delta.get('reason') or 'unknown'}; "
+                f"actor: {row.get('actor') or 'unknown'}; action: #{row['id']}; "
+                f"observed {self.turn - observed} turns ago"
+                + (f"; routine: {row['routine']}" if row.get("routine") else "")
+                for row, observed in ordered
+                for delta in row.get("changes") or []
+                if owner(delta["item"]) == item
+            ]
+
+        if watched and equipment:
+            moved = {item: changes(item) for item in watched}
+            moved = {item: rows for item, rows in moved.items() if rows}
+            if moved:
+                lines.append("Ammunition changes (last five turns):")
+                for item, rows in moved.items():
+                    lines += [f"{item}:", *rows]
+                lines.append("")
+        elif watched:
             lines.append("Ammunition / consumables (current stock; changes last five turns):")
             for item, stock in watched.items():
                 lines.append(
@@ -68,16 +98,7 @@ class ActionHistory:
                         else ""
                     )
                 )
-                for row, observed in ordered:
-                    for delta in row.get("changes") or []:
-                        if owner(delta["item"]) == item:
-                            lines.append(
-                                f"  {delta['change']:+g}, "
-                                f"reason: {delta.get('reason') or 'unknown'}; "
-                                f"actor: {row.get('actor') or 'unknown'}; action: #{row['id']}; "
-                                f"observed {self.turn - observed} turns ago"
-                                + (f"; routine: {row['routine']}" if row.get("routine") else "")
-                            )
+                lines += changes(item)
             lines.append("")
         if effects is not None:
             lines.append("Under effects right now:")

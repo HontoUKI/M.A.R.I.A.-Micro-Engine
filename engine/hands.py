@@ -392,10 +392,13 @@ def describe(
         "Where you are right now:",
     ]
     for key, value in (sight or {}).items():
-        if key in ("actions", "ammunition", "noticed", "atlas", "in_hand"):
+        if key in ("actions", "ammunition", "noticed", "atlas", "in_hand", "equipment"):
             continue
         if key == 'her' and effects_in_actions:
             value = {name: fact for name, fact in value.items() if name != 'effects'}
+        # The equipment block already says what she wears, slot by slot.
+        if key == 'her' and (sight or {}).get('equipment'):
+            value = {name: fact for name, fact in value.items() if name not in ('wearing', 'bare')}
         said = plainly(value, unabridged=frozenset({"effects", "body_lately"}))
         if said:
             lines.append(f"  {key}: {said}")
@@ -547,8 +550,8 @@ def _describe_reference(offer, sight, actions, paused, unfinished, notes, effect
         if key in sight:
             sections.append(f"{key}: {plainly(sight[key])}")
     skip = {"her", "world", "walking_with", "defending", "mending", "inventory", "in_hand",
-            "actions", "ammunition", "routines", "noticed", "atlas", "around", "people",
-            "entities", "bosses",
+            "actions", "ammunition", "equipment", "routines", "noticed", "atlas", "around",
+            "people", "entities", "bosses",
             "window", "sense", "terrain", "plants_around"}
     for key, value in sight.items():
         if key not in skip:
