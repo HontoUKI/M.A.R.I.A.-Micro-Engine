@@ -1,14 +1,5 @@
 # The game port
 
-## Окно модели и бюджет
-
-В игровом режиме Ollama требуется `NUM_CTX >= 16384`; без явного значения движок
-запрашивает 16384. На старте журнал печатает запрошенное окно и потолок промпта.
-Это настройка запроса, а не утверждение о фактическом лимите облачного провайдера.
-`PROMPT_MAX_TOKENS` оставляет место для ответа; обычный ход целится в 6–8K.
-Бюджет сначала резервирует последние реплики разговора, затем выделяет место миру.
-Мир сокращается целыми секциями, обрезка отмечается в промпте.
-
 A character in this engine answers messages. With a **game port** attached she
 can also act — walk somewhere, pick something up, build a house — in a world
 running in another process.
@@ -27,6 +18,15 @@ Acting is `POST /v0/attempts` for one goal and `POST /v0/plans` for several in
 order. The reference router is
 [M.A.R.I.A.-Minecraft-Router](https://github.com/HontoUKI/M.A.R.I.A.-Minecraft-Router);
 anything that answers those routes will do.
+
+## Model window and budget
+
+In game mode Ollama needs `NUM_CTX >= 16384`; without an explicit value the engine asks
+for 16384. At startup the log prints the requested window and the prompt ceiling. This
+is a request setting, not a claim about the cloud provider's actual limit.
+`PROMPT_MAX_TOKENS` leaves room for the answer; an ordinary turn aims at 6–8K. The budget
+first reserves the latest lines of the conversation, then gives the world its room. The
+world is shortened by whole sections, and the cut is marked in the prompt.
 
 ## Turning it on
 
@@ -213,52 +213,118 @@ is the worked example, including the trap that comes with it — a strong `negle
 tag reads `[closed]` as the player ignoring her unless the pack gives the world
 its own tag.
 
-## Справочник по запросу — 01.10
+## Reference on request — 01.10
 
-С 02.10 имя известной рутины также является статьёй `lookup`: параметры и пример
-вызова берутся из её текущего определения, включая выученные рутины. Незнакомый
-параметр запуска вызывает отказ с допустимыми именами до замены текущей работы.
+Since 02.10 the name of a known routine is also a `lookup` article: its parameters and a
+sample call come from its current definition, learned routines included. An unknown run
+parameter is refused with the allowed names before the current work is replaced.
 
-Короткие завершения собственных действий больше не теряются в паузе речи:
-игровой цикл хранит один последний повод `closed` / `waiting` / `interrupted` и
-доставляет его после ограничений частоты, разговора и опасности. Ход заново читает
-состояние мира. Любой другой доставленный ход, уже прочитавший исход, снимает
-ожидание; старые результаты не воспроизводятся отдельной очередью реплик.
+Short completions of her own actions are no longer lost in a pause of speech: the game
+loop keeps one latest `closed` / `waiting` / `interrupted` occasion and delivers it after
+the rate, conversation and danger limits. The turn reads the world state afresh. Any
+other delivered turn that has already read the outcome clears the wait; old results are
+not replayed as a separate queue of lines.
 
-Непрочитанный вызов тоже оставляет один повод `waiting`: для него роутер не создаёт
-попытку и не пришлёт `closed`. Следующий ход получает причину ошибки с теми же
-ограничениями частоты и паузами. Пустой `<play>` и реплика без `<play>` означают
-допустимое бездействие и сами нового хода не создают. Повторный lookup в окончательном
-ответе не исполняется, но его потеря явно сообщается на следующем ходе; исполнение
-остальных вызовов этого ответа не отменяется. При защите запрет справки не создаёт
-дополнительный повод для повторного запроса. Внутренний флаг
-`TurnResult.game_feedback_pending` используется игровым циклом и не добавлен в HTTP-ответ.
-Непроизнесённые ошибки разбора, отправки и ограничения пака хранятся отдельно для
-пары сессия/персонаж: новый исполнитель запроса получает их до построения промпта.
-Они стоят перед обзором мира, чтобы объём окружения не вытеснил причину отказа.
-Успешный следующий ход снимает уведомление; сбой модели сохраняет его для повтора.
-Сброс отношений очищает эти уведомления. Перезапуск процесса их не сохраняет на диск.
+A call that could not be read also leaves one `waiting` occasion: the router creates no
+attempt for it and will send no `closed`. The next turn gets the error's cause under the
+same rate limits and pauses. An empty `<play>` and a line without `<play>` mean
+legitimate inaction and create no new turn by themselves. A repeated lookup in a final
+answer is not executed, but its loss is reported on the next turn; the other calls in
+that answer still run. While defending, the reference ban creates no extra occasion for
+asking again. The internal flag `TurnResult.game_feedback_pending` is used by the game
+loop and is not part of the HTTP response. Unspoken parse, send and pack-limit errors
+are kept separately per session/character pair: a new request runner gets them before
+the prompt is built. They stand before the world overview, so the volume of the
+surroundings cannot push the cause of a refusal out. A successful next turn clears the
+notice; a model failure keeps it for the retry. A relationship reset clears these
+notices. A process restart does not keep them on disk.
 
-Если читатель игры не ответил, команды не отправлены на исполнение. Если связь
-оборвалась при отправке действия, его принятие неизвестно: движок предлагает проверить
-состояние и историю до повтора. Это отдельное уведомление после восстановления связи,
-а не утверждение, что мир отказал или ничего не произошло.
+If the game reader did not answer, the commands were not sent for execution. If the
+connection broke while an action was being sent, whether it was accepted is unknown:
+the engine suggests checking the state and the history before retrying. This is a
+separate notice after the connection comes back, not a claim that the world refused or
+that nothing happened.
 
-Роутер с флагом `glossary` отдаёт короткий блок мира вместо подсказок всех действий.
-Каждый ход сохраняет ситуацию, предмет в руке, сумку, отказы и список всех рутин
-`{name, details}`. При нехватке бюджета разговор получает резерв первым; список рутин
-сохраняется даже при отсечении больших разделов окружения.
+A router with the `glossary` flag hands over a short world block instead of hints for
+every action. Every turn keeps the situation, the item in hand, the bag, refusals and the
+list of all routines `{name, details}`. When the budget runs short the conversation gets
+its reserve first; the routine list is kept even when large sections of the surroundings
+are cut.
 
-`<lookup>Teach</lookup>` читает статью через `GET /v0/glossary?name=Teach`, после чего
-движок повторно вызывает модель внутри того же хода. Действия из первого ответа
-не выполняются. Второй lookup не обрабатывается, теги не выходят в речь. При угрозе
-справка выключена без дополнительного вызова модели; её боевые действия остаются доступны.
-Неизвестное имя и `Glossary` дают оглавление только на текущий ход.
+`<lookup>Teach</lookup>` reads the article through `GET /v0/glossary?name=Teach`, after
+which the engine calls the model again within the same turn. Actions from the first
+answer are not executed. A second lookup is not processed, and the tags do not leak into
+speech. Under a threat the reference is switched off without an extra model call; her
+fighting actions stay available. An unknown name and `Glossary` give the table of
+contents for the current turn only.
 
-У разговора три ячейки справки. Статья со спутниками занимает одну ячейку, живёт десять
-её ходов от последнего чтения; повторное чтение продлевает срок, новая статья вытесняет
-самую давно прочитанную. Ячейки разделены по сессии и персонажу; сброс отношений очищает
-их. В блоке напечатаны возраст и оставшийся срок. Успешные вызовы роутера показываются
-как `<play>`; для сохранения последней успешно выполненной **рутины** есть `teach`
-без тела. Одиночный вызов можно поместить в тело `teach { вызов }`, затем добавить
-`name(...)` и `details(...)`. Тело не записывается моделью как JSON steps.
+A conversation has three reference slots. An article with its companions takes one slot
+and lives ten of her turns from the last reading; reading it again extends the term, a
+new article displaces the one read longest ago. The slots are separate per session and
+character; a relationship reset clears them. The block prints the age and the remaining
+term. Successful router calls are shown as `<play>`; to save the last successfully run
+**routine** there is `teach` without a body. A single call can be put into the body of
+`teach { call }`, then `name(...)` and `details(...)` added. The model does not write the
+body as JSON steps.
+
+## Game feedback
+
+DSL errors reach the next turn with their position in the source.
+`run(name, param: value)` calls a routine; primitives are called directly.
+`<play>drop</play>` cancels the current paused attempt and the saved unfinished plan;
+new calls may follow in the same block after the cancel. The code keeps the closed
+plan's original refusal in the history. Sending an action does not confirm that the
+request was carried out: the model has to match the state that follows against what
+the player asked for — a successful craft does not mean the item was placed or handed
+over.
+
+## The five-turn action history
+
+The router's `state.actions` carries measured item changes with a reason, a target,
+an actor and an outcome. A craft and a placement are kept apart from later failed
+retries. For example: `-4 oak_planks, reason: craft`, `+1 crafting_table, reason:
+craft`, then `-1 crafting_table, reason: placed`. Consumption by the reflex has
+`actor: reflex` and `reason: healing_reflex`. The player receiving a thrown item is
+confirmed separately.
+
+Confirmation is kept apart from the outcome: `packet_sent` means the packet was handed
+to the transport, `server_ack` a matched answer with `acceptance:
+accepted|rejected|unknown`, `effect_confirmed` an observed fact. `completion_basis`
+says on which of these grounds an attempt ended. Without a confirmed effect the
+history says `effect: unconfirmed` outright; neither sending nor an answer turns into
+a game result. The stages of one attempt are refined through its revisions. Older
+records without confirmations still read.
+
+Every new revision is shown in the current turn and the next four; on the sixth it
+disappears. Classification, a lookup continuation and world polls are not extra turns.
+The history is kept in the session, although a new runtime is built for every request,
+and it is cleared when the session resets or the router's stream changes. The old
+formatters for the last attempt, refusal lists and successful calls are gone.
+
+Priority ammunition is set through the DSL: `track(spectral_arrow, as: ammunition)`.
+Exact modded IDs work without separate adapters. `enabled: false` removes the choice.
+At the start of the `<body>` data the current count (zero included) and the measured
+changes over five turns, with actor and reason, are printed. The changes are not
+repeated below; removing the choice returns the facts still alive to the ordinary
+history. This is an observation, not a reserve and not a weapon choice. For 1.20.1
+Potion NBT one variant is supported: `track(potion, potion: fire_resistance)`.
+Arbitrary CustomPotionEffects are not decoded.
+
+The Ammunition block holds the consumables the agent chose, not only projectiles.
+Current effects with their duration are printed next to it. `lock(item)` or
+`lock(potion, potion: fire_resistance)` forbids consuming, right-clicking and reflex
+healing with it until an explicit unlock. Automatic routines cannot lift it; an
+ordinary preparation routine run on an order can. The count and the lock do not expire
+with the five turns of history. The router does not guarantee the lock against unknown
+use of other slots by modded packets or against server-side automatic activations.
+
+### The routine wrapper — 03.10
+
+The new source form: `@teach(details: "purpose") def my_routine(item: bread)
+{ consume($item) }`. The name and parameters belong to `def`; a required parameter is
+marked `null`. This is the DSL, not Python. The declaration is sent as a turn of its
+own. The router checks it whole before saving, without running the body.
+`routine_rejected` means `saved: false`; the model fixes the source by the line and
+`block_path`. Only `routine_saved` with `saved: true`, a name and a version confirms
+the save. Running it is the next turn. The confirmation comes in the shared action
+history; no separate success channel for learning is needed.

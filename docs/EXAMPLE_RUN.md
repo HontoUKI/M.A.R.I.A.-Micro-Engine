@@ -299,8 +299,11 @@ What the RP models change, and what they don't:
 - **The voice gets markedly more in-character.** Rocinante holds a strong,
   consistent Russian Kaguya — *"Здравствуйте, Алекс. Я — Кагуя Синомия,
   вице-президент студенческого совета."* / *"Вы такой очаровательный, Алекс.
-  Неужели вы хотите что-то от меня?"* — and a theatrical Megumin — *"Ваши
-  чувства истинны, как Explosion в полнолуние!"*
+  Неужели вы хотите что-то от меня?"* ("Hello, Alex. I am Kaguya Shinomiya,
+  vice-president of the student council." / "You are so charming, Alex. Could it be
+  you want something from me?") — and a theatrical Megumin — *"Ваши чувства
+  истинны, как Explosion в полнолуние!"* ("Your feelings are true, like Explosion
+  under a full moon!")
 - **Two gotchas worth knowing.** (1) These 12B RP finetunes **code-switch**:
   Rocinante leaks the odd foreign word ("Explosion", once a stray German
   "Verwendung"), and **Mag-Mell drifts into English much more heavily** — *"Privet.

@@ -6,23 +6,23 @@ fight. She is also the only other person left who talks.
 
 An original character written for this engine, shipped under CC-BY-4.0.
 
-## Сюжет
+## The story
 
-> Ты — один из последних инженерных гениев этого мира, полного опасностей. Привык работать
-> один, никому не доверять и никогда не стоять на месте.
+> You are one of the last engineering geniuses of this world full of danger. You are used to
+> working alone, trusting no one and never standing still.
 >
-> Внезапно перед тобой появилась девушка в странной одежде. Вооружённый револьвером и
-> последней горсткой патронов, ты направил на неё ствол. Девушка в шоке забилась в угол.
+> Suddenly a girl in strange clothes appeared in front of you. Armed with a revolver and the
+> last handful of rounds, you pointed the gun at her. In shock, the girl backed into a corner.
 >
-> Ты впервые видишь такого, как ты, — «человека», а не местных жителей. Цивилизация давно
-> пала от вируса.
+> For the first time you see someone like you — a "human", not one of the locals. Civilisation
+> fell to a virus long ago.
 >
-> Что в бою, что по силе новая спутница совершенно бесполезна и становится балластом. Но
-> если она умрёт, ты, возможно, потеряешь последний шанс поговорить с кем-то, кто говорит,
-> а не издаёт пресловутое короткое гнусавое «хмм».
+> In a fight and in strength your new companion is completely useless — dead weight. But if
+> she dies, you may lose your last chance to talk to someone who speaks rather than making
+> that notorious short nasal "hmm".
 >
-> Успех зависит от одного: как быстро ты наладишь массовое производство патронов — и не
-> умрёшь от голода.
+> Success depends on one thing: how fast you set up mass production of ammunition — and not
+> starving to death.
 
 ## ⚠ Warning
 
@@ -78,10 +78,10 @@ about 120 mods on the server. Hardcore for both: a death is the end of that worl
 - **The start.** He has **Last Gaze** — a named revolver — with 32 rounds, a wrench,
   engineer's goggles and an empty atlas: enough to reach a blaze burner, not enough to be
   careless. She has a school lunch: onigiri, sushi, a cheeseburger, mochi, peach tea.
-- **The quest book (FTB Quests)** is two lines. His, «Инженер», six chapters from her
+- **The quest book (FTB Quests)** is two lines. His, «Инженер» (Engineer), six chapters from her
   appearance to a working shell line and a second gun; every early quest pays 4 rounds,
   chapter 0 ends with an iron backpack and crafting and smelting upgrades, chapter 1
-  with a mechanical mixer. Hers, «Мидзуки», is food and comfort: a garden of onion,
+  with a mechanical mixer. Hers, «Мидзуки» (Mizuki), is food and comfort: a garden of onion,
   cabbage, tomato and wheat, a sandwich that is not insects, onigiri «as at home», hot food
   by her own hands, surviving alone, and receiving Last Gaze and ten kills of her own.
   Her quests count what she really did; KubeJS checks them.
