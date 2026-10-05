@@ -1,21 +1,21 @@
-"""Где персонаж стоит с человеком — и, если надо, поставить его туда.
+"""Where a character stands with a person — and, if needed, put her there.
 
-Лестница на связи растёт часами: полный цикл Юкины это около шести часов непрерывной
-игры. Проверять верхние ступени, наиграв до них, нельзя — это не проверка, а вторая
-съёмка. Поэтому здесь есть посев: поставить связь на нужную ступень и посмотреть, какая
-она там.
+The bond ladder grows over hours: Yukina's full cycle is about six hours of continuous play.
+Checking the upper stages by playing up to them is impossible — that is not a check but a
+second take. So there is seeding here: put the bond at the wanted stage and see what she is
+like there.
 
-    python tools/standing.py --character yukina                  # где стоит
-    python tools/standing.py --character yukina --stage sabotage # поставить на ступень
-    python tools/standing.py --character yukina --bond 40        # или прямо числом
-    python tools/standing.py --character yukina --reset          # обратно в начало
+    python tools/standing.py --character yukina                  # where she stands
+    python tools/standing.py --character yukina --stage sabotage # put her on a stage
+    python tools/standing.py --character yukina --bond 40        # or directly by number
+    python tools/standing.py --character yukina --reset          # back to the start
 
-Ключ разговора по умолчанию тот же, что у игры (`minecraft:<имя>`), потому что проверять
-надо ту ведомость, которая живёт, а не соседнюю: 09.09 ход уехал в разговор с самой собой,
-и −8 доверия за убийство не достались никому.
+The conversation key defaults to the game's (`minecraft:<name>`), because the ledger that
+must be checked is the one that lives, not the one next to it: on 09.09 a turn went into a
+conversation with herself, and the −8 trust for a killing went to nobody.
 
-Посев — инструмент проверки, а не игры. Он пишет прямо в состояние, минуя ход, поэтому в
-расшифровке следа не оставляет: досье считается по прожитым ходам и врать о них не должно.
+Seeding is a tool for checking, not for playing. It writes straight into the state, bypassing
+the turn, so it leaves no trace in the transcript: the dossier counts lived turns and must not lie about them.
 """
 from __future__ import annotations
 
@@ -39,18 +39,18 @@ def main() -> int:
             pass
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--character", required=True, help="имя пака, например yukina")
-    parser.add_argument("--who", default="HontoUKI", help="с кем; по умолчанию HontoUKI")
-    parser.add_argument("--key", default="", help="ключ разговора целиком, если он не игровой")
-    parser.add_argument("--stage", default="", help="поставить на эту ступень")
-    parser.add_argument("--bond", type=float, default=None, help="поставить связь числом")
-    parser.add_argument("--reset", action="store_true", help="вернуть к началу пака")
+    parser.add_argument("--character", required=True, help="the pack's name, e.g. yukina")
+    parser.add_argument("--who", default="HontoUKI", help="with whom; HontoUKI by default")
+    parser.add_argument("--key", default="", help="the full conversation key, if it is not the game's")
+    parser.add_argument("--stage", default="", help="put her on this stage")
+    parser.add_argument("--bond", type=float, default=None, help="set the bond by number")
+    parser.add_argument("--reset", action="store_true", help="back to the pack's start")
     args = parser.parse_args()
 
     service = get_service()
     if not service.has_model(args.character):
         known = ", ".join(sorted(service.model_names()))
-        print(f"нет персонажа {args.character!r}; есть {known}")
+        print(f"no character {args.character!r}; there are {known}")
         return 1
 
     pack = service.registry.get(args.character)
@@ -59,7 +59,7 @@ def main() -> int:
 
     if args.reset:
         service.sessions.reset_state(key, pack)
-        print(f"{key}: состояние сброшено к началу пака")
+        print(f"{key}: state reset to the pack's start")
 
     kernel = service.sessions.kernel_for(key, pack)
 
@@ -67,22 +67,22 @@ def main() -> int:
     if args.stage:
         named = [s for s in pack.stages if s.id == args.stage]
         if not named:
-            print(f"нет ступени {args.stage!r}; есть {', '.join(s.id for s in pack.stages)}")
+            print(f"no stage {args.stage!r}; there are {', '.join(s.id for s in pack.stages)}")
             return 1
-        # Середина ступени, а не её край: на самом пороге границы включительны с обеих
-        # сторон, и проверять там значит проверять край, а не ступень.
+        # The middle of a stage, not its edge: on the threshold itself the bounds are inclusive on
+        # both sides, and checking there means checking the edge, not the stage.
         under = [s.up_to for s in pack.stages if s.up_to < named[0].up_to]
         low = max(under) if under else 0.0
         want = (low + named[0].up_to) / 2 * axis_max
 
     if want is not None:
         if pack.stage_axis != "bond":
-            print(f"⚠ пак читает ступени по {pack.stage_axis!r}, а сеется связь —"
-                  " посев ничего не изменит")
+            print(f"⚠ the pack reads stages by {pack.stage_axis!r}, but the bond is seeded —"
+                  " seeding will change nothing")
         axes = kernel.axes.as_dict()
         axes["bond"] = max(0.0, min(axis_max, want))
-        # Тем же способом, каким состояние восстанавливают при возврате к разговору:
-        # свой способ положить числа рано или поздно разойдётся с настоящим.
+        # The same way the state is restored when returning to a conversation: a method of
+        # one's own for laying the numbers down will sooner or later diverge from the real one.
         kernel = StateKernel.restore(pack, axes, axis_max=axis_max)
         service.sessions._kernels[(key, pack.meta.name)] = kernel
         where = service.sessions._dir(key, pack)
@@ -96,9 +96,9 @@ def main() -> int:
 
     print(f"{key} · {pack.meta.display_name}")
     print(f"  affection {axes.affection:6.1f} · trust {axes.trust:6.1f} · bond {axes.bond:6.1f}")
-    where_now = stage.id if stage else "(ступеней нет)"
-    print(f"  ось ступеней: {pack.stage_axis} -> доля {ratio:.3f} -> {where_now}")
-    print(f"  для справки, по {other}: {standing_ratio(axes, axis_max, other):.3f}")
+    where_now = stage.id if stage else "(no stages)"
+    print(f"  stage axis: {pack.stage_axis} -> share {ratio:.3f} -> {where_now}")
+    print(f"  for reference, by {other}: {standing_ratio(axes, axis_max, other):.3f}")
     return 0
 
 

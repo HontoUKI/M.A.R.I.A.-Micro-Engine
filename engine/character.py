@@ -204,16 +204,16 @@ class CharacterRuntime:
 
         # Gate the classifier's choices by the relationship *before* this turn:
         # a tag only unlocks once the standing is inside its window.
-        # Ворота тегов читаются по той же оси, что и ступени: «что ей вообще доступно»
-        # — вопрос о том, кто он ей, а не о её сегодняшнем настроении.
+        # Tag gates are read on the same axis as stages: "what is available to her at all" is
+        # a question of who he is to her, not of her mood today.
         ratio = self._standing(self._state.axes)
         tag = self._classifier.classify(
             self._pack, user_message, dialogue_window, ratio=ratio
         )
 
         pre_axes = self._state.axes
-        # Цена поступка падает от повторения, если пак так сказал: N-й подарок в пределах
-        # своего срока стоит 1/N. Считает досье — оно и так ведёт этот счёт.
+        # A deed's price falls with repetition if the pack says so: the N-th gift within its
+        # term is worth 1/N. The dossier counts — it keeps this count anyway.
         axes = self._state.apply(
             scaled(self._pack.deltas[tag], worth(self._deeds, self._pack, tag))
         )
@@ -295,9 +295,9 @@ class CharacterRuntime:
             actions.observe(sight.get('actions') or {})
             self._lookup_blocked = bool(sight.get("defending") or sight.get("mending"))
             self._paused = _paused_id(sight)
-            # Незаконченное желание: за чем она шла и что осталось. Держится отдельно от
-            # паузы, потому что это разные вещи — прерванную работу продолжают с того же
-            # места, а вставшую поднимают после отхода (§21).
+            # The unfinished wish: what she was going for and what is left. Kept apart from
+            # the pause, because these are different things — interrupted work is continued from
+            # the same place, a stopped one is raised again after a detour (§21).
             self._unfinished = sight.get("unfinished") or None
             block = describe(
                 self._hands.offer(),
@@ -313,8 +313,8 @@ class CharacterRuntime:
             )
             held = getattr(self, "_held_back", ())
             if held:
-                # Сказано один раз и снято: это про строку, которую она только что
-                # написала, а жалоба, пережившая свой ход, становится шумом о прошлом.
+                # Said once and removed: it is about the line she has just written, and a
+                # complaint that outlives its turn becomes noise about the past.
                 self._held_back = ()
                 block = (
                     "You did not do this, and it was not the world that"
@@ -440,19 +440,19 @@ class CharacterRuntime:
         return speech, said * 1 if intention.repeat == 1 else said + (f"x{intention.repeat}",)
 
     def _within_bounds(self, intention):
-        """Убрать из решения то, чего этот характер не делает.
+        """Remove from the decision what this character does not do.
 
-        Гейты тегов решают, что она может почувствовать; здесь — что она может СДЕЛАТЬ.
-        Разница не косметическая: тег живёт один ход, а поступок меняет мир навсегда, и
-        убитый житель не отыгрывается обратно ни ступенью, ни настроением.
+        Tag gates decide what she can feel; this decides what she can DO. The difference is not
+        cosmetic: a tag lives one turn, while a deed changes the world forever, and a killed
+        villager is not taken back by a stage or a mood.
 
-        Держится это в КОДЕ, а не в просьбе к модели, ровно по той причине, по которой в
-        коде держатся окна тегов: просьба «не бери у него еду» исполняется, пока модель о
-        ней помнит, а забывает она в самый интересный момент. Пак называет предел, движок
-        его исполняет.
+        It is held in CODE, not in a request to the model, for exactly the reason tag windows are
+        held in code: the request "do not take his food" is honoured while the model remembers it,
+        and it forgets at the most interesting moment. The pack names the limit, the engine
+        enforces it.
 
-        Отказ обязан быть сказан ЕЙ. Молча выброшенный шаг она прочитает как поломку и
-        напишет ту же строку снова — это уже было с нечитаемыми строками (03.09).
+        The refusal must be told to HER. A silently dropped step she reads as a breakage and
+        writes the same line again — that already happened with unread lines (03.09).
         """
         bounds = getattr(self._pack, "bounds", None) or ()
         if not bounds:
@@ -480,8 +480,8 @@ class CharacterRuntime:
             if stop.refuse:
                 said = f"{said}: {stop.refuse}".strip()
             if _selects(goal) and stop.names():
-                # Выборка (`ALL where …`) не называет вещей, и что в неё попадёт, движок не
-                # знает — словарь у игры. Узкий выход: оставить запретное за EXCEPT.
+                # A selection (`ALL where …`) names no things, and the engine does not know what
+                # will fall into it — the vocabulary is the game's. The narrow way out: leave the forbidden behind EXCEPT.
                 spared = ", ".join(stop.names())
                 said += f" (a selection could include {spared} — leave it out with EXCEPT)"
             held.append(said)
@@ -528,10 +528,10 @@ class CharacterRuntime:
         """This turn's tag block, plus the pack's per-turn reminder and any
         enabled mode reminders — placed near the user message where a small
         model heeds them best."""
-        # Досье идёт ПЕРВЫМ: оно про то, что уже было, и повод этого хода читается на
-        # его фоне, а не наоборот.
-        # Что уже сказано между ними — рядом с досье: и то и другое про прошлое, а не про
-        # этот ход (engine/mentioned.py).
+        # The dossier goes FIRST: it is about what already happened, and this turn's occasion is
+        # read against it, not the other way round.
+        # What has already been said between them — next to the dossier: both are about the past,
+        # not about this turn (engine/mentioned.py).
         parts = [
             summarise(self._deeds),
             self._mentioned,
@@ -551,7 +551,7 @@ class CharacterRuntime:
         return "\n".join(p for p in parts if p).strip()
 
     def _standing(self, axes: Axes) -> float:
-        """Доля, по которой читаются ступени и окна тегов — на оси, которую выбрал пак."""
+        """The share stages and tag windows are read by — on the axis the pack chose."""
         return standing_ratio(axes, self._axis_max, self._pack.stage_axis)
 
     def _resolve_stage(self, pre_axes: Axes, post_axes: Axes):
@@ -619,15 +619,15 @@ def _left_out(goal) -> set[str]:
 
 
 def _objects_of(goal) -> tuple[str, ...]:
-    """Что названо в шаге: сам предмет и список, если он есть.
+    """What a step names: the item itself and a list, if there is one.
 
-    `where.all` — «взять всё» — не даёт ни одного имени, и это не «ничего»: оно включает
-    и то, что перечислено в пределе. Пустота здесь и означает «всё», а решает это `covers`.
+    `where.all` — "take everything" — gives not a single name, and that is not "nothing": it
+    includes what is listed in the limit. Emptiness here means "everything", and `covers` decides.
     """
     fields = goal.fields or {}
     where = fields.get("where") or {}
-    # Выборка (`ALL`/`FIRST … where …`, 28.09) — тоже «всё»: что в неё попадёт, решит мир
-    # в момент шага, а не имена в строке.
+    # A selection (`ALL`/`FIRST … where …`, 28.09) is "everything" too: what falls into it the
+    # world decides at the moment of the step, not the names in the line.
     if isinstance(where, dict) and (where.get("all") is True or _selects(goal)):
         return ()
     named = []

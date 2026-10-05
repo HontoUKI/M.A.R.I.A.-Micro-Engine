@@ -75,30 +75,30 @@ class GatedTag(BaseModel):
 
 
 class ActionBound(GatedTag):
-    """Что она не станет делать в мире — и с какой ступени станет.
+    """What she will not do in the world — and from which stage she will.
 
-    Гейты тегов решают, ЧТО она может почувствовать; этот — что она может СДЕЛАТЬ.
-    Разница не косметическая: тег живёт один ход, а поступок меняет мир навсегда, и
-    убитый житель не отыгрывается обратно ни ступенью, ни настроением.
+    Tag gates decide WHAT she can feel; this one decides what she can DO. The difference is
+    not cosmetic: a tag lives one turn, while a deed changes the world forever, and a killed
+    villager is not taken back by a stage or a mood.
 
-    Правило принадлежит паку, а не движку, по той же причине, что `deltas` и `blocks`:
-    слово `villager` — словарь одного мира, а движку положено знать только «пак назвал
-    предел, и предел исполняется в коде, а не в просьбе к модели».
+    The rule belongs to the pack, not the engine, for the same reason as `deltas` and `blocks`:
+    the word `villager` is one world's vocabulary, and the engine is only meant to know "the pack
+    named a limit, and the limit is enforced in code, not in a request to the model".
 
-    `never` — это не окно. Окно говорит «пока рано»; `never` говорит «эта не станет
-    никогда», и такое в характере бывает: в хардкоре забрать у него еду значит его убить,
-    а это единственное, чего она не сделает. Смешивать их нельзя, иначе «никогда»
-    оказывается «после 0.99».
+    `never` is not a window. A window says "too early yet"; `never` says "this one never
+    will", and characters do have such things: in hardcore taking his food means killing him,
+    and that is the one thing she will not do. They must not be mixed, or "never" turns out to
+    be "after 0.99".
     """
 
     model_config = ConfigDict(extra="forbid")
 
     verb: str = Field(min_length=1)
-    # Что именно. Пусто — любой предмет этого глагола; список — любой из перечисленных.
+    # What exactly. Empty — any item of this verb; a list — any of those listed.
     object: str | list[str] = ""
     never: bool = False
-    # Чем ей это объясняют, её же словами. Отказ без причины она прочитает как поломку и
-    # напишет ту же строку снова — это уже было с нечитаемыми строками (03.09).
+    # What she is told about it, in her own words. A refusal without a reason she reads as a
+    # breakage and writes the same line again — that already happened with unread lines (03.09).
     refuse: str = Field(default="", min_length=0)
 
     @model_validator(mode="after")
@@ -113,14 +113,14 @@ class ActionBound(GatedTag):
         return tuple(self.object)
 
     def covers(self, verb: str, objects: tuple[str, ...]) -> bool:
-        """Про этот ли поступок правило."""
+        """Whether the rule is about this deed."""
         if verb != self.verb:
             return False
         named = self.names()
         if not named:
             return True
-        # `where.all` приезжает пустым списком предметов, и это НЕ «ничего»: взять всё
-        # включает и то, что перечислено. Иначе граница обходится одним словом.
+        # `where.all` arrives as an empty item list, and that is NOT "nothing": taking everything
+        # includes what is listed. Otherwise the limit is bypassed with one word.
         return not objects or any(one in named for one in objects)
 
     def allows(self, ratio: float) -> bool:
@@ -217,34 +217,34 @@ class CharacterPack(BaseModel):
     deltas: dict[str, DeltaVector]
     blocks: dict[str, str]
     axes: AxesConfig = Field(default_factory=AxesConfig)
-    # Сколько ходов поступок этого рода держится в досье. Справочник на тег, потому что
-    # сроки у поступков разные: грубость перестаёт считаться через два десятка ходов, а
-    # убийство — не через два десятка. Незаписанное живёт `REMEMBERED_FOR` ходов.
+    # How many turns a deed of this kind holds in the dossier. A reference per tag, because
+    # deeds have different terms: rudeness stops counting after a couple of dozen turns, a
+    # killing does not. What is not listed lives `REMEMBERED_FOR` turns.
     #
-    # Живёт в ПАКЕ, а не в движке, по той же причине, по которой здесь живут `deltas` и
-    # `blocks`: имена тегов — словарь пака, и таблица со словом `insult` внутри generic-
-    # движка сделала бы его знающим словарь одного персонажа.
-    # На какой оси читаются ступени и окна тегов. По умолчанию — близость, как было у
-    # всех паков до этого поля; `bond` для арки, которая не должна разворачиваться назад
-    # от одного плохого вечера.
+    # It lives in the PACK, not the engine, for the same reason `deltas` and `blocks` live here:
+    # tag names are the pack's vocabulary, and a table with the word `insult` inside a generic
+    # engine would make it know one character's vocabulary.
+    # Which axis stages and tag windows are read on. By default closeness, as for every pack
+    # before this field; `bond` for an arc that must not turn back after one bad
+    # evening.
     stage_axis: Literal["closeness", "bond"] = "closeness"
     remembered_for: dict[str, int] = Field(default_factory=dict)
-    # Теги, чья цена падает от повторения: N-й в пределах своего срока стоит 1/N.
-    # Спасает от того, чтобы отношения покупались количеством.
+    # Tags whose price falls with repetition: the N-th within its term is worth 1/N.
+    # It keeps the relationship from being bought by quantity.
     diminishing: list[str] = Field(default_factory=list)
     sprites: dict[str, str] = Field(default_factory=dict)
     decay: DecayConfig = Field(default_factory=DecayConfig)
     stages: list[Stage] = Field(default_factory=list, max_length=MAX_STAGES)
     invariants: list[str] = Field(default_factory=list)
     actions: list[str] = Field(default_factory=list)
-    # Пределы того, что она делает РУКАМИ. Пусто — пак ничего не запрещает, и движок
-    # ничего не решает за него.
+    # Limits of what she does with her HANDS. Empty — the pack forbids nothing, and the engine
+    # decides nothing for it.
     bounds: list[ActionBound] = Field(default_factory=list)
-    # Роды заметок мира, которых этот персонаж не получает вовсе (`advanced`, `watched`…).
-    # Сюжетная игра не видит механики игры: Мидзуки, 27.09 — достижения превращались у неё
-    # в «торговый автомат» и «завод». Пусто — видит всё, как было у всех паков до поля.
+    # Kinds of world notes this character does not get at all (`advanced`, `watched`…).
+    # A story game does not see the game's mechanics: Mizuki, 27.09 — advancements turned into a
+    # "vending machine" and a "factory" for her. Empty — sees everything, as all packs did before the field.
     unseen_notes: list[str] = Field(default_factory=list)
-    # Петля: скрытый счётчик попыток, переживающий мир (Мидзуки, 30.09). Нет — нет петли.
+    # The loop: a hidden counter of attempts that outlives the world (Mizuki, 30.09). None — no loop.
     loop: Loop | None = None
 
     @model_validator(mode="after")
@@ -265,7 +265,7 @@ class CharacterPack(BaseModel):
             if key not in tag_set:
                 raise ValueError(f"diminishing names {key!r}, which is not a tag")
 
-        # Сроки памяти — только про объявленные теги, и только положительные.
+        # Memory terms — only for declared tags, and only positive ones.
         for key, turns in self.remembered_for.items():
             if key not in tag_set:
                 raise ValueError(f"remembered_for names {key!r}, which is not a tag")
