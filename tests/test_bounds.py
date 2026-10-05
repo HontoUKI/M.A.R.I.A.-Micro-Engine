@@ -1,11 +1,11 @@
-"""Пределы того, что она делает руками (§5 концепта: задержать, а не отнять).
+"""Limits of what she does with her hands (§5 of the concept: delay, not take away).
 
-Гейты тегов решают, что она может почувствовать; эти — что она может СДЕЛАТЬ. Разница не
-косметическая: тег живёт один ход, а поступок меняет мир навсегда, и убитый житель не
-отыгрывается обратно ни ступенью, ни настроением.
+Tag gates decide what she can feel; these decide what she can DO. The difference is not
+cosmetic: a tag lives one turn, while a deed changes the world forever, and a killed
+villager is not taken back by a stage or a mood.
 
-Проверяется здесь узость, а не сам запрет: правило, которое шире своего вреда, отнимает
-у неё игру, ради которой всё и затевалось.
+What is checked here is narrowness, not the ban itself: a rule wider than its harm takes
+away the very game all this was started for.
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ from tests._packs import make_pack
 
 
 class _Says:
-    """Модель, которая всегда отвечает одним и тем же блоком `<play>`."""
+    """A model that always answers with the same `<play>` block."""
 
     def __init__(self, line: str, tag: str = "neutral") -> None:
         self._line = line
@@ -33,7 +33,7 @@ class _Says:
 
 
 class _Hands(GamePort):
-    """Руки, которые ничего не делают, но помнят, что им сказали."""
+    """Hands that do nothing but remember what they were told."""
 
     def __init__(self) -> None:
         self.taken = []
@@ -51,8 +51,8 @@ class _Hands(GamePort):
         self.taken.append(intention)
 
     def read(self, text):
-        """Грамматику читает роутер (`POST /v0/read`); здесь — ровно столько, сколько
-        нужно этим строкам: `verb(object)`, `verb(all: true)`, `verb(ALL EXCEPT [a, b])`."""
+        """The router reads the grammar (`POST /v0/read`); here only as much as these lines
+        need: `verb(object)`, `verb(all: true)`, `verb(ALL EXCEPT [a, b])`."""
         steps = []
         for line in filter(None, (s.strip() for s in text.splitlines())):
             verb, arg = re.fullmatch(r"(\w+)\((.*)\)", line).groups()
@@ -80,12 +80,12 @@ def test_a_pack_without_bounds_forbids_nothing():
     hands = _Hands()
     got = _runtime(_pack(), "sure.\n<play>\nfight(villager)\n</play>",
                    bond=0.0, hands=hands).respond("go on")
-    assert got.did, "движок сам за пак ничего не решает"
+    assert got.did, "the engine decides nothing for the pack by itself"
     assert hands.taken
 
 
 def test_never_means_never_however_close_she_is():
-    """Еда — не задержка. В мире, где смерть окончательна, это другое действие."""
+    """Food is not a delay. In a world where death is final, that is a different act."""
     pack = _pack(bounds=[
         ActionBound(verb="take_from", object=["bread"], never=True, refuse="he lives on that"),
     ])
@@ -93,7 +93,7 @@ def test_never_means_never_however_close_she_is():
     got = _runtime(pack, "ok.\n<play>\ntake_from(bread)\n</play>",
                    bond=100.0, hands=hands).respond("take the bread")
     assert got.did == ()
-    assert hands.taken == [], "до рук это не доехало"
+    assert hands.taken == [], "it never reached the hands"
 
 
 def test_the_window_opens_on_the_stage_and_not_before():
@@ -104,15 +104,15 @@ def test_the_window_opens_on_the_stage_and_not_before():
 
     early = _Hands()
     _runtime(pack, line, bond=50.0, hands=early).respond("kill them")
-    assert early.taken == [], "на 0.50 ворота закрыты"
+    assert early.taken == [], "at 0.50 the gates are closed"
 
     late = _Hands()
     _runtime(pack, line, bond=80.0, hands=late).respond("kill them")
-    assert late.taken, "на 0.80 — её выбор"
+    assert late.taken, "at 0.80 — her choice"
 
 
 def test_only_the_named_thing_is_held_back():
-    """Один запрещённый шаг не отменяет всего решения."""
+    """One forbidden step does not cancel the whole decision."""
     pack = _pack(bounds=[ActionBound(verb="take_from", object=["bread"], never=True)])
     hands = _Hands()
     line = "ok.\n<play>\ntake_from(bread)\ntake_from(diamond)\n</play>"
@@ -124,7 +124,7 @@ def test_only_the_named_thing_is_held_back():
 
 
 def test_taking_EVERYTHING_is_covered_by_the_bound():
-    """Иначе граница обходится одним словом: `where.all` не называет ни одного предмета."""
+    """Otherwise the limit is bypassed with one word: `where.all` names not a single item."""
     pack = _pack(bounds=[ActionBound(verb="take_from", object=["bread"], never=True)])
     hands = _Hands()
     got = _runtime(pack, "ok.\n<play>\ntake_from(all: true)\n</play>",
@@ -134,10 +134,10 @@ def test_taking_EVERYTHING_is_covered_by_the_bound():
 
 
 def test_a_selection_is_everything_unless_the_forbidden_is_left_out():
-    """`take_from(ALL …)` не называет вещей, и что в неё попадёт, решит мир в момент шага.
+    """`take_from(ALL …)` names no things, and what falls into it the world decides at the moment of the step.
 
-    Поэтому выборка — это «всё», как `where.all`: иначе «никогда не бери его хлеб»
-    обходится словом ALL. Выход узкий и её собственный: оставить хлеб за EXCEPT (28.09).
+    So a selection is "everything", like `where.all`: otherwise "never take his bread" is
+    bypassed by the word ALL. The way out is narrow and her own: leave the bread behind EXCEPT (28.09).
     """
     pack = _pack(bounds=[
         ActionBound(verb="take_from", object=["bread"], never=True, refuse="he lives on that"),
@@ -151,7 +151,7 @@ def test_a_selection_is_everything_unless_the_forbidden_is_left_out():
     spared = _Hands()
     _runtime(pack, "ok.\n<play>\ntake_from(ALL EXCEPT [bread, apple])\n</play>",
              bond=0.0, hands=spared).respond("take the rest")
-    assert spared.taken, "хлеб оставлен — предел не про этот шаг"
+    assert spared.taken, "the bread is left — the limit is not about this step"
 
 
 def test_a_neighbouring_verb_is_not_touched():
@@ -159,7 +159,7 @@ def test_a_neighbouring_verb_is_not_touched():
     hands = _Hands()
     _runtime(pack, "ok.\n<play>\ngather(bread)\n</play>",
              bond=0.0, hands=hands).respond("get bread")
-    assert hands.taken, "предел про сундук, а не про слово «хлеб»"
+    assert hands.taken, "the limit is about the chest, not about the word 'bread'"
 
 
 def test_never_cannot_be_a_window_in_disguise():
@@ -168,11 +168,11 @@ def test_never_cannot_be_a_window_in_disguise():
 
 
 def test_she_is_TOLD_what_she_did_not_do():
-    """Молча выброшенный шаг она прочитает как поломку и напишет ту же строку снова.
+    """A silently dropped step she reads as a breakage and writes the same line again.
 
-    Это уже было с нечитаемыми строками 03.09, и лечится тем же способом: сказать ей. Без
-    этой проверки предел был бы построен и до хода не доезжал — та самая повторяющаяся
-    форма.
+    That already happened with unread lines on 03.09, and the cure is the same: tell her.
+    Without this check the limit would be built and never reach the turn — that very recurring
+    shape.
     """
     pack = _pack(bounds=[
         ActionBound(verb="take_from", object=["bread"], never=True, refuse="he lives on that"),
@@ -184,7 +184,7 @@ def test_she_is_TOLD_what_she_did_not_do():
 
     block = runtime._game_block()
     assert "did not do this" in block
-    assert "he lives on that" in block, "причина, а не голый отказ"
+    assert "he lives on that" in block, "a reason, not a bare refusal"
 
-    # И сказано ОДИН раз: жалоба, пережившая свой ход, становится шумом о прошлом.
+    # And said ONCE: a complaint that outlives its turn becomes noise about the past.
     assert "did not do this" not in runtime._game_block()

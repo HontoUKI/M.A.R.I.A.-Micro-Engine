@@ -1,9 +1,9 @@
-"""Очередь подобранного: двадцать подборов — один ход, а не двадцать «спасибо».
+"""The queue of picked-up things: twenty pickups are one turn, not twenty "thank you"s.
 
-Живьём 30.09 после его смерти она подбирала его вещи с места на место, и каждый подбор
-был своим ходом. Очередь живёт `GIFTS_LIVE` секунд: заговорил он — всё едет в его ход,
-промолчал — уходит одним поводом. Подарок и его посмертные вещи — разные факты, и
-очередь их не смешивает.
+Live 30.09 after his death she picked up his things from place to place, and every pickup
+was its own turn. The queue lives `GIFTS_LIVE` seconds: if he speaks, everything goes into
+his turn; if he stays silent, it goes as one occasion. A gift and his posthumous things are
+different facts, and the queue does not mix them.
 """
 from __future__ import annotations
 

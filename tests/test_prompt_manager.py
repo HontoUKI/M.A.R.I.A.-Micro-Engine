@@ -121,8 +121,8 @@ def test_memory_recall_dropped_before_dialogue_when_budget_tight():
 
 
 def test_oldest_dialogue_turns_dropped_first():
-    # Длиннее пола: ниже него ронять нечего, и утверждение было бы о полу, а не о
-    # порядке.
+    # Longer than the floor: below it there is nothing to drop, and the claim would be about the
+    # floor, not the order.
     window = (
         DialogueTurn("user", "oldest oldest oldest"),
         DialogueTurn("assistant", "old"),
@@ -165,13 +165,13 @@ def test_large_world_is_cut_before_the_recent_conversation():
 
 
 def test_the_newest_turns_survive_a_budget_that_has_nothing_left():
-    """Ходы, ради которых поле и заведено.
+    """The turns the field exists for.
 
-    09.09 в игре блок мира занял почти весь потолок, бюджет окна вышел
-    отрицательным, и окно исчезало ЦЕЛИКОМ: тридцать ходов прошли как тридцать
-    первых, и она четырежды слово в слово повторила один и тот же ответ, имея
-    предыдущую копию в окне, которого никто не передал. Уронить старые ходы —
-    сделка; уронить все — другой персонаж.
+    On 09.09 in the game the world block took up almost the whole ceiling, the window budget
+    came out negative, and the window disappeared ENTIRELY: thirty turns went by as thirty
+    first ones, and four times she repeated one and the same answer word for word, with the
+    previous copy in a window nobody passed on. Dropping old turns is a bargain; dropping all
+    of them is a different character.
     """
     window = (
         DialogueTurn("user", "oldest oldest oldest"),
@@ -192,7 +192,7 @@ def test_the_newest_turns_survive_a_budget_that_has_nothing_left():
 
 
 def test_the_floor_is_the_newest_ones_and_no_more():
-    """Пол — не «держать всё»: старое по-прежнему уходит первым."""
+    """The floor is not "keep everything": the old still goes first."""
     window = tuple(
         DialogueTurn("user" if i % 2 == 0 else "assistant", f"turn{i}") for i in range(8)
     )
@@ -207,7 +207,7 @@ def test_the_floor_is_the_newest_ones_and_no_more():
 
 
 def test_a_prompt_over_its_ceiling_says_so(caplog):
-    """Молчаливый перерасход — это и есть дефект: платит за него её память."""
+    """A silent overspend is the defect itself: her memory pays for it."""
     import logging
 
     inputs = PromptInputs(

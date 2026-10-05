@@ -24,7 +24,7 @@ from engine.hands import (
 
 
 class _Reader:
-    """Стоит за `POST /v0/read`: грамматику читает роутер, здесь — что он ответил и что ему дали."""
+    """Stands in for `POST /v0/read`: the router reads the grammar; here, what it answered and what it was given."""
 
     def __init__(self, answer=None) -> None:
         self.answer = answer if answer is not None else {"steps": [], "repeat": 1, "word": None}
@@ -37,8 +37,8 @@ class _Reader:
 
 class TestReadingHerDecision:
     def test_the_block_goes_to_the_game_and_leaves_the_speech(self):
-        # Язык внутри <play> принадлежит игре (28.09): сюда приходит только то, что она
-        # поняла, и ни одного слова игры движок не знает.
+        # The language inside <play> belongs to the game (28.09): only what it understood comes
+        # here, and the engine knows not a single word of the game.
         read = _Reader(
             {"steps": [{"verb": "build", "object": "shelter"}], "repeat": 1, "word": None}
         )
@@ -74,20 +74,20 @@ class TestReadingHerDecision:
         assert intention.unread == ("line 1, column 5: dig needs parentheses: dig(…)",)
 
     def test_an_unclosed_block_is_never_spoken(self):
-        # Недописанное решение лучше потерять, чем произнести вслух: живьём 03.09 она
-        # ответила игроку строкой «DO: gather "cobblestone" 3 "search": 5» дважды подряд,
-        # не сделав при этом ничего.
+        # An unfinished decision is better lost than said out loud: live 03.09 she answered the
+        # player with the line "DO: gather "cobblestone" 3 "search": 5" twice in a row,
+        # doing nothing meanwhile.
         read = _Reader()
         intention, speech = read_intention("I am on it.<play>\ngather(cobble", read)
         assert speech == "I am on it."
         assert read.texts == ["gather(cobble"]
 
     def test_the_old_form_outside_the_block_is_cut_and_told_not_read(self):
-        # DO: снят (28.09), но строка протокола, сказанная вслух в чат, хуже несделанного.
+        # DO: is removed (28.09), but a protocol line said out loud in chat is worse than undone.
         read = _Reader()
         intention, speech = read_intention('Okay.\nDO: gather {"object": "stone"}\nCONTINUE', read)
         assert speech == "Okay."
-        assert read.texts == [], "старая форма в игру не уходит"
+        assert read.texts == [], "the old form does not go to the game"
         assert len(intention.unread) == 2
         assert all("old form" in u for u in intention.unread)
 
@@ -97,7 +97,7 @@ class TestReadingHerDecision:
         assert speech == "Fine."
 
     def test_the_block_is_named_in_what_she_is_told(self):
-        # Правило, живущее только в разборе, до пишущего цель не доезжает.
+        # A rule living only in the parser never reaches whoever writes the goal.
         offer = {
             "game": "Minecraft",
             "about": "",
@@ -150,31 +150,31 @@ class TestSayingWhatTheGameSent:
         assert "nothing" not in plainly({"nothing": None, "here": 1})
 
     def test_a_nested_list_is_summarised_but_the_census_never_is(self):
-        """Живьём 03.09 строка про блоки шла на 589 символов: каждый род печатал
-        все свои координаты и потом ПОВТОРЯЛ первую как nearest. Верстак, который
-        она собиралась продублировать, был там — и был погребён.
+        """Live 03.09 the blocks line ran to 589 characters: every kind printed all its
+        coordinates and then REPEATED the first as nearest. The crafting table she was about
+        to duplicate was there — and was buried.
 
-        Режется подробность, а не перепись: выбросить запись снаружи значит
-        потерять целую вещь, а не её частности.
+        The detail is cut, not the census: dropping a record outright means losing a whole
+        thing, not its particulars.
         """
         census = [{"what": f"kind{i}", "where": [{"x": n} for n in range(9)]} for i in range(6)]
         said = plainly(census)
         for i in range(6):
-            assert f"kind{i}" in said, "род не имеет права пропасть"
-        assert "and 6 more" in said, "координаты сокращаются"
+            assert f"kind{i}" in said, "a kind has no right to disappear"
+        assert "and 6 more" in said, "coordinates are shortened"
 
     def test_an_empty_reading_is_a_fact_and_a_missing_one_is_not(self):
-        """Живьём 03.09 игрок позвал её «в наш дом», а список отмеченных мест был
-        пуст — значит про места её промпт не говорил ВООБЩЕ НИЧЕГО, и модель
-        заполнила пробел домом, которого нет.
+        """Live 03.09 the player called her "to our house", and the list of marked places
+        was empty — so her prompt said NOTHING AT ALL about places, and the model filled the
+        gap with a house that does not exist.
 
-        Та же форма, что у Марии с просмотренным: пропущенный блок дописывается,
-        напечатанное «ты не отмечала ничего» — это ответ.
+        The same shape as Maria's with what she watched: an omitted block gets made up, a
+        printed "you have marked nothing" is an answer.
         """
         assert plainly([]) == "none"
         assert plainly({"places": [], "signs": []}) == "places none, signs none"
-        # Отсутствующее — по-прежнему ничего: «нет сведений» и «сведения о пустоте»
-        # это разные вещи, и вторая не имеет права выглядеть первой.
+        # Absent is still nothing: "no information" and "information about emptiness" are
+        # different things, and the second has no right to look like the first.
         assert plainly(None) == ""
 
     def test_what_was_just_said_is_not_said_again(self):
@@ -240,10 +240,10 @@ class TestTheBoundary:
         assert did == ()
 
     def test_an_unfinished_wanting_reaches_her_with_what_is_left(self):
-        """Путь к цели не прямой (§21): игрок берётся за кирку, обнаруживает, что
-        нужен верстак, идёт за досками и возвращается. Прямая линия прощает ложное
-        «я сделала» — следующий шаг упрётся; ОТХОД не прощает, потому что отход и
-        есть то место, где внешнее желание надо держать.
+        """The path to a goal is not straight (§21): a player takes up a pickaxe, finds
+        that a crafting table is needed, goes for planks and comes back. A straight line
+        forgives a false "I did it" — the next step will run into it; a DETOUR does not,
+        because a detour is exactly where the outer wish has to be held.
         """
         said = describe(
             {"game": "Minecraft", "affordances": [{"verb": "craft"}]},
