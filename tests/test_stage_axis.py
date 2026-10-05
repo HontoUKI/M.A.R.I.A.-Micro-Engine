@@ -1,12 +1,12 @@
-"""На какой оси читаются ступени и ворота тегов.
+"""Which axis stages and tag gates are read on.
 
-Ступень — климат, и климат не должен меняться от одного плохого вечера. Живьём 09.09
-четыре грубости уронили близость 0.935 → 0.797: на лестнице, висящей на близости, это
-угрожает развернуть НАЗАД сам характер, а не испортить настроение. Злиться на человека и
-не мочь его отпустить — разные числа, и вторым может быть только `bond`.
+A stage is a climate, and a climate must not change from one bad evening. Live 09.09 four
+insults dropped closeness 0.935 → 0.797: on a ladder hanging on closeness that threatens to
+turn the character itself BACK, not to spoil a mood. Being angry with a person and being
+unable to let him go are different numbers, and the second can only be `bond`.
 
-Поле необязательное и по умолчанию сохраняет прежнее поведение: пак, написанный до него,
-не должен заметить, что оно появилось.
+The field is optional and by default keeps the old behaviour: a pack written before it must
+not notice it appeared.
 """
 from __future__ import annotations
 
@@ -14,12 +14,12 @@ from engine.state import Axes, standing_ratio
 from tests._packs import make_pack
 
 LADDER = [
-    {"id": "wary", "up_to": 0.05, "block": "Поодаль."},
-    {"id": "helping", "up_to": 0.15, "block": "Помогает."},
-    {"id": "attached", "up_to": 0.30, "block": "Зависит."},
-    {"id": "keeping", "up_to": 0.50, "block": "Держит."},
-    {"id": "sabotage", "up_to": 0.75, "block": "Мешает тихо."},
-    {"id": "obsessed", "up_to": 1.00, "block": "Не отпускает."},
+    {"id": "wary", "up_to": 0.05, "block": "At a distance."},
+    {"id": "helping", "up_to": 0.15, "block": "Helps."},
+    {"id": "attached", "up_to": 0.30, "block": "Depends."},
+    {"id": "keeping", "up_to": 0.50, "block": "Holds on."},
+    {"id": "sabotage", "up_to": 0.75, "block": "Quietly gets in the way."},
+    {"id": "obsessed", "up_to": 1.00, "block": "Does not let go."},
 ]
 
 
@@ -40,15 +40,15 @@ def test_bond_answers_what_they_are_to_her_at_all():
 
 
 def test_a_bad_evening_does_not_unwind_a_bond_ladder():
-    """Утверждение, ради которого поле и заведено.
+    """The claim the field exists for.
 
-    Одни и те же четыре грубости: на близости они сбрасывают её ступенью вниз, на связи —
-    не двигают лестницу вовсе. Проверяется обеими осями сразу, потому что «не
-    развернулось» ничего не значит без «а на другой оси развернулось бы».
+    The same four insults: on closeness they drop her a stage down, on bond they do not move the
+    ladder at all. Both axes are checked at once, because "did not turn back" means nothing
+    without "but on the other axis it would have".
     """
     pack = make_pack(stages=LADDER)
-    before = Axes(affection=93.5, trust=93.5, bond=60.0)   # близость 0.935, связь 0.60
-    after = Axes(affection=61.5, trust=65.5, bond=58.4)    # четыре оскорбления −8/−7/−0.4
+    before = Axes(affection=93.5, trust=93.5, bond=60.0)   # closeness 0.935, bond 0.60
+    after = Axes(affection=61.5, trust=65.5, bond=58.4)    # four insults −8/−7/−0.4
 
     from engine.state import resolve_stage
     close_before = resolve_stage(standing_ratio(before, 100.0, "closeness"), pack.stages)
@@ -57,15 +57,15 @@ def test_a_bad_evening_does_not_unwind_a_bond_ladder():
     bond_after = resolve_stage(standing_ratio(after, 100.0, "bond"), pack.stages)
 
     assert close_before.id == "obsessed"
-    assert close_after.id == "sabotage", "на близости характер откатывается ступенью вниз"
-    assert bond_before.id == bond_after.id == "sabotage", "на связи лестница не двигается"
+    assert close_after.id == "sabotage", "on closeness the character rolls back a stage"
+    assert bond_before.id == bond_after.id == "sabotage", "on bond the ladder does not move"
 
 
 def test_the_ladder_still_falls_when_the_bond_itself_is_spent():
-    """Односторонняя — не значит неподвижная.
+    """One-way does not mean motionless.
 
-    Убийство её собственной рукой того, кто был другим, стоит связи. Иначе лестница была
-    бы не медленной, а необратимой, и цена перестала бы существовать.
+    Killing by her own hand someone who was different costs bond. Otherwise the ladder would be
+    not slow but irreversible, and the price would stop existing.
     """
     pack = make_pack(stages=LADDER)
     from engine.state import resolve_stage
@@ -76,9 +76,9 @@ def test_the_ladder_still_falls_when_the_bond_itself_is_spent():
 
 
 def test_tag_windows_read_the_same_axis_as_the_stages():
-    """Иначе «она стала другой» и «ей стало доступно другое» происходят в разные моменты.
+    """Otherwise "she became different" and "something different became available to her" happen at different moments.
 
-    Проверяется через рантайм, а не через арифметику: разъехаться они могут только там.
+    Checked through the runtime, not arithmetic: that is the only place they can diverge.
     """
     import json
 
@@ -95,11 +95,11 @@ def test_tag_windows_read_the_same_axis_as_the_stages():
         stage_axis="bond",
         stages=LADDER,
         tags=[
-            {"id": "warmth", "description": "Тепло.", "sentiment": "positive"},
-            {"id": "hostility", "description": "Грубость.", "sentiment": "negative"},
-            {"id": "neutral", "description": "Обычное.", "sentiment": "neutral"},
-            # Доступна только на верхней половине лестницы.
-            {"id": "possessive", "description": "Ревность.", "sentiment": "negative",
+            {"id": "warmth", "description": "Warmth.", "sentiment": "positive"},
+            {"id": "hostility", "description": "Rudeness.", "sentiment": "negative"},
+            {"id": "neutral", "description": "Ordinary.", "sentiment": "neutral"},
+            # Available only on the upper half of the ladder.
+            {"id": "possessive", "description": "Jealousy.", "sentiment": "negative",
              "unlock_at": 0.5},
         ],
         deltas={
@@ -113,12 +113,12 @@ def test_tag_windows_read_the_same_axis_as_the_stages():
 
     from engine.state import StateKernel
 
-    # Близость высокая, связь низкая: ворота обязаны быть ЗАКРЫТЫ, хотя настроение отличное.
+    # High closeness, low bond: the gates must be CLOSED, though the mood is excellent.
     warm_stranger = StateKernel(pack.axes, values={"affection": 95.0, "trust": 95.0, "bond": 5.0})
-    got = CharacterRuntime(pack, _Says("possessive"), state=warm_stranger).respond("кто это был")
+    got = CharacterRuntime(pack, _Says("possessive"), state=warm_stranger).respond("who was that")
     assert got.tag == pack.meta.fallback_tag
 
-    # И наоборот: связь высокая, настроение испорчено — ворота открыты.
+    # And the other way round: high bond, a spoiled mood — the gates are open.
     bonded = StateKernel(pack.axes, values={"affection": 20.0, "trust": 10.0, "bond": 80.0})
-    got = CharacterRuntime(pack, _Says("possessive"), state=bonded).respond("кто это был")
+    got = CharacterRuntime(pack, _Says("possessive"), state=bonded).respond("who was that")
     assert got.tag == "possessive"

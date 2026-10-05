@@ -1,12 +1,12 @@
-"""Записка мира про человека рядом: что именно она читает.
+"""A world note about a person nearby: what exactly she reads.
 
-Роутер сообщает ФАКТ — «дал», «смотрит», «ушёл», «к нему что-то подобралось», — и
-записка обязана донести его словами, не сделав за неё вывода. Проверяется здесь и то,
-и другое: что содержание доезжает целиком и что оценки в нём нет.
+The router reports a FACT — "gave", "is watching", "left", "something crept up on him" —
+and the note must carry it in words without drawing a conclusion for her. Both are checked
+here: that the content arrives whole and that there is no judgement in it.
 
-Формы событий — не мои: их объявляет адаптер, таблица в его `minecraft/README.md`.
-Ошибиться тут дёшево на вид и дорого на деле — поле, взятое СОСЕДНЕЕ с нужным, даёт
-записку, которая выглядит правильной и всегда пуста.
+The event shapes are not mine: the adapter declares them, the table is in its `minecraft/README.md`.
+Erring here looks cheap and is costly in practice — a field taken NEXT to the right one gives a
+note that looks correct and is always empty.
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ def test_a_gift_says_who_and_what():
         "took": [{"what": "diamond", "count": 2}, {"what": "iron_helmet", "count": 1}],
     })
     assert said == "[HontoUKI gave you diamond x2, iron_helmet]"
-    # Единица не пишется: «iron_helmet x1» — это счёт, а не речь.
+    # One is not written: "iron_helmet x1" is a count, not speech.
     assert "x1" not in said
 
 
@@ -39,10 +39,10 @@ def test_watching_says_whether_she_was_working():
 
 
 def test_leaving_has_two_shapes_and_both_survive():
-    # Ушёл ногами — это расстояние и время.
+    # Left on foot — that is distance and time.
     walked = _note({"kind": "left", "who": "HontoUKI", "blocks": 63, "gone_for": 31})
     assert "63" in walked and "31" in walked
-    # Вышел из игры — это другое, и «63 блока» здесь было бы выдумкой.
+    # Logged out of the game is something else, and "63 blocks" here would be invention.
     out = _note({"kind": "left", "who": "HontoUKI", "why": "logged out"})
     assert out == "[HontoUKI logged out]"
     assert "blocks" not in out
@@ -54,7 +54,7 @@ def test_standing_with_others_names_them_and_counts_them():
         "them": [{"what": "villager", "count": 3}, {"what": "cow", "count": 1}],
     })
     assert said == "[HontoUKI is standing with villager x3, cow]"
-    # Корова и житель приезжают одинаково: что из них соперник, решает пак, а не провод.
+    # A cow and a villager arrive alike: which of them is a rival is decided by the pack, not the wire.
     assert "villager" in said and "cow" in said
 
 
@@ -74,13 +74,13 @@ def test_danger_names_what_and_how_close():
 ])
 def test_a_note_states_a_fact_and_never_a_reading(event):
     said = _note(event)
-    # В скобках, как всё, что приходит не от человека: иначе записка неотличима от речи.
+    # In brackets, like everything that does not come from a person: otherwise a note is indistinguishable from speech.
     assert said.startswith("[") and said.endswith("]")
-    # Имя человека называется всегда — глагол про человека без имени бесполезен, и
-    # ровно на этом 02.09 сломался `follow`.
+    # The person's name is always named — a verb about a person without a name is useless, and
+    # exactly this broke `follow` on 02.09.
     assert "HontoUKI" in said
-    # И ни одного слова, которого роутер не измерял. «Ушёл» — факт, «бросил тебя» —
-    # прочтение, и прочтение принадлежит ей, а не проводу.
+    # And not one word the router did not measure. "Left" is a fact, "abandoned you" is a
+    # reading, and the reading belongs to her, not the wire.
     assert not re.search(
         r"\b(ignor\w+|abandon\w+|left you|lonely|misses?|loves?|scared|finally)\b",
         said, re.IGNORECASE,
@@ -88,38 +88,38 @@ def test_a_note_states_a_fact_and_never_a_reading(event):
 
 
 def test_death_says_whether_a_person_did_it():
-    """«Она умерла» и «ТЫ её убил» — разные новости, и вторую терять нельзя.
+    """'She died' and 'YOU killed her' are different news, and the second must not be lost.
 
-    Роутер спрашивает об этом саму игру и называет человека отдельным полем; записка
-    только не теряет его. Что смерть от его руки значит — ярость, преданность или
-    ничего — решает она.
+    The router asks the game itself about it and names the person in a separate field; the note
+    only does not lose it. What a death by his hand means — rage, devotion or nothing — she
+    decides.
     """
     by_him = _note({"kind": "died", "by_player": "HontoUKI",
                     "how": "Yukina was slain by HontoUKI"})
     by_world = _note({"kind": "died", "how": "Yukina was blown up by a creeper"})
     assert by_him == "[HontoUKI killed you]"
     assert "creeper" in by_world and "killed you" not in by_world
-    # И смерть без объяснения — всё ещё смерть, а не пустая скобка.
+    # And a death without an explanation is still a death, not an empty bracket.
     assert _note({"kind": "died"}) == "[you died]"
 
 
 def test_an_unknown_event_still_gives_a_readable_note():
-    # Роутер объявляет свои виды сам и может завести новый раньше, чем про него узнают
-    # здесь. Пустая строка была бы ходом ни о чём; голое имя вида — честный минимум.
+    # The router declares its kinds itself and may start a new one before it is known about
+    # here. An empty line would be a turn about nothing; the bare kind name is an honest minimum.
     assert _note({"kind": "something_new"}) == "[something_new]"
 
 
 def test_only_the_gaze_waits_for_him_to_finish_speaking():
-    """Пороги тишины: у поводов про него их почти нет, и это осмысленно.
+    """Quiet thresholds: occasions about him have almost none, and that makes sense.
 
-    `QUIET_AFTER_HIM` защищает разговор от её собственных дел. Повод про него — сам
-    разговор и есть, только не словами: ответить на подаренный алмаз через секунду
-    после «take this» значит услышать, а не перебить.
+    `QUIET_AFTER_HIM` protects the conversation from her own business. An occasion about him is
+    the conversation itself, only not in words: answering a gifted diamond a second after
+    "take this" is hearing him, not interrupting.
 
-    Взгляд — исключение: он может стоять и смотреть посреди беседы, и «ты на меня
-    смотришь!» поверх его же реплики это ровно прежний дефект.
+    A gaze is the exception: he may stand and look in the middle of a conversation, and "you're
+    looking at me!" over his own line is exactly the old defect.
     """
-    assert WITH_CONTENT["watched"] is None, "None значит держать общий порог"
+    assert WITH_CONTENT["watched"] is None, "None means keep the common threshold"
     assert QUIET_AFTER_HIM > 0
     # 30.09: what she noticed far off, and a place that brings something back, wait too —
     # her news, not his deed.
@@ -132,17 +132,17 @@ def test_only_the_gaze_waits_for_him_to_finish_speaking():
 
 
 def test_a_death_belongs_to_the_person_who_caused_it():
-    """Живьём 09.09, и это дорого стоило.
+    """Live 09.09, and it cost dearly.
 
-    Он убил её, и ход ушёл в разговор С САМОЙ СОБОЙ: у `died` нет поля `who` — человек
-    лежит в `by_player`, — цикл только что перезапустился, и запасным вариантом стояло
-    ЕЁ имя. Появилась вторая ведомость `minecraft:Yukina` с единственной строкой, куда и
-    легли −8 доверия. Он убил её, и это не стоило ему ничего; а через ход она об этом не
-    помнила, потому что записка лежала в другом окне.
+    He killed her, and the turn went into a conversation WITH HERSELF: `died` has no `who`
+    field — the person lies in `by_player` — the loop had just restarted, and the fallback was
+    HER name. A second ledger `minecraft:Yukina` appeared with a single row, where the −8 trust
+    went. He killed her, and it cost him nothing; and a turn later she did not remember it,
+    because the note lay in another window.
     """
     assert about_whom({"kind": "died", "by_player": "HontoUKI"}) == "HontoUKI"
-    # Смерть от мира ничьей не становится: приписать её человеку значило бы взять с него
-    # плату за крипера.
+    # A death to the world does not become anyone's: attributing it to a person would mean
+    # charging him for the creeper.
     assert about_whom({"kind": "died", "how": "blown up by a creeper"}) == ""
 
 
@@ -152,18 +152,18 @@ def test_a_note_about_a_person_is_a_turn_about_that_person():
 
 
 def test_her_own_work_belongs_to_nobody_by_itself():
-    """Ход про её собственную печь не про человека, и выдумывать его нечем.
+    """A turn about her own furnace is not about a person, and there is nothing to invent one with.
 
-    Он достаётся тому, с кем она разговаривает; а если не разговаривает ни с кем — хода
-    нет вовсе. Разговора с самой собой не бывает, и ведомость, не принадлежащая никому,
-    молча съедает то, что должно было кому-то стоить.
+    It goes to whoever she is talking to; and if she talks to nobody there is no turn at all.
+    There is no conversation with oneself, and a ledger belonging to nobody silently eats what
+    should have cost someone something.
     """
     for kind in ("closed", "waiting", "interrupted"):
         assert about_whom({"kind": kind}) == ""
 
 
 def test_a_place_that_brings_something_back_is_named_with_when():
-    """30.09: «Стоп. Она помнит, что здесь мы чуть не умерли.» The router says what and
+    """30.09: "Stop. She remembers we almost died here." The router says what and
     when; the note says it as a fact, never as a feeling."""
     said = _note({"kind": "remembered", "what": "something hit you here — skeleton",
                   "ago": "35 min ago", "times": 2, "blocks": 4})
