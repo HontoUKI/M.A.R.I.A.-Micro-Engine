@@ -38,40 +38,40 @@ from engine.config import load_settings  # noqa: E402
 # honest unit for a place where people type "k".
 WINDOW = 8
 
-# Сколько ждать перед новой попыткой подключиться к потоку. Секунды, не мгновение:
-# роутер перезапускают руками, и частить в закрытый порт — это шум, а не готовность.
+# How long to wait before trying to connect to the stream again. Seconds, not an instant:
+# the router is restarted by hand, and hammering a closed port is noise, not readiness.
 RECONNECT_EVERY = 3.0
 
-# События, на которые ей стоит дать ход.
+# Events that deserve a turn for her.
 #
-# Долгая работа не даёт ей хода вовсе: шахта говорит «попалась железная руда», а
-# следующий раз её спросят, когда шахта кончится. Всё, что автор перечислял как
-# «правильный выбор» — вскопать жилу, осветить пещеру, зачистить подземелье, — упирается
-# не в отсутствие суждения, а в отсутствие МОМЕНТА, когда его можно высказать.
+# Long work gives her no turn at all: the mine says "found iron ore", and next time she is
+# asked is when the mine ends. Everything the author listed as "the right choice" — dig out
+# a vein, light a cave, clear a dungeon — runs into not a lack of judgement but a lack of a
+# MOMENT when it can be spoken.
 #
-# Список короткий и структурный, а не по вкусу: работа кончилась · работа пошла сама и
-# тело свободно · её сбили · и то, что она встретила по дороге. Ошибиться тут дёшево —
-# игрок рядом и поправит; дорого спамить, поэтому есть порог.
+# The list is short and structural, not a matter of taste: the work ended · the work goes on
+# by itself and the body is free · she was knocked off · and what she met on the way. Erring
+# here is cheap — the player is nearby and will correct it; spamming is costly, hence the threshold.
 WAKING = ("closed", "waiting", "interrupted")
 
-# Поводы, которые везут СВОЁ содержание.
+# Occasions that carry THEIR OWN content.
 #
-# Про него до сих пор существовало ровно одно событие — он заговорил, — и всё остальное,
-# чем человек присутствует, до неё не доезжало. Он подошёл и смотрит, как она строит; он
-# положил ей в руки алмаз; он ушёл за холм; за его спиной крипер. Персонаж, у которого
-# всё это есть в тегах, без этого провода не может выбрать их ни разу: механизм построен
-# и до момента не доезжает — та самая повторяющаяся форма.
+# Until now there was exactly one event about him — he spoke — and everything else by which a
+# person is present never reached her. He came up and watches her build; he put a diamond in
+# her hands; he went over the hill; there is a creeper behind his back. A character that has
+# all this in its tags could not choose them even once without this wire: the mechanism is
+# built and never reaches the moment — that very recurring shape.
 #
-# Число — сколько секунд тишины после ЕГО реплики нужно этому поводу. Ноль почти у всех,
-# и это не небрежность: `QUIET_AFTER_HIM` защищает от того, чтобы её собственное дело
-# перебило разговор, а здесь повод — сам разговор и есть, только не словами. Ответить
-# на подаренный алмаз через секунду после «take this» — не перебить его, а услышать.
+# The number is how many seconds of quiet after HIS line this occasion needs. Zero for almost
+# all, and that is not carelessness: `QUIET_AFTER_HIM` keeps her own business from
+# interrupting the conversation, while here the occasion is the conversation itself, only not
+# in words. Answering a gifted diamond a second after "take this" is not interrupting him but hearing him.
 #
-# Исключение — взгляд: он может стоять и смотреть посреди беседы, и «ты на меня
-# смотришь!» поверх его же реплики это ровно прежний дефект.
+# The exception is a gaze: he may stand and look in the middle of a conversation, and "you're
+# looking at me!" over his own line is exactly the old defect.
 #
-# Смерть здесь же, хотя она и не про него: без содержания от неё остаётся пустая скобка,
-# а «она умерла» и «ТЫ её убил» — разные новости, и вторую терять нельзя.
+# Death is here too, though it is not about him: without content only an empty bracket is
+# left of it, and "she died" and "YOU killed her" are different news, and the second must not be lost.
 # The game's own words for each advancement tier — the same three verbs vanilla prints,
 # and BlazeandCave's pack prints through its tellraw. The tier is a fact of the
 # announcement, not a reading of it.
@@ -89,66 +89,66 @@ WITH_CONTENT = {
     "returned": 0.0,
     "beside": 0.0,
     "died": 0.0,
-    # Умер он (или другой игрок) — объявлением самой игры (30.09). Без этого она через
-    # десять секунд после его смерти спросила «куда вы пропали?». Ноль и поверх всего.
+    # He (or another player) died — by the game's own announcement (30.09). Without this, ten
+    # seconds after his death she asked "where did you go?". Zero and over everything.
     "player_died": 0.0,
-    # Всё, что происходит с их уговором идти вместе. До сих пор поза жила молча: она
-    # говорила «я иду за тобой», отставала, теряла его из виду и переставала быть его
-    # спутницей — и ни одна из этих трёх вещей до неё не доезжала. «Я иду» оставалось
-    # правдой ровно до той секунды, когда переставало ею быть.
+    # Everything that happens to their agreement to walk together. Until now the posture lived
+    # silently: she said "I'm following you", fell behind, lost sight of him and stopped being his
+    # companion — and not one of these three things reached her. "I'm coming" stayed true exactly
+    # until the second it stopped being so.
     "falling_behind": 0.0,
     "lost_sight": 0.0,
     "lost_them": 0.0,
     "cannot_reach": 0.0,
-    # Он продвинулся по игре, и мир объявил это вслух — обоим. Её часы: тревога растёт
-    # не от настроения, а от того, как далеко он ушёл.
+    # He progressed through the game, and the world announced it out loud — to both. Her clock:
+    # unease grows not from a mood but from how far he has got.
     "advanced": 0.0,
-    # Её ударили, и тело уже бежит (роутер, `flee.js`: поза того, кто не умеет драться).
-    # Ноль и поверх его реплики: крик о помощи не ждёт паузы в разговоре.
+    # She was hit, and the body is already running (router, `flee.js`: the posture of one who cannot fight).
+    # Zero and over his line: a cry for help does not wait for a pause in the conversation.
     "fled": 0.0,
-    "watched": None,  # None — держать общий порог тишины
-    # Заметила вдали сделанное, а не выросшее (30.09). Один раз на находку: постоянной
-    # строкой в каждом ходе статуя в двухстах блоках была новостью снова и снова. Общий
-    # порог тишины — не поверх его реплики.
+    "watched": None,  # None — keep the common quiet threshold
+    # She noticed something made, not grown, in the distance (30.09). Once per find: as a constant
+    # line in every turn a statue two hundred blocks away was news again and again. The common
+    # quiet threshold — not over his line.
     "noticed": None,
-    # Она снова там, где что-то случилось (30.09, роутер memories.js): «здесь меня
-    # ударили», «здесь он чуть не попался». Один раз на возвращение, не поверх него.
+    # She is back where something happened (30.09, router memories.js): "I was hit here", "he
+    # almost got caught here". Once per return, not over him.
     "remembered": None,
 }
 
-# Не чаще раза в столько секунд. Ход, который нельзя перебить и который идёт каждые две
-# секунды, — это уже не внимание, а трескотня.
+# No more often than once in this many seconds. A turn that cannot be interrupted and comes
+# every two seconds is no longer attention but chatter.
 WAKE_EVERY = 20.0
 
-# И не раньше, чем столько секунд после ЕГО реплики.
+# And no sooner than this many seconds after HIS line.
 #
-# Живьём 08.09, из её же расшифровки: он написал «take some cooked cod», она ответила в
-# 19:35:00 — и в 19:35:02 взяла слово сама, потому что попытка закрылась. Пауза между её
-# ответом и её же «Hellooo? Are you even listening to me?» — ДВЕ СЕКУНДЫ.
+# Live 08.09, from her own transcript: he wrote "take some cooked cod", she answered at
+# 19:35:00 — and at 19:35:02 took the floor herself, because an attempt closed. The pause
+# between her answer and her own "Hellooo? Are you even listening to me?" — TWO SECONDS.
 #
-# Порог у очереди говорить был только один и не тот: «не чаще раза в двадцать секунд»
-# считает от прошлого её хода и ничего не знает про то, что он сказал только что. Пока
-# она стояла в тупике `gather → craft → gather`, попытки закрывались каждые несколько
-# секунд, и каждая давала ей слово поверх разговора.
+# The queue to speak had only one threshold, and the wrong one: "no more than once in twenty
+# seconds" counts from her last turn and knows nothing about what he has just said. While
+# she stood in the `gather → craft → gather` dead end, attempts closed every few seconds,
+# and each gave her the floor over the conversation.
 QUIET_AFTER_HIM = 45.0
 
-# Пока она бежит, спокойные поводы молчат. Живьём 30.09 её гнал призрак, и между двумя
-# «помогите» пришла записка «вижу вдали постройку» — ход ушёл на неё, а не на погоню.
-# Столько секунд после последнего `fled` (число моё); сама погоня, удар и смерть
-# проходят всегда.
+# While she runs, the calm occasions are silent. Live 30.09 a vex was chasing her, and between
+# two "help"s came the note "I see a building in the distance" — the turn went to it, not the chase.
+# This many seconds after the last `fled` (my number); the chase itself, a blow and death
+# always go through.
 DANGER_HOLD = 20.0
 
-# Что ждёт, пока опасность не пройдёт: находки, память о месте, взгляд и её работа.
+# What waits until the danger passes: finds, memory of a place, a gaze and her work.
 CALM = frozenset({"noticed", "remembered", "watched", *WAKING})
 
-# Сколько живёт очередь подобранного (решение автора 30.09). Живьём после его смерти она
-# подбирала его вещи с места на место, и КАЖДЫЙ подбор был отдельным ходом: пять «спасибо»
-# за тридцать секунд. Подобранное копится; заговорил он за это время — всё описывается
-# одной запиской перед его репликой, в том же ходе. Промолчал — уходит одним поводом.
+# How long the queue of picked-up things lives (decided 30.09). Live after his death she
+# picked up his things from place to place, and EVERY pickup was a separate turn: five
+# "thanks" in thirty seconds. Pickups pile up; if he spoke meanwhile, all of it is described
+# in one note before his line, in the same turn. If he stayed silent, it goes as one occasion.
 GIFTS_LIVE = 10.0
 
-# Как часто цикл просыпается без событий, чтобы очередь могла истечь: у потока роутера
-# нет пульса, и тишина в мире иначе держала бы подарки сколько угодно.
+# How often the loop wakes without events so the queue can expire: the router's stream has
+# no pulse, and silence in the world would otherwise hold gifts indefinitely.
 TICK = 1.0
 
 # Minecraft chat is one line. Anything longer is sent as several messages rather
@@ -165,7 +165,7 @@ def _say(port: str, text: str) -> None:
         try:
             urllib.request.urlopen(request, timeout=5).close()
         except OSError as why:
-            print(f"[не сказала: {why}]", file=sys.stderr)
+            print(f"[did not say: {why}]", file=sys.stderr)
 
 
 def _chunks(text: str, limit: int) -> list[str]:
@@ -203,18 +203,18 @@ def _listen(port: str):
                     except ValueError:
                         continue
         except (OSError, urllib.error.URLError) as why:
-            # Возвращаться, а не выходить: докстринг обещал это с самого начала, а код
-            # делал обратное — живьём 03.09 перезапуск роутера убил её насмерть, и она
-            # молчала в мире, где игрок продолжал ей писать. Роутер это отдельный
-            # процесс; его перезапуск не событие в её жизни.
+            # Come back rather than exit: the docstring promised this from the start, while the code
+            # did the opposite — live 03.09 a router restart killed her for good, and she stayed
+            # silent in a world where the player kept writing to her. The router is a separate
+            # process; its restart is not an event in her life.
             if not quiet:
-                print(f"[связь с роутером потеряна: {why} — жду]", file=sys.stderr)
+                print(f"[lost the connection to the router: {why} — waiting]", file=sys.stderr)
             quiet = True
             time.sleep(RECONNECT_EVERY)
             continue
-        # Поток кончился без ошибки: тоже обрыв, просто вежливый.
+        # The stream ended without an error: a break too, just a polite one.
         if not quiet:
-            print("[поток кончился — жду]", file=sys.stderr)
+            print("[the stream ended — waiting]", file=sys.stderr)
         quiet = True
         time.sleep(RECONNECT_EVERY)
 
@@ -329,11 +329,11 @@ def calm_now(event: dict, fled_at: float, now: float) -> bool:
 
 
 def about_whom(event: dict) -> str:
-    """Про кого этот повод.
+    """Whom this occasion is about.
 
-    Не «кто говорил»: записка мира про человека — тоже ход про него, хотя он молчал. А у
-    смерти человек лежит в своём поле, потому что «умерла» и «ОН убил» — разные события,
-    и второе называет его прямо.
+    Not "who spoke": a world note about a person is a turn about him too, though he was silent.
+    And for a death the person lies in a field of its own, because "died" and "HE killed" are
+    different events, and the second names him directly.
     """
     if event.get("kind") == "died":
         return str(event.get("by_player") or "")
@@ -341,12 +341,12 @@ def about_whom(event: dict) -> str:
 
 
 def _note(event: dict) -> str:
-    """Записка мира про человека рядом — словами, в квадратных скобках.
+    """A world note about a person nearby — in words, in square brackets.
 
-    Скобки не украшение: по этому же каналу приезжает её собственная реплика игрока, и
-    записка обязана быть отличима от чужой речи. Пак читает эти строки тегами (`gift`,
-    `watched`, `he_left`, `he_is_in_danger`), поэтому здесь называются ФАКТЫ и не
-    делается выводов: «он ушёл», а не «он тебя бросил». Что это значит — её дело.
+    The brackets are not decoration: the player's own line arrives over this same channel, and
+    a note must be distinguishable from someone's speech. The pack reads these lines as tags
+    (`gift`, `watched`, `he_left`, `he_is_in_danger`), so FACTS are named here and no conclusions
+    drawn: "he left", not "he abandoned you". What it means is her business.
     """
     kind = event.get("kind")
     who = event.get("who") or "somebody"
@@ -403,8 +403,8 @@ def _note(event: dict) -> str:
         )
         return f"[{who} is standing with {them or 'somebody'}]"
     if kind == "died":
-        # Убил человек — это другая новость, чем «умерла», и она называется прямо.
-        # Что она значит, решает она; провод только не теряет её.
+        # Killed by a person is different news from "died", and it is named directly.
+        # What it means she decides; the wire only does not lose it.
         if event.get("by_player"):
             return f"[{event['by_player']} killed you]"
         how = event.get("how")
@@ -412,13 +412,13 @@ def _note(event: dict) -> str:
     if kind == "at_risk":
         return f"[a {event.get('from')} is {event.get('blocks')} blocks from {who}]"
     if kind == "falling_behind":
-        # Факт, не вывод: он далеко. Что это значит — догонять, бросить работу или
-        # сказать ему стоять — её дело, а не записки. Занята она была или просто не
-        # поспевает — разные новости, и вторую нельзя подавать первой.
+        # A fact, not a conclusion: he is far away. What it means — catch up, drop the work or
+        # tell him to stop — is her business, not the note's. Whether she was busy or simply
+        # cannot keep up are different news, and the second must not be served as the first.
         where = f"[you are walking with {who} and he is {event.get('blocks')} blocks away"
         if event.get("busy"):
-            # Работа не останавливается (11.09): роутер больше не бросает её дела, чтобы
-            # догнать. Догонит, когда закончит, — если не решит бросить сама.
+            # The work does not stop (11.09): the router no longer drops her business to catch
+            # up. She will catch up when she finishes — unless she decides to drop it herself.
             return where + " — you are still at what you were doing; you will catch up after]"
         return where + " — you are following and not keeping up]"
     if kind == "lost_sight":
@@ -431,8 +431,8 @@ def _note(event: dict) -> str:
             )
         return f"[{who} is gone from the world — you are walking with nobody now]"
     if kind == "advanced":
-        # Факт и время, без выводов. Что значит «Мы уходим вглубь» и быстро ли три
-        # достижения за вечер — её дело, не записки.
+        # A fact and a time, without conclusions. What an advancement title means and whether
+        # three advancements in an evening is fast is her business, not the note's.
         since = event.get("since")
         pace = f", {since}s after the last one" if isinstance(since, int) else ""
         return f"[{who} {VERB.get(event.get('tier'), VERB['task'])} \"{event.get('what')}\"{pace}]"
@@ -484,9 +484,9 @@ def main() -> int:
     # to end the evening — the turn itself was already guarded, and the report was not.
     for stream in (sys.stdout, sys.stderr):
         try:
-            # line_buffering, потому что перенаправленный stdout блочный: пять её
-            # реплик просидели в буфере и дошли бы только на выходе. Лог, который
-            # виден лишь после смерти процесса, — это не лог.
+            # line_buffering, because a redirected stdout is block-buffered: five of her lines
+            # sat in the buffer and would have arrived only on exit. A log visible only after
+            # the process dies is not a log.
             stream.reconfigure(errors="replace", line_buffering=True)
         except (AttributeError, ValueError):
             pass  # not a real console; nothing to soften
@@ -514,18 +514,18 @@ def main() -> int:
         return 1
 
     display = service.registry.get(args.character).meta.display_name
-    # Чего она не видит вовсе — решает пак (сюжетной игре механика игры не показывается).
+    # What she does not see at all is decided by the pack (a story game is not shown the game's mechanics).
     unseen = frozenset(service.registry.get(args.character).unseen_notes)
     in_world = _her_name(port)
-    print(f"персонаж {display}")
-    print(f"в мире   {in_world or '?'}")
+    print(f"character {display}")
+    print(f"in world  {in_world or '?'}")
     if in_world and in_world.lower() != display.lower():
         # Two products disagreeing quietly is worse than either being wrong.
-        print(f"⚠ мир зовёт её {in_world}, а играешь ты {display}.")
-        print(f"  Роутер логинится под своим именем: make run NAME={display}")
+        print(f"⚠ the world calls her {in_world}, but you are playing {display}.")
+        print(f"  The router logs in under its own name: make run NAME={display}")
     if unseen:
-        print(f"не видит {', '.join(sorted(unseen))}")
-    print("слушаю чат. Ctrl+C — выйти.\n")
+        print(f"does not see {', '.join(sorted(unseen))}")
+    print("listening to chat. Ctrl+C to quit.\n")
 
     # One window and one relationship PER PLAYER. Two people in the same world
     # are two conversations, and a shared window is how the answer to one of them
@@ -534,8 +534,8 @@ def main() -> int:
 
     woke_at = 0.0
     heard_at = 0.0
-    # Про КОГО был последний ход. Не то же, что «кто говорил последним»: записка мира
-    # про человека — тоже ход про него, хотя он молчал.
+    # WHOM the last turn was about. Not the same as "who spoke last": a world note about a
+    # person is a turn about him too, though he was silent.
     last_person = ""
     gifts = Gifts()
     fled_at = 0.0
@@ -549,9 +549,9 @@ def main() -> int:
             continue
         kind = event.get("kind")
 
-        # `came_upon` приезжает заметкой хода, а не своим родом события: в потоке это
-        # `progress` с этим ключом. Спрашивать надо у того, чем событие является, а не у
-        # его имени — сегодня это стоило роутеру падения (R33).
+        # `came_upon` arrives as a turn note, not as an event kind of its own: in the stream it
+        # is `progress` with that key. Ask what the event is, not its name — today that cost the
+        # router a crash (R33).
         about_him = kind in WITH_CONTENT
         notable = about_him or kind in WAKING or (kind == "progress" and "came_upon" in event)
 
@@ -561,47 +561,46 @@ def main() -> int:
             deferred.defer(event)
             continue
         if notable:
-            # Порог частоты — про её СОБСТВЕННЫЕ дела: попытки закрываются каждые
-            # несколько секунд, и без него это трескотня. Поводы про человека наперечёт
-            # и уже прорежены роутером — про взгляд и про опасность он говорит не чаще
-            # раза в минуту на человека, — так что глушить их ещё раз значит терять их.
+            # The rate threshold is about her OWN business: attempts close every few seconds,
+            # and without it that is chatter. Occasions about a person are few and already
+            # thinned out by the router — about a gaze and danger it speaks no more than once a
+            # minute per person — so muting them again means losing them.
             if not about_him and time.time() - woke_at < WAKE_EVERY:
                 deferred.defer(event)
                 continue
-            # Разговор старше собственного повода: слово берут в тишине, а не поперёк
-            # только что сказанного. Иначе её собственный ход выглядит как «ты меня не
-            # слушаешь» ровно там, где он её слушает.
+            # A conversation outranks her own occasion: the floor is taken in silence, not across
+            # what was just said. Otherwise her own turn looks like "you're not listening to me"
+            # exactly where he is listening to her.
             quiet = QUIET_AFTER_HIM if WITH_CONTENT.get(kind) is None else WITH_CONTENT[kind]
             if time.time() - heard_at < quiet:
                 deferred.defer(event)
                 continue
             woke_at = time.time()
-            # Чей это ход.
+            # Whose turn this is.
             #
-            # Живьём 09.09: он убил её, и запись ушла в разговор С САМОЙ СОБОЙ. У события
-            # `died` нет поля `who` — там `by_player`, — цикл только что перезапустился,
-            # `last_person` был пуст, и запасным вариантом стояло ЕЁ СОБСТВЕННОЕ имя. В
-            # итоге появилась вторая ведомость, `minecraft:Yukina`, куда и легли −8
-            # доверия за убийство: он убил её, и это не стоило ему ничего. А через ход она
-            # об этом не помнила — записка лежала в другом окне.
+            # Live 09.09: he killed her, and the record went into a conversation WITH HERSELF. The
+            # `died` event has no `who` field — it has `by_player` — the loop had just restarted,
+            # `last_person` was empty, and the fallback was HER OWN name. As a result a second ledger
+            # appeared, `minecraft:Yukina`, where the −8 trust for the killing went: he killed her, and
+            # it cost him nothing. And a turn later she did not remember it — the note lay in another window.
             #
-            # Разговора с самой собой не бывает, поэтому запасного варианта с её именем
-            # больше нет: нет человека — нет и хода. Молчание честнее ведомости, которая
-            # никому не принадлежит.
+            # There is no conversation with oneself, so there is no fallback with her name any more:
+            # no person — no turn. Silence is more honest than a ledger that belongs to
+            # nobody.
             who = about_whom(event) or last_person
             if not who:
                 continue
             deferred.clear()  # This turn reads the current world, including pending outcomes.
             last_person = who
             window = windows.setdefault(who, [])
-            # Ход про её работу идёт БЕЗ содержания, и это не упущение: состояние мира
-            # собирается заново каждый ход, и в нём уже есть и незаконченное желание, и
-            # то, что ждёт её у печи, и чем кончилась последняя попытка. Ей не хватало
-            # не сведений, а очереди говорить.
+            # A turn about her work goes WITHOUT content, and that is not an omission: the world
+            # state is assembled anew every turn, and it already holds the unfinished wish, what
+            # waits for her at the furnace, and how the last attempt ended. She did not lack
+            # information, she lacked a turn to speak.
             #
-            # А поводу про человека сведения нужны: ни в каком состоянии не написано,
-            # что он ТОЛЬКО ЧТО вложил ей в руки алмаз. Это момент, а не положение дел,
-            # и без содержания от него остаётся пустая скобка.
+            # But an occasion about a person needs information: no state says that he JUST put a
+            # diamond in her hands. That is a moment, not a state of affairs, and without content
+            # only an empty bracket is left of it.
             said = _note(event) if about_him else f"[{kind}]"
             try:
                 result = service.complete(
@@ -611,7 +610,7 @@ def main() -> int:
                     world=_world_id(port),
                 )
             except Exception as why:  # noqa: BLE001
-                print(f"[ход не вышел: {why}]", file=sys.stderr)
+                print(f"[the turn failed: {why}]", file=sys.stderr)
                 continue
             if getattr(result, "game_feedback_pending", False):
                 deferred.defer({"kind": "waiting"})
@@ -621,10 +620,10 @@ def main() -> int:
                 _say(port, result.reply)
             if result.did:
                 print("  " + " · ".join(result.did))
-            # Записка про НЕГО и её ответ — это обмен с ним, и в окне ему место: иначе
-            # на «нравится?» через ход ей нечем вспомнить, что она только что
-            # благодарила. Записка про её собственную печь обменом не является и в окно
-            # по-прежнему не идёт.
+            # A note about HIM and her answer are an exchange with him, and they belong in the
+            # window: otherwise a turn later, at "do you like it?", she has nothing to remember
+            # she had just thanked him with. A note about her own furnace is not an exchange and
+            # still does not go into the window.
             if about_him:
                 window.append(ChatMessage(role="user", content=said))
                 window.append(ChatMessage(role="assistant", content=result.reply))
@@ -638,7 +637,7 @@ def main() -> int:
             continue
         last_person = who
         deferred.clear()  # A human turn also receives the latest action outcome.
-        # Отметка о том, что он говорил: её собственный повод молчит столько-то после.
+        # A mark that he spoke: her own occasion stays silent for this long afterwards.
         heard_at = time.time()
         print(f"<{who}> {said}")
 
@@ -665,7 +664,7 @@ def main() -> int:
                 world=_world_id(port),
             )
         except Exception as why:  # noqa: BLE001 - one bad turn must not end the evening
-            print(f"[ход не вышел: {why}]", file=sys.stderr)
+            print(f"[the turn failed: {why}]", file=sys.stderr)
             continue
 
         if getattr(result, "game_feedback_pending", False):
