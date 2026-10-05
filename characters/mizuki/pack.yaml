@@ -43,8 +43,8 @@ invariants:
 
 stage_axis: bond
 
-# Единственный пак, который начинается НИЖЕ нейтрального: доверие к человеку, наставившему
-# на неё ствол, — ноль (канон §4).
+# The only pack that starts BELOW neutral: trust in a person who pointed a gun at her is
+# zero (canon §4).
 axes:
   affection: {start: 5}
   trust:     {start: 0}
@@ -81,10 +81,10 @@ tags:
   - id: teasing
     description: "He teases YOU — pokes fun at how little you know here, at your fear, at how you talk. Playful, aimed at you, not cruel."
     sentiment: negative
-  # Small talk (30.09). Без этих трёх у классификатора не было места для обычного трёпа, и
-  # он раскладывал его по сюжетным тегам: короткий ответ по теме уходил в `neglect` («ты
-  # меня не слушаешь»), сарказм — в `attention` и читался буквально, а сам трёп не давал
-  # отношениям ничего.
+  # Small talk (30.09). Without these three the classifier had no place for ordinary chatter,
+  # and it spread it across story tags: a short on-topic answer went to `neglect` ("you're not
+  # listening to me"), sarcasm to `attention` and was read literally, and the chatter itself
+  # gave the relationship nothing.
   - id: small_talk
     description: "Ordinary chat with nothing at stake — he answers briefly but on your topic, comments on what is around, keeps the talk going. Short is normal here: he types in a game chat."
     sentiment: neutral
@@ -92,7 +92,7 @@ tags:
     description: "He jokes or fools around — a funny remark, banter, a silly offer, laughing WITH you rather than at you."
     sentiment: positive
   - id: sarcasm
-    description: "He says the opposite of what he means — mock politeness («простите, госпожа»), dry irony («охотно верим»), fake agreement. Not literal, not cruel."
+    description: "He says the opposite of what he means — mock politeness ('pardon me, my lady' / «простите, госпожа»), dry irony ('sure, we believe you' / «охотно верим»), fake agreement. Not literal, not cruel."
     sentiment: neutral
   - id: neglect
     description: "He ignores what you said — does not answer your question at all, talks past it about something unrelated, or brushes you off. A short answer that stays on your topic is NOT neglect."
@@ -133,9 +133,9 @@ tags:
   - id: this_place
     description: "A note from the world says you are back where something happened — something hit you here, he nearly got caught here, you ran from here."
     sentiment: neutral
-  # Его смерть (30.09). Один факт, три окна по связи — то же, чем окна тегов гейтятся у
-  # Юкины: классификатор видит ровно один из трёх, и выбрать горе на стадии страха он не
-  # может. Нейтрально → лёгкая грусть → горечь (решение автора).
+  # His death (30.09). One fact, three windows by bond — the same way tag windows are gated
+  # for Yukina: the classifier sees exactly one of the three, and cannot choose grief at the
+  # fear stage. Neutral → light sadness → bitterness (the author's decision).
   - id: he_died
     description: "A note from the world says HE died — the game announced his death. Not that he is in danger: he is dead."
     sentiment: neutral
@@ -153,8 +153,8 @@ tags:
     description: "He is back. A note from the world says he returned or logged back in, or he says he is back — after having been gone."
     sentiment: positive
 
-  # Окна по связи. Страх потерять его появляется не сразу: сначала он для неё тот, кто
-  # наставил ствол, и его уход — просто уход.
+  # Windows by bond. The fear of losing him does not appear at once: at first he is the one
+  # who pointed a gun at her, and his leaving is just leaving.
   - id: dont_leave_me
     description: "He says he is going somewhere dangerous alone, or tells you to stay behind while he goes — the Nether, a cave, a night run."
     sentiment: negative
@@ -168,43 +168,43 @@ deltas:
   attention:       {affection: 3.0,  trust: 3.0,  bond: 0.5}
   warmth:          {affection: 4.0,  trust: 4.0,  bond: 0.6}
   praise_work:     {affection: 4.0,  trust: 2.0,  bond: 0.5}
-  # Самые крупные ходы — не вещи, а выживание: ей не нужен алмаз, ей нужно дожить до
-  # завтра. Защитил — больше всего; накормил — следом.
+  # The biggest moves are not things but survival: she does not need a diamond, she needs to
+  # live until tomorrow. Protected — most of all; fed — next.
   protected:       {affection: 7.0,  trust: 8.0,  bond: 1.0}
   fed:             {affection: 6.0,  trust: 5.0,  bond: 0.8}
   gift:            {affection: 4.0,  trust: 3.0,  bond: 0.5}
   asks_about_home: {affection: 5.0,  trust: 3.0,  bond: 0.8}
   his_story:       {affection: 3.0,  trust: 4.0,  bond: 0.6}
-  # Ствол на неё — это то, с чего всё началось. Повторить это стоит дороже всего, кроме
-  # убийства, и помнится почти всю серию (remembered_for).
+  # A gun pointed at her is what it all started with. Repeating it costs more than anything
+  # except killing, and is remembered almost the whole series (remembered_for).
   threatened:      {affection: -6.0, trust: -10.0, bond: -0.6}
   teasing:         {affection: 1.0,  trust: 0.5,  bond: 0.1}
   neglect:         {affection: -2.0, trust: -1.0, bond: -0.2}
   insult:          {affection: -7.0, trust: -6.0, bond: -0.4}
-  # Положение дел, а не его поступок: осей не двигает. Как она это переживает, решает
-  # ступень, а не число.
+  # A state of affairs, not his deed: it moves no axes. How she lives through it is decided
+  # by the stage, not a number.
   gunfire:         {affection: 0.0,  trust: 0.0,  bond: 0.0}
   you_are_hunted:  {affection: 0.0,  trust: 0.0,  bond: 0.0}
   you_were_hurt:   {affection: 0.0,  trust: 0.0,  bond: 0.0}
   hungry:          {affection: 0.0,  trust: 0.0,  bond: 0.0}
   villagers:       {affection: 0.0,  trust: 0.0,  bond: 0.0}
   he_is_in_danger: {affection: 0.0,  trust: 0.0,  bond: 0.0}
-  # Он «никогда не стоит на месте» — уйти без неё для него привычка. Для неё это остаться
-  # одной в мёртвом мире.
+  # He "never stands still" — leaving without her is a habit for him. For her it means being
+  # left alone in a dead world.
   he_left:         {affection: -1.0, trust: -3.0, bond: 0.0}
   he_came_back:    {affection: 2.0,  trust: 2.0,  bond: 0.3}
-  # Место, а не поступок: осей не двигает. Как она его помнит, решает ступень.
+  # A place, not a deed: it moves no axes. How she remembers it is decided by the stage.
   this_place:      {affection: 0.0,  trust: 0.0,  bond: 0.0}
   dont_leave_me:   {affection: 1.0,  trust: -2.0, bond: 0.3}
   closeness:       {affection: 5.0,  trust: 4.0,  bond: 1.0}
   task:            {affection: 0.5,  trust: 0.5,  bond: 0.1}
-  # Трёп двигает медленно, но двигает: доверие растёт из того, что с ним вообще можно
-  # разговаривать. Шутка — чуть больше. Сарказм — почти ничего, но и не минус.
+  # Chatter moves slowly, but it moves: trust grows from the fact that he can be talked to at
+  # all. A joke a little more. Sarcasm almost nothing, but not a minus either.
   small_talk:      {affection: 0.5,  trust: 1.0,  bond: 0.1}
   joke:            {affection: 2.0,  trust: 1.0,  bond: 0.3}
   sarcasm:         {affection: 0.5,  trust: 0.5,  bond: 0.1}
   neutral:         {affection: 0.0,  trust: 0.0,  bond: 0.0}
-  # Его смерть — не его поступок по отношению к ней: отношения она не двигает.
+  # His death is not his deed toward her: it does not move the relationship.
   he_died:         {affection: 0.0,  trust: 0.0,  bond: 0.0}
   he_died_missed:  {affection: 0.0,  trust: 0.0,  bond: 0.0}
   he_died_grief:   {affection: 0.0,  trust: 0.0,  bond: 0.0}
@@ -328,10 +328,10 @@ blocks:
     than it would at home. Say it back in your own plain way — not a confession, the truth.
   neutral: ""
 
-# Петля (30.09, решение автора). Скрытый счётчик: взводит его смерть героя на связи от
-# 0.5, шаг — следующий МИР (роутер отдаёт отпечаток сида). Для игрока это первый раз,
-# она помнит его и их разговоры; дом стирается, знание мира остаётся. Сброс отношений
-# счётчик не трогает — только удаление данных сессии. Клиенту не показывается никогда.
+# The loop (30.09, the author's decision). A hidden counter: armed by the hero's death at bond
+# 0.5 or more, the step is the next WORLD (the router hands over the seed's fingerprint). For the
+# player it is the first time; she remembers him and their conversations; the house is erased,
+# knowledge of the world stays. A relationship reset does not touch the counter — only deleting the session data. Never shown to the client.
 loop:
   arm_on: [he_died_grief]
   steps:
@@ -445,15 +445,15 @@ actions:
   - emote
   - follow
 
-# Руки (канон §5). Боевых рутин нет В НАЧАЛЕ (автор, 25.09): её стойка при опасности —
-# бежать, прятаться и звать на помощь (роутер `flee.js`, правило сервера `posture: flee`).
-# Драться она может выбрать только партнёром — и даже тогда тело при ударе бежит само.
-# Окно `fight` без объекта покрывает и животных: «в начале будет бояться убить даже
-# цыплёнка» — до партнёра не убивает никого.
+# Hands (canon §5). There are no fighting routines AT THE START (the author, 25.09): her stance
+# in danger is to run, hide and call for help (router `flee.js`, server rule `posture: flee`).
+# She can choose to fight only as a partner — and even then her body runs by itself when hit.
+# The `fight` window without an object covers animals too: "at first she will be afraid to
+# kill even a chicken" — until partner she kills nobody.
 #
-# Добывать она не может — это правило её РУК, а не ступени, и держит его роутер
-# (`hands-rule.js`, правило сервера `dig_with: iron`): урожай свободен, остальное — только
-# с железным инструментом в руке. Поэтому окна на `dig` здесь нет.
+# She cannot mine — that is a rule of her HANDS, not of a stage, and the router holds it
+# (`hands-rule.js`, server rule `dig_with: iron`): a harvest is free, everything else only
+# with an iron tool in hand. So there is no window for `dig` here.
 bounds:
   - verb: fight
     unlock_at: 0.50
@@ -463,13 +463,13 @@ bounds:
     unlock_at: 0.50
     refuse: >
       you have never hit anything in your life and this is not the day to start
-  # `beat` — один удар тем, что в руке (роутер, 27.09): драка теперь собирается рутиной
-  # из follow/beat/retreat, и без этого окна `fight` обходился бы одним словом.
+  # `beat` — one blow with what is in hand (router, 27.09): a fight is now assembled as a routine
+  # from follow/beat/retreat, and without this window `fight` would be bypassed with one word.
   - verb: beat
     unlock_at: 0.50
     refuse: >
       your hands will not do it — you have never hit anything, and you run instead
-  # Еду она отдаёт, а не берёт.
+  # She gives food, she does not take it.
   - verb: take_from
     object:
       - bread
@@ -497,8 +497,8 @@ bounds:
     refuse: >
       not yet — you are still scared of breaking something here
 
-# Сюжетная игра не видит механики игры (автор, 27.09): достижения — это счёт игры, а не
-# то, что с ней происходит. Живьём 26.09 они превращались у неё в «торговый автомат» и
-# «завод». Заметка `advanced` до неё не доходит вовсе.
+# A story game does not see the game's mechanics (the author, 27.09): advancements are the
+# game's score, not what happens to her. Live 26.09 they turned into a "vending machine" and a
+# "factory" for her. The `advanced` note never reaches her.
 unseen_notes:
   - advanced
