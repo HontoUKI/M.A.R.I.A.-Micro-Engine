@@ -1,11 +1,11 @@
-"""Мидзуки: балласт, который нельзя потерять.
+"""Mizuki: ballast that must not be lost.
 
-Пак держится на трёх утверждениях канона (`direction/MIZUKI_CONCEPT.md`), и все три —
-числа и код, а не проза:
+The pack rests on three claims of the canon (`direction/MIZUKI_CONCEPT.md`), and all three
+are numbers and code, not prose:
 
-1. Она начинает НИЖЕ нейтрального: доверие к человеку, наставившему на неё ствол, ноль.
-2. Самое большое, что он может сделать, — защитить её, а не одарить.
-3. Боевых рутин у неё нет до ступени партнёра; стойка при опасности — бегство (роутер).
+1. She starts BELOW neutral: trust in a person who pointed a gun at her is zero.
+2. The biggest thing he can do is protect her, not give her gifts.
+3. She has no fighting routines until the partner stage; her stance in danger is flight (router).
 """
 from __future__ import annotations
 
@@ -19,9 +19,9 @@ from engine.perception import TagClassifier, _available_tags
 
 _MIZUKI = Path(__file__).resolve().parents[1] / "characters" / "mizuki"
 
-FOLLOWING = 0.15   # кирка и блоки в руках
-USEFUL = 0.30      # страх, что он уйдёт один; стройка
-PARTNER = 0.50     # «ты для меня важна»
+FOLLOWING = 0.15   # a pickaxe and blocks in her hands
+USEFUL = 0.30      # the fear that he leaves alone; building
+PARTNER = 0.50     # "you matter to me"
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def pack():
 
 
 class _Insists:
-    """Модель, которая называет один и тот же тег, что бы ей ни предложили."""
+    """A model that names the same tag whatever it is offered."""
 
     def __init__(self, tag: str) -> None:
         self._tag = tag
@@ -45,7 +45,7 @@ def test_she_starts_below_neutral_because_he_pointed_a_gun(pack):
 
 
 def test_protecting_her_is_the_biggest_thing_he_can_do(pack):
-    """Ей не нужен алмаз — ей нужно дожить до завтра."""
+    """She does not need a diamond — she needs to live until tomorrow."""
     protected = pack.deltas["protected"]
     for tag, delta in pack.deltas.items():
         if tag != "protected":
@@ -61,7 +61,7 @@ def test_pointing_the_gun_again_costs_more_than_protecting_her_returns(pack):
 
 
 def test_the_world_happening_to_her_moves_nothing(pack):
-    """Выстрел, охота на неё, голод — положение дел, а не его поступок."""
+    """A shot, a hunt for her, hunger — a state of affairs, not his deed."""
     for tag in ("gunfire", "you_are_hunted", "you_were_hurt", "hungry", "he_is_in_danger"):
         d = pack.deltas[tag]
         assert (d.affection, d.trust, d.bond) == (0.0, 0.0, 0.0), tag
@@ -84,7 +84,7 @@ def test_a_locked_tag_cannot_be_chosen_even_when_the_model_names_it(pack):
 
 
 def test_no_fighting_until_she_is_his_partner(pack):
-    """Автор, 25.09: «отсутствие каких-либо боевых рутин в начале»."""
+    """The author, 25.09: "no fighting routines at all at the start"."""
     for verb in ("fight", "strike", "beat"):
         bound = next(b for b in pack.bounds if b.verb == verb)
         assert bound.covers(verb, ("zombie",))
@@ -98,7 +98,7 @@ def test_her_hands_open_with_the_stages(pack):
 
 
 def test_digging_is_the_worlds_rule_not_a_stage(pack):
-    """Бревно рукой нереально на любой ступени — это держит роутер (`dig_with: iron`)."""
+    """A log by hand is unreal at any stage — the router holds this (`dig_with: iron`)."""
     assert not any(b.verb == "dig" for b in pack.bounds)
 
 
@@ -115,11 +115,11 @@ def test_she_never_takes_his_food(pack):
 
 def test_every_stage_has_a_cold_face(pack):
     for stage in pack.stages:
-        assert "unkind lately" in stage.block, f"ступень {stage.id} не умеет холодеть"
+        assert "unkind lately" in stage.block, f"stage {stage.id} cannot go cold"
 
 
 def test_gunfire_is_read_by_the_stage(pack):
-    """Один повод, разные ступени: вздрагивает в начале, спокойна у партнёра."""
+    """One occasion, different stages: she flinches at the start, is calm as a partner."""
     assert "stage note" in pack.blocks["gunfire"]
     by_id = {s.id: s.block for s in pack.stages}
     assert "flinch" in by_id["shock"]
@@ -127,7 +127,7 @@ def test_gunfire_is_read_by_the_stage(pack):
 
 
 def test_no_japanese_words_are_invited(pack):
-    """Автор, 25.09: «Kowai с самого старта — так себе». Пак не должен звать японские слова."""
+    """The author, 25.09: "Kowai from the very start — not great". The pack must not call up Japanese words."""
     text = " ".join([pack.identity, *pack.blocks.values(), *(s.block for s in pack.stages)]).lower()
     for word in ("kowai", "itadakimasu", "sugoi", "japanese word"):
         assert word not in text, word
@@ -138,26 +138,26 @@ def _flat(text):
 
 
 def test_nothing_unseen_is_invited(pack):
-    """Живьём 26.09: «шум как на заводе» на дереве в лесу, «торговый автомат» на кровать.
+    """Live 26.09: "noise like a factory" at a tree in the forest, "a vending machine" at a bed.
 
-    Блок `progress` подсказывал сравнение с заводом, поездом, автоматом на ЛЮБОЕ достижение,
-    включая её собственные; идентичность звала сравнивать с домом всё подряд. Пак не должен
-    подсказывать ни одной вещи, которой она не видела.
+    The `progress` block suggested comparing ANY advancement with a factory, a train, a vending
+    machine, her own included; her identity called for comparing everything with home. The pack
+    must not suggest a single thing she has not seen.
     """
     text = " ".join([pack.identity, *pack.blocks.values(), *(s.block for s in pack.stages)]).lower()
     for word in ("factory", "vending machine"):
         assert word not in text, word
     assert "compare what you actually see here to home" in _flat(pack.identity)
-    # «Ничего не выдумывать» — не её черта, а режим игры: GAMER=true (engine/character.py).
+    # "Invent nothing" is not her trait but a game mode: GAMER=true (engine/character.py).
     assert not any("never describe a machine" in i.lower() for i in pack.invariants)
 
 
 def test_she_does_not_see_advancements(pack):
-    """Автор, 27.09: «закрыть ей глаза на достижения — это сюжетное РП».
+    """The author, 27.09: "close her eyes to advancements — this is story RP".
 
-    Достижение — счёт игры, а не то, что с ней происходит; живьём 26.09 кровать («Sweet
-    Dreams») стала у неё «торговым автоматом». Заметка `advanced` до неё не доходит, и тегов,
-    которые кормились только ею, в паке нет.
+    An advancement is the game's score, not something that happens to her; live 26.09 a bed
+    ("Sweet Dreams") became a "vending machine" for her. The `advanced` note does not reach her,
+    and the pack has no tags fed only by it.
     """
     from tools.play import visible
 
@@ -169,7 +169,7 @@ def test_she_does_not_see_advancements(pack):
 
 
 def test_home_is_not_one_memory_on_repeat(pack):
-    """Живьём 26.09: «поезд в восемь утра» пять раз за утро — пример из блока стал ответом."""
+    """Live 26.09: "the eight o'clock train" five times in a morning — the block's example became the answer."""
     block = _flat(pack.blocks["asks_about_home"])
     assert "you have not told him yet" in block
     assert "train at eight" not in block
@@ -177,7 +177,7 @@ def test_home_is_not_one_memory_on_repeat(pack):
 
 def test_small_talk_has_its_own_tags_and_neglect_is_narrow():
     """30.09: without small-talk tags the classifier filed chatter under story tags —
-    short on-topic answers as `neglect` («ты всё равно меня не слушаешь» ×3), mock
+    short on-topic answers as `neglect` ("you don't listen to me anyway" ×3), mock
     politeness as `attention` answered literally — and «teasing» told her to say «at
     home I would explain», five times in one evening."""
     pack = load_pack(str(_MIZUKI))
@@ -193,7 +193,7 @@ def test_small_talk_has_its_own_tags_and_neglect_is_narrow():
 
 
 def test_his_death_is_read_by_the_stage(pack):
-    # Нейтрально → лёгкая грусть → горечь: один факт, три окна, и в каждом ровно одно.
+    # Neutral → light sadness → bitterness: one fact, three windows, and exactly one in each.
     died = ("he_died", "he_died_missed", "he_died_grief")
     for bond, want in ((0.05, "he_died"), (0.30, "he_died_missed"), (0.80, "he_died_grief")):
         offered = [t.id for t in _available_tags(pack, ratio=bond) if t.id in died]
@@ -205,7 +205,7 @@ def test_his_death_is_read_by_the_stage(pack):
 
 
 def test_the_loop_arms_only_on_grief_and_the_warning_is_on_the_box(pack):
-    # Петля взводится только горем (связь от 0.5), и предупреждение стоит в описании пака.
+    # The loop is armed only by grief (bond from 0.5), and the warning stands in the pack's description.
     assert pack.loop.arm_on == ["he_died_grief"]
     assert len(pack.loop.steps) == 3
     assert "irreversible consequences" in pack.meta.description
