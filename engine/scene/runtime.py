@@ -395,5 +395,5 @@ def _parse_moment(raw: str) -> tuple[str, str] | None:
     return None
 
 
-# Одно определение на всех, кто масштабирует дельту (R26).
+# One definition for everyone who scales a delta (R26).
 _scaled = scaled

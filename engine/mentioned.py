@@ -1,8 +1,8 @@
 """What has already been said between them — so it is not asked or said again.
 
 Live 29.09 (Mizuki): three questions about his goggles in two minutes, the first two
-unanswered; «Дома я бы тебе объяснила…» five times in twenty minutes; «Ты всё равно
-меня не слушаешь» three times. The window is eight messages, and the world's own notes
+unanswered; "I'd explain it to you at home…" five times in twenty minutes; "You don't
+listen to me anyway" three times. The window is eight messages, and the world's own notes
 («he is standing with a pig», «[closed]») take their places in it, so her own words
 leave it in a minute or two. What is gone from the window she can say again as if new.
 
@@ -24,10 +24,10 @@ MOST_ASKED = 8
 MOST_SAID = 6
 #: A line is quoted up to this many characters.
 QUOTE = 90
-#: Shorter sentences («Иду!», «Спасибо.») are not formulas worth remembering.
+#: Shorter sentences ("Coming!", "Thanks.") are not formulas worth remembering.
 SHORTEST = 18
 #: His answer is his very next turn, and only if he spoke in it. Two turns on, with a
-#: world note between, «Ты не от мира сего» was filed as the answer to «А он кислый?».
+#: world note between, "You're not of this world" was filed as the answer to "Is it sour?".
 ANSWER_WITHIN = 1
 
 _SENTENCE = re.compile(r"[^.!?…]+[.!?…]*")

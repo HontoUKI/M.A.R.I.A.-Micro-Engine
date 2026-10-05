@@ -122,11 +122,11 @@ class SessionStore:
         return entries
 
     def entries(self, session_key: str, pack: CharacterPack) -> list[dict]:
-        """Прожитые ходы этого разговора, старые первыми.
+        """The lived turns of this conversation, oldest first.
 
-        Досье выводится из них и отдельно не хранится: расшифровка и так пишет каждый ход
-        с его тегом, а второе хранилище того же самого — это два места, которые рано или
-        поздно разойдутся.
+        The dossier is derived from them and not stored separately: the transcript already writes
+        every turn with its tag, and a second store of the same thing is two places that sooner or
+        later will diverge.
         """
         return self._read_entries(self._dir(session_key, pack))
 

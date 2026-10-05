@@ -118,11 +118,11 @@ class StateKernel:
 
 
 def scaled(delta: DeltaVector, scale: float) -> DeltaVector:
-    """Дельта, умноженная на долю.
+    """A delta multiplied by a share.
 
-    Масштабирование сохраняет правило «связь не больше двух других осей», поэтому
-    результат остаётся законной дельтой. Одно определение на всех, кто это делает:
-    свидетель в сцене и убывающая цена повторённого поступка.
+    Scaling keeps the rule "bond no more than the two other axes", so the result stays a
+    legal delta. One definition for everyone who does this: a witness in a scene and the
+    diminishing price of a repeated deed.
     """
     return DeltaVector(
         affection=delta.affection * scale,

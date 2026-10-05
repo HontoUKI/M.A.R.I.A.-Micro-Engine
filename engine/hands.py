@@ -36,23 +36,23 @@ TIMEOUT = 5.0
 
 # She says what she is doing on its own line; the engine cuts it out before the
 # reply is shown, so a decision cannot be read aloud as speech.
-# Сколько однородных записей проговаривается прежде «и ещё N». Три, потому что
-# повторение — это про рисунок, а рисунок виден на трёх, не на шестнадцати.
+# How many records of one kind are spelled out before "and N more". Three, because
+# repetition is about a pattern, and a pattern shows in three, not in sixteen.
 MOST = 3
 
-# Всё, что адресовано игре, одним блоком — как мысль у тех характеров, у кого она есть.
+# Everything addressed to the game in one block — like a thought for characters that have one.
 #
-# Блок находится где угодно в тексте и переживает склейку предложений: то, что режет
-# реплику на предложения, склеивает соседние строки пробелом, и граница строки исчезает
-# раньше, чем её кто-то ищет.
+# The block is found anywhere in the text and survives sentence joining: what cuts a line
+# into sentences joins neighbouring lines with a space, and the line boundary vanishes
+# before anyone looks for it.
 #
-# Незакрытый блок забирает всё до конца: недописанное решение лучше потерять, чем
-# произнести вслух — ровно тот дефект, из-за которого 03.09 она ответила игроку строкой
+# An unclosed block takes everything to the end: an unfinished decision is better lost than
+# said out loud — exactly the defect that made her answer the player on 03.09 with the line
 # «DO: gather …».
 _PLAY = re.compile(r"<play>(?P<body>.*?)(?:</play>|\Z)", re.IGNORECASE | re.DOTALL)
-# Старая форма вне блока (`DO: …`, `REPEAT: n`, голые CONTINUE/DROP). С 28.09 язык живёт
-# только внутри `<play>` и читается роутером, но такая строка всё равно вырезается из речи:
-# протокол, сказанный вслух в чат, хуже несделанного. Ей говорится, что строка не прочитана.
+# The old form outside a block (`DO: …`, `REPEAT: n`, bare CONTINUE/DROP). Since 28.09 the
+# language lives only inside `<play>` and is read by the router, but such a line is still cut
+# out of speech: protocol said out loud in chat is worse than undone. She is told the line was not read.
 _STRAY = re.compile(
     r"^\s*(?:do:.*|repeat:\s*\S*|continue|drop)\s*$", re.IGNORECASE | re.MULTILINE
 )
@@ -248,11 +248,11 @@ class GamePort:
         return self._post(f"/attempts/{attempt_id}/resume", {})
 
     def resume_plan(self, plan_id: str) -> dict[str, Any]:
-        """Пойти доделывать то, что осталось от вставшего плана.
+        """Go and finish what was left of a stopped plan.
 
-        Тем же словом, что и возвращение к прерванной попытке: для неё это одно и то же
-        «продолжай», а чем оно отличается внутри — дело роутера, который и заводит новый
-        ряд вместо воскрешения старого.
+        The same word as returning to an interrupted attempt: for her it is one and the same
+        "keep going", and how it differs inside is the router's business, which starts a new row
+        instead of resurrecting the old one.
         """
         return self._post(f"/plans/{plan_id}/resume", {})
 
@@ -319,13 +319,13 @@ def plainly(value: Any, depth: int = 0, *, unabridged: frozenset[str] = frozense
         return str(value)
     if isinstance(value, list):
         said = [p for p in (plainly(v, depth + 1, unabridged=unabridged) for v in value) if p]
-        # **Пустой список — это ФАКТ, а отсутствующее значение — нет.**
+        # **An empty list is a FACT, a missing value is not.**
         #
-        # Пустое читалось как ничего и выбрасывалось из промпта целиком. Живьём 03.09
-        # игрок позвал её «в наш дом», а список отмеченных мест был пуст — значит про
-        # места её промпт не говорил ВООБЩЕ НИЧЕГО, и модель заполнила пробел домом,
-        # которого нет. Та же форма, что у Марии с просмотренным: пропущенный блок
-        # дописывается, напечатанное «ты не отмечала ничего» — это ответ.
+        # Empty read as nothing and was dropped from the prompt entirely. Live 03.09 the player
+        # called her "to our house", and the list of marked places was empty — so her prompt said
+        # NOTHING AT ALL about places, and the model filled the gap with a house that does not
+        # exist. The same shape as Maria's with what she watched: an omitted block gets made up, a
+        # printed "you have marked nothing" is an answer.
         if not said:
             return "none"
         if depth > 0 and len(said) > MOST:
@@ -343,12 +343,12 @@ def plainly(value: Any, depth: int = 0, *, unabridged: frozenset[str] = frozense
                 continue
             # Already said, in this same breath. A STRICT part of something already
             # said: the nearest of a kind is the first of its list, not a separate
-            # fact. Строгая — потому что равенство это не повтор, а совпадение:
-            # два пустых списка дают «none» и «none», и это ДВА факта, каждый про
-            # своё. Проглоченный второй — ровно та тишина, из-за которой она и
-            # сочиняет.
-            # Сравниваются ЗНАЧЕНИЯ со значениями, а не с уже склеенной строкой: в той
-            # стоит ещё и ключ, и «none» оказывалось частью «places none».
+            # fact. Strict — because equality is not a repeat but a coincidence:
+            # two empty lists give "none" and "none", and those are TWO facts, each about
+            # its own thing. A swallowed second one is exactly the silence that makes her
+            # invent.
+            # VALUES are compared with values, not with the already joined line: that one
+            # also holds the key, and "none" turned out to be part of "places none".
             if any(said in earlier and len(said) < len(earlier) for earlier in told):
                 continue
             told.append(said)
@@ -405,10 +405,10 @@ def describe(
     lines += [
         "</body>",
         "",
-        # Рамка, а не характер. Пак Юкины писан под отыгрыш, а в отыгрыше придумать
-        # подробность — это работа; в мире это враньё, и разницу должен объявить тот,
-        # кто мир приносит. Живьём 03.09 игрок позвал её «в наш дом», и она сочинила
-        # дом: список мест был пуст и до неё не доезжал вовсе.
+        # A frame, not character. Yukina's pack is written for roleplay, and in roleplay inventing a
+        # detail is the job; in the world it is a lie, and the difference must be declared by whoever
+        # brings the world. Live 03.09 the player called her "to our house", and she invented a
+        # house: the list of places was empty and never reached her.
         "Everything above is what you actually see and remember. It is not a"
         " setting to embellish: a place that is not listed is one you have not"
         " marked, and a thing not listed is one you have not seen. Saying where"
@@ -451,16 +451,16 @@ def describe(
             "Taking a new goal drops it too — that is a choice, not a mistake.",
         ]
     if unfinished:
-        # Незаконченное желание, и оно важнее паузы.
+        # The unfinished wish, and it matters more than the pause.
         #
-        # Путь к цели не прямой (§21, замечание автора): игрок берётся за кирку,
-        # обнаруживает, что нужен верстак, идёт за досками и возвращается. Прямая линия
-        # прощает ложное «я сделала» — следующий шаг упрётся и скажет; ОТХОД не прощает,
-        # потому что отход ровно то место, где внешнее желание надо держать.
+        # The path to a goal is not straight (§21, the author's note): a player takes up a pickaxe,
+        # finds that a crafting table is needed, goes for planks and comes back. A straight line
+        # forgives a false "I did it" — the next step will run into it and say so; a DETOUR does not,
+        # because a detour is exactly where the outer wish has to be held.
         #
-        # А держать было нечем: план закрывался, описание исхода рассказывало про последнюю
-        # попытку, и то, что она шла за КИРКОЙ, не помнил никто. Проще всего модели в
-        # этот момент считать, что кирка сделана.
+        # And there was nothing to hold it with: the plan closed, the outcome description told about
+        # the last attempt, and nobody remembered she was going for a PICKAXE. At that moment the
+        # easiest thing for the model is to assume the pickaxe is made.
         after = plainly(unfinished.get("after"))
         stopped = plainly(unfinished.get("stopped_on"))
         left = unfinished.get("remaining") or []

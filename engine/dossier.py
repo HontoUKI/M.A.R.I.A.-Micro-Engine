@@ -1,47 +1,47 @@
-"""Досье на человека: что он делал, а не как прочёлся этот ход.
+"""A dossier on a person: what he did, not how this turn read.
 
-Третье, что ход может знать, и до сих пор его не было вовсе.
+The third thing a turn can know, and until now it did not exist at all.
 
-Тег красит ОДИН ход. Ступень выражает накопленную близость и меняется медленно и грубо.
-Между ними не было ничего — и полоса грубости внутри одной ступени не оставляла следа:
-живьём 09.09 игрок нагрубил четыре раза, теги прочлись верно, оси упали 0.935 → 0.797,
-а ступень всё это время оставалась `devoted`, чей блок говорит «ты совершенно
-безоружна». Она ушла в холод ровно на один ход — и на следующем поводе не знала, что
-уходила. Замечание автора: «моя грубость никак не наказалась».
+A tag colours ONE turn. A stage expresses accumulated closeness and changes slowly and coarsely.
+There was nothing between them — and a stretch of rudeness within one stage left no trace:
+live 09.09 the player was rude four times, the tags read correctly, the axes fell 0.935 → 0.797,
+and all that time the stage stayed `devoted`, whose block says "you are completely
+defenceless". She went cold for exactly one turn — and on the next occasion did not know she
+had. The author's note: "my rudeness was not punished at all".
 
-Решение автора — досье, как у Марии: не эхо последних ходов, а запись о человеке,
-которая живёт дольше разговора.
+The author's decision is a dossier, as Maria has: not an echo of the last turns but a record
+about the person that lives longer than a conversation.
 
-**Оно ВЫВОДИТСЯ из расшифровки, а не хранится отдельно.** Расшифровка и так пишет
-каждый ход с его тегом и временем; второе хранилище того же самого — это два места,
-которые рано или поздно разойдутся, и тогда досье начнёт рассказывать о разговоре,
-которого не было.
+**It is DERIVED from the transcript, not stored separately.** The transcript already writes
+every turn with its tag and time; a second store of the same thing is two places that sooner
+or later will diverge, and then the dossier will start telling of a conversation that never
+happened.
 
-**И оно называет, а не толкует.** Движок говорит, что человек делал и сколько раз;
-злопамятна ли она, смеётся ли над этим или не замечает вовсе — решает пак. Та же
-граница, по которой игровой порт несёт слова мира и не читает их.
+**And it names rather than interprets.** The engine says what the person did and how many
+times; whether she holds a grudge, laughs it off or does not notice at all is up to the pack.
+The same line along which the game port carries the world's words and does not read them.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-# Сколько родов поступков перечисляется. Шесть: строка живёт в промпте каждый ход, а
-# список, который не дочитывают, — это плата без выгоды.
+# How many kinds of deeds are listed. Six: the line lives in the prompt every turn, and a
+# list nobody reads to the end is a cost without a benefit.
 MOST = 6
 
-# Сколько ходов поступок держится, если пак не сказал иначе. Двадцать — число автора.
+# How many turns a deed holds if the pack did not say otherwise. Twenty — the author's number.
 #
-# Без срока досье только росло: `insult x9` весило бы одинаково и через сотню ходов, а
-# «у факта не было выхода» — тот самый храповик, на котором линия Марии простояла трое
-# суток. Пак задаёт срок на КАЖДЫЙ род поступка отдельно (`remembered_for`), потому что
-# сроки у них разные: грубость перестаёт считаться через два десятка ходов, а убийство
-# через два десятка не перестаёт.
+# Without a term the dossier only grew: `insult x9` would weigh the same a hundred turns later,
+# and "a fact had no way out" is the very ratchet Maria's line stood on for three days. The
+# pack sets the term for EACH kind of deed separately (`remembered_for`), because the terms
+# differ: rudeness stops counting after a couple of dozen turns, a killing does
+# not.
 REMEMBERED_FOR = 20
 
 
 @dataclass(frozen=True)
 class Deed:
-    """Один род поступка: сколько раз и как давно в последний раз."""
+    """One kind of deed: how many times and how long ago the last one was."""
 
     tag: str
     times: int
@@ -49,13 +49,12 @@ class Deed:
 
 
 def deeds(entries, pack, most: int = MOST) -> tuple[Deed, ...]:
-    """Что человек делал, свежее вперёд.
+    """What the person did, freshest first.
 
-    Считаются только теги, которые ПАК объявил положительными или отрицательными:
-    обычный гул («mundane», «neutral», записки о её собственной работе) — не поступок, и
-    перечислять его значило бы платить токенами за отсутствие событий. Решение при этом
-    остаётся паковым: движок читает `sentiment`, а не собственные представления о том,
-    что важно.
+    Only tags the PACK declared positive or negative count: ordinary hum ("mundane",
+    "neutral", notes about her own work) is not a deed, and listing it would mean paying tokens
+    for the absence of events. The decision stays the pack's: the engine reads `sentiment`,
+    not its own ideas of what matters.
     """
     rows = list(entries or [])
     known_tags = {t.id for t in pack.tags}
@@ -68,9 +67,9 @@ def deeds(entries, pack, most: int = MOST) -> tuple[Deed, ...]:
         known = pack.tag(tag)
         if known.sentiment not in ("positive", "negative"):
             continue
-        # Справочник сверяется на КАЖДОМ поступке, а не на роде целиком: три грубости
-        # подряд и одна сто ходов назад — это «три», а не «четыре». Иначе один свежий
-        # случай воскрешал бы весь давно истёкший счёт.
+        # The reference is checked on EVERY deed, not on the kind as a whole: three insults in a
+        # row and one a hundred turns ago are "three", not "four". Otherwise one fresh case would
+        # resurrect the whole long-expired count.
         if back >= lifetimes.get(tag, REMEMBERED_FOR):
             continue
         seen = tally.setdefault(tag, [0, back])
@@ -81,22 +80,22 @@ def deeds(entries, pack, most: int = MOST) -> tuple[Deed, ...]:
 
 
 def times(found, tag: str) -> int:
-    """Сколько раз этот род поступка случился в пределах своего срока."""
+    """How many times this kind of deed happened within its term."""
     return next((d.times for d in found if d.tag == tag), 0)
 
 
 def worth(found, pack, tag: str) -> float:
-    """Во сколько ценится ОЧЕРЕДНОЙ такой поступок, долей от полного.
+    """What the NEXT such deed is worth, as a share of the full value.
 
-    Замечание автора 09.09: «стоит сделать уменьшение дельт на подарки, учитывая то что мы
-    записываем количество тех или иных тегов». Считать уже умеет досье — оно и решает.
+    The author's note 09.09: "we should shrink the deltas for gifts, given that we record the
+    count of each tag". The dossier already knows how to count — so it decides.
 
-    Правило одно и без магических чисел: N-й поступок в пределах своего срока стоит `1/N`.
-    Первый подарок за вечер — целиком, второй вполовину, пятый впятеро меньше. До нуля не
-    доходит никогда: он всё-таки о ней подумал, пусть и в пятый раз подряд.
+    One rule and no magic numbers: the N-th deed within its term is worth `1/N`. The first
+    gift of an evening counts in full, the second by half, the fifth a fifth. It never reaches
+    zero: he did think of her, even if for the fifth time in a row.
 
-    А срок даёт этому дыхание: у Юкины подарок помнится шестьдесят ходов, и через час
-    следующий снова стоит целого. Подарки перестают быть счётом и становятся РИТМОМ.
+    And the term gives it breath: for Yukina a gift is remembered sixty turns, and an hour later
+    the next is worth a whole one again. Gifts stop being a score and become a RHYTHM.
     """
     if tag not in (getattr(pack, "diminishing", None) or ()):
         return 1.0
@@ -104,7 +103,7 @@ def worth(found, pack, tag: str) -> float:
 
 
 def summarise(found, most: int = MOST) -> str:
-    """Досье одной строкой, для хвоста хода. Пусто — значит ничего не было."""
+    """The dossier in one line, for the turn's tail. Empty means nothing happened."""
     found = tuple(found)[:most]
     if not found:
         return ""

@@ -125,9 +125,9 @@ class EngineService:
 
         driver, window = _split_messages(messages)
         kernel = self.sessions.kernel_for(session_key, pack)
-        # Что этот человек делал раньше. Между тегом (один ход) и ступенью (накопленная
-        # близость) не было ничего, и полоса грубости внутри одной ступени не оставляла
-        # следа вовсе.
+        # What this person did before. Between a tag (one turn) and a stage (accumulated
+        # closeness) there was nothing, and a stretch of rudeness within one stage left no
+        # trace at all.
         lived = self.sessions.entries(session_key, pack)
         done = deeds(lived, pack)
         runtime = CharacterRuntime(
