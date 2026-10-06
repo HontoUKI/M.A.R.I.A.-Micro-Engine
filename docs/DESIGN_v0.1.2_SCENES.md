@@ -1,8 +1,14 @@
 # Design — v0.1.2: a cast, a stage, and a web of feelings
 
-> **Status: design, not built yet.** This is the plan for v0.1.2, written down so
-> we agree on the shape before writing code. Everything here grows out of the
-> v0.1 pieces we already have — it does not throw any of them away.
+> **Status: built.** Written as the plan before the code, and kept as the design
+> record. The pieces live in `engine/scene/` (ScenePack and loader, relationship
+> matrix, stage-gated tags, director, runtime) and are served as `/scenes/...` in
+> `app/main.py`: group chat (`advance`), play mode with a cue (`run`), an image
+> backdrop, the transcript and the matrix. How the open questions were settled is
+> at the end, under "Decided in the code".
+>
+> Not built: binding a scene to a game. Every actor in a scene shares one model,
+> and the game port speaks for one character.
 
 ## The short version
 
@@ -235,25 +241,22 @@ scratch. That's why holding several characters stays cheap.
   re-sent.
 - **The narrator is never a cast member.** Reacted to, never answered.
 
-## Still to decide
+## Decided in the code
 
-1. **How long do the characters riff before pausing?** When the cast is talking
-   among themselves, how many turns fire before it waits for your next cue — so a
-   scene doesn't run away on its own?
-2. **When the model can't pick a speaker,** who talks — round-robin, whoever was
-   just addressed, or "you choose"?
-3. **How much does each character overhear?** Does everyone remember the whole
-   scene, or only the lines aimed at or spoken by them? (Leaning: you remember
-   what you witnessed.)
-4. **Do character-to-character feelings drift on their own,** or only when the
-   two actually interact? (e.g. does Megumin's crush fade if Kaguya ignores her
-   for a while?)
-5. **The backdrop's picture** — the ScenePack's `setting` text already covers the
-   authored/typed case with no vision model needed; the open part is just the
-   *image* upload — reuse a vision model (as the full runtime does) as an
-   optional extra, on top of the always-available typed setting?
-6. **Where a scene is saved** — extend today's `.local/sessions` into a
-   `.local/scenes/<id>/` folder holding each pair's tally plus one shared script?
+1. **How long the cast riffs.** Play mode runs `max_turns` per cue, capped at 8
+   (`_MAX_SCENE_RUN_TURNS`), then waits for the next cue.
+2. **When the model can't pick a speaker,** it falls back to round-robin over the
+   cast (`next_round_robin`).
+3. **Overhearing.** Bystanders do not speak, but they react to what they saw: a
+   witness pass moves their feelings at half strength (`witness_scale = 0.5`).
+4. **Drift.** Character-to-character feelings move only when the two interact or
+   one witnesses the other. A matrix edge has a baseline, but nothing decays it
+   back on its own today.
+5. **The backdrop.** The typed `setting` always works. An uploaded image is
+   captioned by a vision model and replaces it; without a vision model the upload
+   answers 501.
+6. **Where a scene is saved.** In `.local/scenes` (`SCENES_STATE_DIR`): the
+   matrix and the transcript, never inside the tracked `scenes/` directory.
 
 ## What this is not
 
