@@ -274,6 +274,7 @@ class CharacterRuntime:
             did=did,
             game_feedback_pending=bool(
                 getattr(self, "_unread", ()) or getattr(self, "_game_delivery_issue", "")
+                or getattr(self, "_game_readiness", ())
             ),
         )
 
@@ -337,6 +338,20 @@ class CharacterRuntime:
             if delivery:
                 self._game_delivery_issue = ""
                 block = delivery + "\n\n" + block
+            readiness = getattr(self, "_game_readiness", ())
+            if readiness:
+                self._game_readiness = ()
+                block = (
+                    "The Router read your last <play> source as valid, but reported "
+                    "ready: false for these routine calls: " + "; ".join(readiness)
+                    + "\nmissing_routine means a routine was not defined when the source was read; "
+                    "requires_binding means its name needs parameter binding. "
+                    "This is a readiness diagnostic, not a source rejection or an action outcome. "
+                    "Saving and submitting the returned steps were handled separately; check "
+                    "routine_saved/saved: true and the action history for their actual results. "
+                    "Re-read after defining or binding the calls to check current readiness."
+                    + "\n\n" + block
+                )
             return block
         except Exception:
             return ""
@@ -366,6 +381,7 @@ class CharacterRuntime:
         # malformed line twice running — the world had no answer to give, because the
         # line never reached it.
         self._unread = intention.unread
+        self._game_readiness = intention.readiness
         if not intention:
             # `speech`, never `reply`. An intention is falsy exactly when her play
             # was there and could not be READ — and that was the one path that put the
@@ -481,7 +497,8 @@ class CharacterRuntime:
                 said = f"{said}: {stop.refuse}".strip()
             if _selects(goal) and stop.names():
                 # A selection (`ALL where …`) names no things, and the engine does not know what
-                # will fall into it — the vocabulary is the game's. The narrow way out: leave the forbidden behind EXCEPT.
+                # will fall into it — the vocabulary is the game's. The narrow way out:
+                # leave the forbidden behind EXCEPT.
                 spared = ", ".join(stop.names())
                 said += f" (a selection could include {spared} — leave it out with EXCEPT)"
             held.append(said)

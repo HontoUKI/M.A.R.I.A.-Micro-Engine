@@ -21,6 +21,7 @@ second game be attached without a line changing here, and it is why the goal's
 """
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -52,7 +53,8 @@ MOST = 3
 _PLAY = re.compile(r"<play>(?P<body>.*?)(?:</play>|\Z)", re.IGNORECASE | re.DOTALL)
 # The old form outside a block (`DO: …`, `REPEAT: n`, bare CONTINUE/DROP). Since 28.09 the
 # language lives only inside `<play>` and is read by the router, but such a line is still cut
-# out of speech: protocol said out loud in chat is worse than undone. She is told the line was not read.
+# out of speech: protocol said out loud in chat is worse than undone. She is told
+# the line was not read.
 _STRAY = re.compile(
     r"^\s*(?:do:.*|repeat:\s*\S*|continue|drop)\s*$", re.IGNORECASE | re.MULTILINE
 )
@@ -85,6 +87,9 @@ class Intention:
     # about it is what let her write the same malformed line twice running, believing
     # both times that she acted.
     unread: tuple[str, ...] = ()
+    # Valid source can contain forward or parameter-bound routine calls. These
+    # diagnostics do not change truthiness or prevent saving/submitting steps.
+    readiness: tuple[str, ...] = ()
 
     def __bool__(self) -> bool:
         return bool(self.steps) or self.carry_on or self.let_go
@@ -140,9 +145,27 @@ def read_intention(
             carry_on=word == "continue",
             let_go=word == "drop",
             unread=unread,
+            readiness=_readiness_diagnostics(said),
         ),
         speech,
     )
+
+
+def _readiness_diagnostics(said: dict[str, Any]) -> tuple[str, ...]:
+    """Carry optional Router readiness metadata without interpreting its DSL."""
+    if said.get("ready") is not False:
+        return ()
+    calls = said.get("unresolved_calls")
+    if not isinstance(calls, list):
+        calls = []
+    diagnostics = tuple(
+        json.dumps(
+            {key: call[key] for key in ("name", "step_path", "reason") if key in call},
+            ensure_ascii=False,
+        )
+        for call in calls if isinstance(call, dict)
+    )
+    return diagnostics or ("ready: false; the reader gave no unresolved call details",)
 
 
 def _game_result_diagnostic(result: dict[str, Any], status: int | None = None) -> str:
@@ -406,7 +429,8 @@ def describe(
         "</body>",
         "",
         # A frame, not character. Yukina's pack is written for roleplay, and in roleplay inventing a
-        # detail is the job; in the world it is a lie, and the difference must be declared by whoever
+        # detail is the job; in the world it is a lie, and the difference must be declared
+        # by whoever
         # brings the world. Live 03.09 the player called her "to our house", and she invented a
         # house: the list of places was empty and never reached her.
         "Everything above is what you actually see and remember. It is not a"
@@ -455,7 +479,8 @@ def describe(
         #
         # The path to a goal is not straight (§21, the author's note): a player takes up a pickaxe,
         # finds that a crafting table is needed, goes for planks and comes back. A straight line
-        # forgives a false "I did it" — the next step will run into it and say so; a DETOUR does not,
+        # forgives a false "I did it" — the next step will run into it and say so;
+        # a DETOUR does not,
         # because a detour is exactly where the outer wish has to be held.
         #
         # And there was nothing to hold it with: the plan closed, the outcome description told about
