@@ -352,3 +352,21 @@ across request runners per session/character, survives a failed model turn and
 world-budget trimming, and is consumed once by a successful turn. Relationship
 reset clears it; process restart does not persist it. No new field is added to
 the public chat response or the character-pack schema.
+
+### Rejected source repair — 12.10
+
+An explicit reader refusal retains one private draft for the next real turn:
+the SHA-256 revision of the submitted source, its original character count,
+a bounded quoted excerpt, a local error fragment and allowlisted diagnostics.
+`source_complete: false` identifies a truncated excerpt; the consumer does not
+claim it can reconstruct the complete program. An explicit authoring refusal
+with `saved: false` also retains the draft and reason, separately from uncertain
+delivery and closed game actions. No refused draft becomes an executable decision.
+
+The repair context lives only in per-session/character memory, survives request
+runner recreation and failed model turns, and is cleared by a successful turn
+or relationship reset. New refusals replace it. It is attached as private source
+data outside the world overview's trimming budget, never added to dialogue,
+saved life data or the public response. The rendered context is bounded to
+7,000 characters, including JSON escaping; this is a character bound, not an
+exact model token count. An excerpt does not replace the selected seed example.
