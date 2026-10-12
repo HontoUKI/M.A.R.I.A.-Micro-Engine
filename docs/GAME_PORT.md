@@ -328,3 +328,27 @@ own. The router checks it whole before saving, without running the body.
 `block_path`. Only `routine_saved` with `saved: true`, a name and a version confirms
 the save. Running it is the next turn. The confirmation comes in the shared action
 history; no separate success channel for learning is needed.
+
+### Source readiness — 12.10
+
+`POST /v0/read` can additionally return `ready: false` and
+`unresolved_calls: [{name, step_path, reason}]`. `step_path` is an opaque source
+location, such as `steps[0].where.routine.steps[0]`; this consumer does not parse it.
+`missing_routine` means the named routine was unknown at reading time;
+`requires_binding` means the routine name needs parameter binding.
+
+This is valid source with a readiness diagnostic, not a syntax rejection.
+Forward declarations may still be saved, and returned steps still go through the
+ordinary submission and pack-bound checks. Readiness does not confirm a save or
+an action outcome. Check `routine_saved`, `saved: true`, name/version and the
+action history for those results; re-read the source after defining or binding
+the calls to check its current readiness. Older Router responses without this
+metadata behave as before; `ready: true` leaves no readiness notice.
+
+The diagnostic reaches the next real turn through a separate readiness notice,
+including when there is no Router event to wake the game loop. It never goes
+through the unread-source notice that says nothing moved. The notice is kept
+across request runners per session/character, survives a failed model turn and
+world-budget trimming, and is consumed once by a successful turn. Relationship
+reset clears it; process restart does not persist it. No new field is added to
+the public chat response or the character-pack schema.
