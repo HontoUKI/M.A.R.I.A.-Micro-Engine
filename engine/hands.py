@@ -29,6 +29,8 @@ from typing import Any
 
 import requests
 
+from engine.game_repair import FailedSource
+
 # The wire contract this client was written against.
 CONTRACT = "0.0.1"
 
@@ -90,6 +92,8 @@ class Intention:
     # Valid source can contain forward or parameter-bound routine calls. These
     # diagnostics do not change truthiness or prevent saving/submitting steps.
     readiness: tuple[str, ...] = ()
+    # A reader refusal retains one private draft for repair, not for execution or speech.
+    failed_source: FailedSource | None = None
 
     def __bool__(self) -> bool:
         return bool(self.steps) or self.carry_on or self.let_go
@@ -131,7 +135,9 @@ def read_intention(
         return Intention(unread=unread), speech
     said = read(text)
     if said.get("error"):
-        return Intention(unread=unread + (str(said["error"]),)), speech
+        failed = FailedSource.capture(text, said)
+        return Intention(unread=unread + (str(failed.diagnostic.get("error", "reader refusal")),),
+                         failed_source=failed), speech
     steps = tuple(
         Goal(str(s["verb"]), {k: v for k, v in s.items() if k != "verb"})
         for s in said.get("steps") or []

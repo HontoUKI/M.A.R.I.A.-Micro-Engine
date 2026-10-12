@@ -165,7 +165,8 @@ class EngineService:
         finally:
             pending = {
                 name: value for name in (
-                    "_unread", "_held_back", "_game_delivery_issue", "_game_readiness"
+                    "_unread", "_held_back", "_game_delivery_issue", "_game_readiness",
+                    "_game_repair",
                 )
                 if (value := getattr(runtime, name, None))
             }

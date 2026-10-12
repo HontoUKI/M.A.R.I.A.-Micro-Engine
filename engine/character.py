@@ -16,6 +16,7 @@ from dataclasses import dataclass, replace
 
 from engine.action_history import ActionHistory
 from engine.dossier import summarise, worth
+from engine.game_repair import FailedSource
 from engine.glossary import LOOKUP, GlossaryNotes
 from engine.hands import (
     GameActionNotCompleted,
@@ -24,6 +25,7 @@ from engine.hands import (
     describe,
     read_intention,
     require_game_acceptance,
+    split_play,
 )
 from engine.llm import LLMError, OllamaClient
 from engine.memory import VectorStore
@@ -221,6 +223,7 @@ class CharacterRuntime:
         stage = stage_obj.id if stage_obj else None
 
         recall_text, query_vec = self._recall(user_message)
+        repair = getattr(self, "_game_repair", None) if self._hands is not None else None
 
         inputs = PromptInputs(
             identity=self._pack.identity,
@@ -228,7 +231,10 @@ class CharacterRuntime:
             stage_block="\n\n".join(
                 part for part in (stage_obj.block if stage_obj else "", self._loop_block) if part
             ),
-            steering_block=self._steering_block(tag),
+            steering_block="\n".join(part for part in (
+                self._steering_block(tag),
+                repair.render() if repair else "",
+            ) if part),
             memory_recall=recall_text,
             web_context=self._web_lookup(tag, user_message),
             game_block=self._game_block(),
@@ -275,6 +281,7 @@ class CharacterRuntime:
             game_feedback_pending=bool(
                 getattr(self, "_unread", ()) or getattr(self, "_game_delivery_issue", "")
                 or getattr(self, "_game_readiness", ())
+                or getattr(self, "_game_repair", None)
             ),
         )
 
@@ -382,6 +389,7 @@ class CharacterRuntime:
         # line never reached it.
         self._unread = intention.unread
         self._game_readiness = intention.readiness
+        self._game_repair = intention.failed_source
         if not intention:
             # `speech`, never `reply`. An intention is falsy exactly when her play
             # was there and could not be READ — and that was the one path that put the
@@ -423,11 +431,21 @@ class CharacterRuntime:
                 return speech, ()
             require_game_acceptance(self._hands.act(intention))
         except GameRequestRejected as refusal:
+            detail = str(refusal)
+            authoring = any(goal.verb in {"teach", "patch", "restore"}
+                            for goal in intention.steps)
+            if authoring and refusal.result.get("saved") is False:
+                # Source was read, but the authoring request was explicitly refused.
+                # Do not turn an uncertain delivery or a game outcome into a draft error.
+                self._game_repair = FailedSource.capture(
+                    split_play(reply)[0], refusal.result, stage="save_refusal"
+                )
+                detail = str({"saved": False, **self._game_repair.diagnostic})
             self._game_delivery_issue = (
                 "The Router explicitly refused your last request; do not claim it succeeded. "
                 "This is a confirmed request refusal, not a lost response. "
                 "Current work may still be active; inspect it before replacing or repeating it. "
-                + str(refusal)
+                + detail
             )
             return speech, ()
         except GameActionNotCompleted as outcome:
