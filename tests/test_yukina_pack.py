@@ -226,7 +226,8 @@ def test_the_dossier_is_weighed_on_every_turn_not_only_when_insulted(pack):
     only when being rude right now. It worked once it stood where EVERY turn sounds.
     """
     assert "note about what he has done" in pack.reply_directive
-    # And the block about the rudeness itself knows about it too: one of the two places is not enough.
+    # And the block about the rudeness itself knows about it too: one of the two places is not
+    # enough.
     assert "note above" in pack.blocks["insult"]
 
 

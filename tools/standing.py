@@ -15,7 +15,8 @@ must be checked is the one that lives, not the one next to it: on 09.09 a turn w
 conversation with herself, and the −8 trust for a killing went to nobody.
 
 Seeding is a tool for checking, not for playing. It writes straight into the state, bypassing
-the turn, so it leaves no trace in the transcript: the dossier counts lived turns and must not lie about them.
+the turn, so it leaves no trace in the transcript: the dossier counts lived turns and must not lie
+about them.
 """
 from __future__ import annotations
 
@@ -41,7 +42,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--character", required=True, help="the pack's name, e.g. yukina")
     parser.add_argument("--who", default="HontoUKI", help="with whom; HontoUKI by default")
-    parser.add_argument("--key", default="", help="the full conversation key, if it is not the game's")
+    parser.add_argument(
+        "--key", default="", help="the full conversation key, if it is not the game's"
+    )
     parser.add_argument("--stage", default="", help="put her on this stage")
     parser.add_argument("--bond", type=float, default=None, help="set the bond by number")
     parser.add_argument("--reset", action="store_true", help="back to the pack's start")

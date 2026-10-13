@@ -24,7 +24,9 @@ from engine.hands import (
 
 
 class _Reader:
-    """Stands in for `POST /v0/read`: the router reads the grammar; here, what it answered and what it was given."""
+    """Stands in for `POST /v0/read`: the router reads the grammar; here, what it answered and what
+    it was given.
+    """
 
     def __init__(self, answer=None) -> None:
         self.answer = answer if answer is not None else {"steps": [], "repeat": 1, "word": None}

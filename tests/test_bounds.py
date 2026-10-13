@@ -134,10 +134,12 @@ def test_taking_EVERYTHING_is_covered_by_the_bound():
 
 
 def test_a_selection_is_everything_unless_the_forbidden_is_left_out():
-    """`take_from(ALL …)` names no things, and what falls into it the world decides at the moment of the step.
+    """`take_from(ALL …)` names no things, and what falls into it the world decides at the moment of
+    the step.
 
     So a selection is "everything", like `where.all`: otherwise "never take his bread" is
-    bypassed by the word ALL. The way out is narrow and her own: leave the bread behind EXCEPT (28.09).
+    bypassed by the word ALL. The way out is narrow and her own: leave the bread behind
+    EXCEPT (28.09).
     """
     pack = _pack(bounds=[
         ActionBound(verb="take_from", object=["bread"], never=True, refuse="he lives on that"),

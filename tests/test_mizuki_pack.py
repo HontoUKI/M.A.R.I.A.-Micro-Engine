@@ -127,7 +127,9 @@ def test_gunfire_is_read_by_the_stage(pack):
 
 
 def test_no_japanese_words_are_invited(pack):
-    """The author, 25.09: "Kowai from the very start — not great". The pack must not call up Japanese words."""
+    """The author, 25.09: "Kowai from the very start — not great". The pack must not call up
+    Japanese words.
+    """
     text = " ".join([pack.identity, *pack.blocks.values(), *(s.block for s in pack.stages)]).lower()
     for word in ("kowai", "itadakimasu", "sugoi", "japanese word"):
         assert word not in text, word
@@ -169,7 +171,9 @@ def test_she_does_not_see_advancements(pack):
 
 
 def test_home_is_not_one_memory_on_repeat(pack):
-    """Live 26.09: "the eight o'clock train" five times in a morning — the block's example became the answer."""
+    """Live 26.09: "the eight o'clock train" five times in a morning — the block's example became
+    the answer.
+    """
     block = _flat(pack.blocks["asks_about_home"])
     assert "you have not told him yet" in block
     assert "train at eight" not in block
@@ -205,7 +209,8 @@ def test_his_death_is_read_by_the_stage(pack):
 
 
 def test_the_loop_arms_only_on_grief_and_the_warning_is_on_the_box(pack):
-    # The loop is armed only by grief (bond from 0.5), and the warning stands in the pack's description.
+    # The loop is armed only by grief (bond from 0.5), and the warning stands in the pack's
+    # description.
     assert pack.loop.arm_on == ["he_died_grief"]
     assert len(pack.loop.steps) == 3
     assert "irreversible consequences" in pack.meta.description

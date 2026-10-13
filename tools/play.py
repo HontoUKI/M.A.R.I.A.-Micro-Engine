@@ -65,13 +65,15 @@ WAKING = ("closed", "waiting", "interrupted")
 # The number is how many seconds of quiet after HIS line this occasion needs. Zero for almost
 # all, and that is not carelessness: `QUIET_AFTER_HIM` keeps her own business from
 # interrupting the conversation, while here the occasion is the conversation itself, only not
-# in words. Answering a gifted diamond a second after "take this" is not interrupting him but hearing him.
+# in words. Answering a gifted diamond a second after "take this" is not interrupting him but
+# hearing him.
 #
 # The exception is a gaze: he may stand and look in the middle of a conversation, and "you're
 # looking at me!" over his own line is exactly the old defect.
 #
 # Death is here too, though it is not about him: without content only an empty bracket is
-# left of it, and "she died" and "YOU killed her" are different news, and the second must not be lost.
+# left of it, and "she died" and "YOU killed her" are different news, and the second must not be
+# lost.
 # The game's own words for each advancement tier — the same three verbs vanilla prints,
 # and BlazeandCave's pack prints through its tellraw. The tier is a fact of the
 # announcement, not a reading of it.
@@ -103,7 +105,8 @@ WITH_CONTENT = {
     # He progressed through the game, and the world announced it out loud — to both. Her clock:
     # unease grows not from a mood but from how far he has got.
     "advanced": 0.0,
-    # She was hit, and the body is already running (router, `flee.js`: the posture of one who cannot fight).
+    # She was hit, and the body is already running (router, `flee.js`: the posture of one who cannot
+    # fight).
     # Zero and over his line: a cry for help does not wait for a pause in the conversation.
     "fled": 0.0,
     "watched": None,  # None — keep the common quiet threshold
@@ -514,7 +517,8 @@ def main() -> int:
         return 1
 
     display = service.registry.get(args.character).meta.display_name
-    # What she does not see at all is decided by the pack (a story game is not shown the game's mechanics).
+    # What she does not see at all is decided by the pack (a story game is not shown the game's
+    # mechanics).
     unseen = frozenset(service.registry.get(args.character).unseen_notes)
     in_world = _her_name(port)
     print(f"character {display}")
@@ -580,9 +584,12 @@ def main() -> int:
             #
             # Live 09.09: he killed her, and the record went into a conversation WITH HERSELF. The
             # `died` event has no `who` field — it has `by_player` — the loop had just restarted,
-            # `last_person` was empty, and the fallback was HER OWN name. As a result a second ledger
-            # appeared, `minecraft:Yukina`, where the −8 trust for the killing went: he killed her, and
-            # it cost him nothing. And a turn later she did not remember it — the note lay in another window.
+            # `last_person` was empty, and the fallback was HER OWN name. As a result a second
+            # ledger
+            # appeared, `minecraft:Yukina`, where the −8 trust for the killing went: he killed her,
+            # and
+            # it cost him nothing. And a turn later she did not remember it — the note lay in
+            # another window.
             #
             # There is no conversation with oneself, so there is no fallback with her name any more:
             # no person — no turn. Silence is more honest than a ledger that belongs to

@@ -54,7 +54,8 @@ def test_standing_with_others_names_them_and_counts_them():
         "them": [{"what": "villager", "count": 3}, {"what": "cow", "count": 1}],
     })
     assert said == "[HontoUKI is standing with villager x3, cow]"
-    # A cow and a villager arrive alike: which of them is a rival is decided by the pack, not the wire.
+    # A cow and a villager arrive alike: which of them is a rival is decided by the pack, not the
+    # wire.
     assert "villager" in said and "cow" in said
 
 
@@ -74,7 +75,8 @@ def test_danger_names_what_and_how_close():
 ])
 def test_a_note_states_a_fact_and_never_a_reading(event):
     said = _note(event)
-    # In brackets, like everything that does not come from a person: otherwise a note is indistinguishable from speech.
+    # In brackets, like everything that does not come from a person: otherwise a note is
+    # indistinguishable from speech.
     assert said.startswith("[") and said.endswith("]")
     # The person's name is always named — a verb about a person without a name is useless, and
     # exactly this broke `follow` on 02.09.

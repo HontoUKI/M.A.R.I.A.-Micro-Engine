@@ -76,7 +76,8 @@ def test_the_ladder_still_falls_when_the_bond_itself_is_spent():
 
 
 def test_tag_windows_read_the_same_axis_as_the_stages():
-    """Otherwise "she became different" and "something different became available to her" happen at different moments.
+    """Otherwise "she became different" and "something different became available to her" happen at
+    different moments.
 
     Checked through the runtime, not arithmetic: that is the only place they can diverge.
     """

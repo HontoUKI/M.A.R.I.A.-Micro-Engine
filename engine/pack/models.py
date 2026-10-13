@@ -242,9 +242,11 @@ class CharacterPack(BaseModel):
     bounds: list[ActionBound] = Field(default_factory=list)
     # Kinds of world notes this character does not get at all (`advanced`, `watched`…).
     # A story game does not see the game's mechanics: Mizuki, 27.09 — advancements turned into a
-    # "vending machine" and a "factory" for her. Empty — sees everything, as all packs did before the field.
+    # "vending machine" and a "factory" for her. Empty — sees everything, as all packs did before
+    # the field.
     unseen_notes: list[str] = Field(default_factory=list)
-    # The loop: a hidden counter of attempts that outlives the world (Mizuki, 30.09). None — no loop.
+    # The loop: a hidden counter of attempts that outlives the world (Mizuki, 30.09). None — no
+    # loop.
     loop: Loop | None = None
 
     @model_validator(mode="after")

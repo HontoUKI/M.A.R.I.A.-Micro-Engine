@@ -14,7 +14,10 @@ def test_nothing_said_nothing_printed():
 
 def test_a_question_carries_his_next_line_or_no_answer():
     lived = [
-        turn("<Honto> walk", "Coming. What are those goggles on your forehead? Do they change anything?"),
+        turn(
+            "<Honto> walk",
+            "Coming. What are those goggles on your forehead? Do they change anything?",
+        ),
         turn("[closed]", "Just... What are those goggles on your forehead?"),
         turn("<Honto> Mostly for information", "Information about what?"),
     ]

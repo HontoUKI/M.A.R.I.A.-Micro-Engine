@@ -86,7 +86,8 @@ def test_the_dossier_is_a_fact_and_never_a_reading(pack):
 
 
 def test_the_list_stays_short(pack):
-    # The line goes into the prompt EVERY turn; a list nobody reads to the end is a cost without a benefit.
+    # The line goes into the prompt EVERY turn; a list nobody reads to the end is a cost without a
+    # benefit.
     many = turns(
         "insult", "warmth", "gift", "watched", "praise_work",
         "teasing", "neglect", "someone_else", "killed_by_him",
